@@ -16,12 +16,12 @@ export function isDemoMode(): boolean {
   return import.meta.env.VITE_DEMO_MODE === 'true';
 }
 
-export function initDemoSession(): boolean {
+export async function initDemoSession(): Promise<boolean> {
   if (isOnboarded()) {
     return false;
   }
 
-  db.initProfile(
+  await db.initProfile(
     LOGGED_IN_ZALO_USER.id,
     LOGGED_IN_ZALO_USER.name,
     REGION.defaultSchool,

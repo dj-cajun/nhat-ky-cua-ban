@@ -92,8 +92,8 @@ export const SEED_VISITORS = [
 ];
 
 export const SEED_DIARY_POSTS = [
-  { authorId: 'zalo-hcm-marie-11a-001', content: 'Thitrượt', hasPhoto: false, hasVideo: false, hasLink: false },
-  { authorId: 'zalo-hcm-marie-11a-001', content: 'Nhìnnhaukk', hasPhoto: false, hasVideo: false, hasLink: false },
+  { authorId: 'zalo-hcm-marie-11a-001', content: 'thi trượt rồi huhu', hasPhoto: false, hasVideo: false, hasLink: false },
+  { authorId: 'zalo-hcm-marie-11a-001', content: 'nhìn nhau cười chết =))', hasPhoto: false, hasVideo: false, hasLink: false },
 ];
 
 export const SEED_SCHOOL_POSTS = [
@@ -136,7 +136,7 @@ export const SEED_SCHOOL_POSTS = [
 
 export const SEED_GUESTBOOK_POSTS = [
   { authorId: 'cm-04', content: 'Nhật ký đẹp quá kk', targetUserId: 'zalo-hcm-marie-11a-001' },
-  { authorId: 'cm-08', content: 'Đicafekhông?', targetUserId: 'zalo-hcm-marie-11a-001' },
+  { authorId: 'cm-08', content: 'Đi cf không mấy bà?', targetUserId: 'zalo-hcm-marie-11a-001' },
 ];
 
 export const SEED_VOTE_POSTS = [
@@ -145,9 +145,9 @@ export const SEED_VOTE_POSTS = [
 ];
 
 export const SEED_CALENDAR = [
-  { date: '2026-07-01', content: 'Nhìn nhau cười' },
-  { date: '2026-07-02', content: 'Bực mình quá' },
-  { date: '2026-07-03', content: 'Hội thao vui' },
+  { date: '2026-07-01', content: 'nhìn nhau kk' },
+  { date: '2026-07-02', content: 'bực mình ghê' },
+  { date: '2026-07-03', content: 'hội thao vui' },
 ];
 
 export const SEED_PHOTO_CAPTION = 'BFF cùng lớp';
@@ -239,6 +239,5 @@ export const REALTIME_MESSAGES = {
 
 export const APP_META = {
   name: 'Nhật ký của bạn',
-  nameKo: 'Nhật ký của bạn',
   slogan: '100% ẩn danh — điều tra lớp học bằng Họ và nhật ký',
 };

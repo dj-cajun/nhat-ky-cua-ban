@@ -49,7 +49,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
         canWrite && onWrite ? 'cy-board-preview-home--writable' : ''
       } ${voteLock ? 'opacity-90' : ''}`}
     >
-      <div className="shrink-0">
+      <div className="cy-board-preview-scroll">
         {HOME_BOARDS.map((board, index) => {
           const posts = Array.isArray(allPosts?.[board]) ? allPosts[board] : [];
           const slots = buildPreviewSlots(posts);
@@ -60,9 +60,12 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
                 type="button"
                 onClick={() => openBoard(board)}
                 disabled={voteLock}
-                className="cy-board-section-title w-full active:bg-y2k-pink-light/50 disabled:opacity-50"
+                className="cy-board-section-title cy-board-row-tappable w-full"
               >
-                {BOARD_LABELS[board]}
+                <span className="min-w-0 flex-1 truncate">{BOARD_LABELS[board]}</span>
+                <span className="cy-board-post-row-cue" aria-hidden>
+                  ›
+                </span>
               </button>
 
               {slots.map((post, slotIndex) => {
@@ -82,12 +85,15 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
                     type="button"
                     onClick={() => openBoard(board)}
                     disabled={voteLock}
-                    className="cy-board-post-row w-full disabled:opacity-50 active:bg-y2k-pink-light/30"
+                    className="cy-board-post-row cy-board-row-tappable w-full"
                   >
                     <AnonymousMark post={post} disabled={voteLock} />
                     <span className="min-w-0 flex-1 truncate text-zinc-700">
                       {truncateLine(post.content)}
                       <MediaIcons post={post} />
+                    </span>
+                    <span className="cy-board-post-row-cue" aria-hidden>
+                      🐾
                     </span>
                   </button>
                 );
@@ -98,7 +104,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
       </div>
 
       {canWrite && onWrite && (
-        <div className="mt-auto shrink-0 border-t-2 border-black px-2 py-1.5 text-right">
+        <div className="cy-board-preview-write-bar">
           <button type="button" onClick={onWrite} className="cy-write-btn">
             {vi.home.write}
           </button>

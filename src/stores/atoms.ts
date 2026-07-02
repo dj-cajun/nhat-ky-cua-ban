@@ -3,7 +3,7 @@ import type { BoardType, FeedPost, UserProfile, ViewMode, Visitor } from '@/type
 import { mockCurrentUser, mockStrangerUser } from '@/lib/mock-data';
 import { db } from '@/lib/db';
 
-export type AppPage = 'home' | 'dotori' | 'board' | 'album' | 'founding';
+export type AppPage = 'home' | 'dotori' | 'board' | 'album';
 
 export const appPageAtom = atom<AppPage>('home');
 export const viewModeAtom = atom<ViewMode>('my');
@@ -16,13 +16,9 @@ export const showVoteOverlayAtom = atom(false);
 export const postsAtom = atom<Record<BoardType, FeedPost[]>>(db.getPosts());
 export const visitorsAtom = atom<Visitor[]>(db.getVisitors());
 
-export const dotoriBalanceAtom = atom((get) => get(currentUserAtom).dotoriBalance);
-
 export const displayUserAtom = atom((get) => {
   const mode = get(viewModeAtom);
   return mode === 'my' ? get(currentUserAtom) : get(strangerUserAtom);
 });
 
 export const strangerHostIdAtom = atom<string | null>(null);
-
-export const photoIndexAtom = atom(0);

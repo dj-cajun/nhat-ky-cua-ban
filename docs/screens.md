@@ -41,6 +41,12 @@
 | My Home | 실명 + 사진 | 비밀 카드 O | — |
 | Stranger Home | Họ: [성씨] + 실루엣 | X | O |
 
+### S-01 온보딩 힌트
+
+- 입력: 성별, 키 범위, MBTI 앞자리, 등교 수단
+- 저장: Web Crypto SHA-256 단방향 봉인 — **원본 미저장**
+- UI 카피 예: *"Trưa nay ăn bún bò ngon lắm"*, *"nhìn nhau cười kk"* (100% tiếng Việt Gen Z)
+
 ### 디자인 토큰
 
 | 토큰 | 값 |

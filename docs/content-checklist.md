@@ -45,8 +45,8 @@
 
 | URL | 동작 |
 |-----|------|
-| `/` | 데모 모드 시 바로 Marie Curie 11A 홈 |
+| `/` | 데모 모드 시 온보딩 생략 → **개척단 관문** → 홈 |
+| `/?reset=1` | 세션 초기화 → 로그인부터 (개척단 포함 전체 플로우 재시연) |
 | `/?vote=demo` | 5시 투표 Lock |
 | `/?notify=demo` | 21시 지목 알림 |
-| `/?founding=demo` | 3인 개척단 데모 (학급 잠금 → Zalo 링크 → 퀴즈) |
-| `/?founding=join&token=...` | 개척단 초대 링크 (Zalo 단톡 공유용) |
+| `/?founding=join&token=...` | Zalo 단톡 초대 링크 (온보딩 prefill + 자동 합류) |

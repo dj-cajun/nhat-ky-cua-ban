@@ -61,7 +61,7 @@ body {
   }
 
   .cy-badge-pink {
-    @apply rounded border-2 border-black px-2 py-0.5 text-xs font-bold;
+    @apply rounded border-2 border-black px-2 py-0.5 text-xs font-bold text-black;
     background-color: #ffb6d9;
   }
 
@@ -84,12 +84,32 @@ body {
     height: 19rem;
   }
 
+  .cy-board-preview-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto pb-16;
+  }
+
+  .cy-board-preview-write-bar {
+    @apply mt-auto shrink-0 border-t-2 border-black bg-white px-2 py-1.5 text-right;
+  }
+
   .cy-board-section-title {
-    @apply flex h-7 shrink-0 items-center px-3 text-left text-xs font-bold text-zinc-900;
+    @apply flex h-7 shrink-0 items-center gap-1 px-3 text-left text-xs font-bold text-zinc-900;
   }
 
   .cy-board-post-row {
     @apply flex h-5 shrink-0 items-center gap-1.5 px-3 text-left text-[11px] leading-none;
+  }
+
+  .cy-board-row-tappable {
+    @apply transition-colors disabled:opacity-50;
+  }
+
+  .cy-board-row-tappable:active:not(:disabled) {
+    background-color: #f1f5f9;
+  }
+
+  .cy-board-post-row-cue {
+    @apply shrink-0 text-[9px] leading-none opacity-30;
   }
 
   .cy-board {
@@ -140,6 +160,14 @@ body {
   .cy-avatar svg {
     @apply h-full w-full object-cover;
     filter: grayscale(100%) contrast(1.1);
+  }
+
+  .cy-avatar-editable {
+    @apply cursor-pointer transition-transform active:scale-[0.98];
+  }
+
+  .cy-name-mask {
+    @apply rounded border border-zinc-400 bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-zinc-500;
   }
 
   .cy-pill {

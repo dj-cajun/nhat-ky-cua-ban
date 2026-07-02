@@ -2,13 +2,12 @@ import type {
   BoardType,
   CalendarEntry,
   FeedPost,
-  HintData,
   PhotoAlbum,
   PhotoCard,
   UserProfile,
   Visitor,
 } from '@/types';
-import { encryptHintData } from '@/lib/hint-crypto';
+import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 import { CLASSMATES, DEFAULT_POSTS, DEFAULT_VISITORS } from '@/lib/seed-data';
 import {
   DEFAULT_STATUS_MESSAGE,
@@ -105,10 +104,19 @@ export function initLocalDb(
   realName: string,
   schoolName: string,
   className: string,
-  hint: HintData,
+  hintSeal: string,
 ): StoredProfile {
   const existing = getProfile();
-  if (existing && existing.zaloId === zaloId) return existing;
+  if (existing && existing.zaloId === zaloId) {
+    if (isPlaceholderZaloName(existing.realName) && !isPlaceholderZaloName(realName)) {
+      const repaired = updateProfile({
+        realName,
+        surname: realName.split(/\s+/)[0] ?? realName,
+      });
+      return repaired ?? existing;
+    }
+    return existing;
+  }
 
   const surname = realName.split(/\s+/)[0] ?? realName;
   const profile: StoredProfile = {
@@ -123,7 +131,7 @@ export function initLocalDb(
     dotoriBalance: DEFAULT_DOTORI_BALANCE,
     visitCountToday: DEFAULT_VISIT_TODAY,
     visitCountTotal: DEFAULT_VISIT_TOTAL,
-    hintEncrypted: encryptHintData(hint),
+    hintEncrypted: hintSeal,
   };
 
   write(KEYS.profile, profile);
@@ -233,33 +241,6 @@ export function addPhotoCard(imageUrl: string, caption = ''): PhotoCard {
   };
   savePhotoGallery([...photos, card]);
   return card;
-}
-
-export function savePhotoImage(imageUrl: string): void {
-  const photos = getPhotoGallery();
-  if (photos.length === 0) {
-    savePhotoGallery([{ id: 'photo-1', imageUrl, caption: SEED_PHOTO_CAPTION }]);
-    return;
-  }
-  updatePhotoCard(photos[0].id, { imageUrl });
-}
-
-export function savePhotoCaption(caption: string): void {
-  const photos = getPhotoGallery();
-  if (photos.length === 0) {
-    savePhotoGallery([{ id: 'photo-1', imageUrl: SEED_PHOTO_URL, caption }]);
-    return;
-  }
-  updatePhotoCard(photos[0].id, { caption });
-}
-
-export function savePhotoAlbum(imageUrl: string, caption: string): void {
-  const photos = getPhotoGallery();
-  if (photos.length === 0) {
-    savePhotoGallery([{ id: 'photo-1', imageUrl, caption }]);
-    return;
-  }
-  updatePhotoCard(photos[0].id, { imageUrl, caption });
 }
 
 export function getVoteRecords(): VoteRecord[] {

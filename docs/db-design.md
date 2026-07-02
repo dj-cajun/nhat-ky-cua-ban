@@ -51,7 +51,7 @@ schools ──1:N── classes ──1:N── profiles
 | class_id | uuid | FK → classes | 소속 학급 |
 | avatar_url | text | nullable | 프로필 사진 |
 | status_message | text | nullable | 상태 메시지 |
-| hint_data | jsonb | NOT NULL | 암호화된 힌트 (성별, 키, MBTI, 등교수단) |
+| hint_data | text | NOT NULL | SHA-256 봉인 JSON (`digest` + `shields`, 원본 미저장) |
 | dotori_balance | int | default 0 | 도토리 잔액 |
 | visit_count_today | int | default 0 | 오늘 방문자 수 |
 | visit_count_total | int | default 0 | 총 방문자 수 |

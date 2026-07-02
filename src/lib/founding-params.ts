@@ -1,21 +1,17 @@
-import { resetAllFoundings } from '@/lib/class-founding';
+const PENDING_JOIN_KEY = 'founding_pending_join_token';
 
 export type FoundingUrlIntent = {
-  demo: boolean;
   joinToken: string | null;
 };
 
-/** URL: ?founding=demo 또는 ?founding=join&token=... */
+/** URL: ?founding=join&token=... — Zalo 단톡 초대 링크 */
 export function parseFoundingUrl(): FoundingUrlIntent {
   const params = new URLSearchParams(window.location.search);
   const founding = params.get('founding');
   const joinToken = founding === 'join' ? params.get('token') : null;
-  const demo = founding === 'demo';
 
-  if (demo || joinToken) {
-    if (demo) {
-      resetAllFoundings();
-    }
+  if (joinToken) {
+    stashJoinToken(joinToken);
     params.delete('founding');
     params.delete('token');
     const query = params.toString();
@@ -23,5 +19,19 @@ export function parseFoundingUrl(): FoundingUrlIntent {
     window.history.replaceState({}, '', next);
   }
 
-  return { demo, joinToken };
+  return { joinToken };
+}
+
+export function stashJoinToken(token: string): void {
+  sessionStorage.setItem(PENDING_JOIN_KEY, token);
+}
+
+export function peekJoinToken(): string | null {
+  return sessionStorage.getItem(PENDING_JOIN_KEY);
+}
+
+export function consumeJoinToken(): string | null {
+  const token = sessionStorage.getItem(PENDING_JOIN_KEY);
+  sessionStorage.removeItem(PENDING_JOIN_KEY);
+  return token;
 }

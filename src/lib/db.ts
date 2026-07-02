@@ -1,5 +1,7 @@
 import type { FeedPost, PhotoCard, UserProfile, Visitor, HintData } from '@/types';
 import * as localDb from '@/lib/local-db';
+import { sealHintData } from '@/lib/hint-crypto';
+import { extractSurname } from '@/lib/zalo-auth';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { isRemoteEnabled } from '@/lib/supabase-remote';
 import {
@@ -15,15 +17,16 @@ export type { StoredProfile, VoteRecord, Comment, Nomination } from '@/lib/local
 /** 통합 데이터 레이어 — Supabase 설정 시 백그라운드 동기화 */
 export const db = {
   getProfile: () => localDb.getProfile(),
-  initProfile: (
+  initProfile: async (
     zaloId: string,
     realName: string,
     school: string,
     className: string,
     hint: HintData,
   ) => {
-    const profile = localDb.initLocalDb(zaloId, realName, school, className, hint);
-    void pushProfileToRemote(zaloId, realName, school, className, hint);
+    const hintSeal = await sealHintData(hint, extractSurname(realName));
+    const profile = localDb.initLocalDb(zaloId, realName, school, className, hintSeal);
+    void pushProfileToRemote(zaloId, realName, school, className, hintSeal);
     return profile;
   },
   updateProfile: (patch: Partial<UserProfile>) => localDb.updateProfile(patch),
@@ -44,9 +47,6 @@ export const db = {
   updatePhotoCard: (id: string, patch: Partial<Pick<PhotoCard, 'imageUrl' | 'caption'>>) =>
     localDb.updatePhotoCard(id, patch),
   addPhotoCard: (imageUrl: string, caption?: string) => localDb.addPhotoCard(imageUrl, caption),
-  saveCaption: (caption: string) => localDb.savePhotoCaption(caption),
-  savePhoto: (imageUrl: string) => localDb.savePhotoImage(imageUrl),
-  savePhotoAlbum: (imageUrl: string, caption: string) => localDb.savePhotoAlbum(imageUrl, caption),
   getVotes: () => localDb.getVoteRecords(),
   saveVote: (record: localDb.VoteRecord) => {
     localDb.saveVoteRecord(record);

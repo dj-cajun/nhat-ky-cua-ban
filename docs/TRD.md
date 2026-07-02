@@ -103,19 +103,34 @@
 | `VITE_SUPABASE_URL` | Supabase URL | Public |
 | `VITE_SUPABASE_ANON_KEY` | Anon key | Public |
 | `VITE_ZMP_APP_ID` | Zalo Mini App ID | Public |
+| `VITE_HINT_PEPPER` | 힌트 SHA-256 pepper (프로덕션 필수) | Public* |
+
+\* pepper는 클라이언트 노출 전제 — 프로덕션은 서버 HMAC 권장
 
 ---
 
 ## 8. 보안 체크리스트
 
 - [ ] RLS 모든 테이블 적용
-- [ ] 힌트 데이터 암호화 (profiles.hint_data)
+- [x] 힌트 SHA-256 단방향 봉인 (`profiles.hint_data` — digest + shields, 원본 미저장)
 - [ ] Profanity Shield 서버·클라이언트 이중 검증
 - [ ] `.env` gitignore
 
 ---
 
-## 9. 변경 이력
+## 9. 힌트 데이터 처리 (S-01)
+
+| 단계 | 처리 |
+|------|------|
+| 온보딩 입력 | 성별·키·MBTI·등교수단 (카테고리 값) |
+| 제출 직전 | `sealHintData()` — 필드별 SHA-256 해시 |
+| DB 저장 | `{ v:1, digest, shields }` JSON (XOR 금지) |
+| 투표 실드 | `shields[shield]` 문구만 노출 |
+| 원본 | 클라이언트·DB 모두 미보관 |
+
+---
+
+## 10. 변경 이력
 
 | 날짜 | 버전 | 변경 내용 |
 |------|------|-----------|

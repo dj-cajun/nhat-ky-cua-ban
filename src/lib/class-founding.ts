@@ -55,6 +55,56 @@ function findByToken(token: string): ClassFoundingRecord | null {
   return null;
 }
 
+export function getFoundingByInviteToken(token: string): ClassFoundingRecord | null {
+  const record = findByToken(token);
+  return record ?? null;
+}
+
+export function isFoundingMember(record: ClassFoundingRecord, userId: string): boolean {
+  return record.members.some((member) => member.userId === userId);
+}
+
+const GATE_STORAGE_KEY = 'diary_founding_gates';
+
+function gateKey(schoolName: string, className: string, userId: string): string {
+  return `${buildClassKey(schoolName, className)}::${userId}`;
+}
+
+function readGates(): Record<string, true> {
+  try {
+    const raw = localStorage.getItem(GATE_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, true>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeGates(gates: Record<string, true>): void {
+  localStorage.setItem(GATE_STORAGE_KEY, JSON.stringify(gates));
+}
+
+export function hasPassedGate(schoolName: string, className: string, userId: string): boolean {
+  return Boolean(readGates()[gateKey(schoolName, className, userId)]);
+}
+
+export function markGatePassed(schoolName: string, className: string, userId: string): void {
+  const gates = readGates();
+  gates[gateKey(schoolName, className, userId)] = true;
+  writeGates(gates);
+}
+
+export function canEnterClassHome(
+  schoolName: string,
+  className: string,
+  userId: string,
+): boolean {
+  const record = getFounding(schoolName, className);
+  if (!record || record.status !== 'active') {
+    return false;
+  }
+  return isFoundingMember(record, userId) || hasPassedGate(schoolName, className, userId);
+}
+
 export function getFounding(schoolName: string, className: string): ClassFoundingRecord | null {
   const classKey = buildClassKey(schoolName, className);
   const record = readAll()[classKey];
@@ -190,6 +240,7 @@ export function verifyFoundingGate(
   schoolName: string,
   className: string,
   answers: string[],
+  userId?: string,
 ): GateResult {
   const record = getFounding(schoolName, className);
   if (!record || record.status !== 'active') {
@@ -201,6 +252,10 @@ export function verifyFoundingGate(
   const allMatch = normalizedQuizzes.every(
     (quiz, index) => normalizedAnswers[index] === quiz,
   );
+
+  if (allMatch && userId) {
+    markGatePassed(schoolName, className, userId);
+  }
 
   return allMatch ? { ok: true } : { ok: false, reason: 'wrong_answer' };
 }
@@ -227,6 +282,7 @@ export function simulateFoundingJoin(classKey: string): ClassFoundingRecord | nu
 
 export function resetAllFoundings(): void {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(GATE_STORAGE_KEY);
 }
 
 export function resetFounding(schoolName: string, className: string): void {

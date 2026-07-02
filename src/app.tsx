@@ -9,17 +9,30 @@ import { AlbumPage } from '@/pages/album';
 import { FoundingPage } from '@/pages/founding';
 import { db } from '@/lib/db';
 import { initDemoSession, isDemoMode } from '@/lib/demo-init';
-import { parseFoundingUrl } from '@/lib/founding-params';
+import { canEnterClassHome } from '@/lib/class-founding';
+import { consumeJoinToken, parseFoundingUrl, peekJoinToken } from '@/lib/founding-params';
+import { getOnboardingPrefillFromToken } from '@/lib/founding-router';
+import { ensureProfileName } from '@/lib/profile-name';
+import { ensureHintSealOnProfile } from '@/lib/supabase-sync';
 import { isZaloLoggedIn } from '@/lib/zalo-auth';
 import { handleDevReset, isOnboarded } from '@/lib/session';
 import { vi } from '@/i18n/vi';
 import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
-type AppStage = 'boot' | 'login' | 'onboarding' | 'app';
+type AppStage = 'boot' | 'login' | 'onboarding' | 'founding' | 'app';
 
 function resolveStage(): AppStage {
   if (!isZaloLoggedIn()) return 'login';
   if (!isOnboarded()) return 'onboarding';
+
+  const profile = db.getProfile();
+  if (
+    profile &&
+    !canEnterClassHome(profile.schoolName, profile.className, profile.id)
+  ) {
+    return 'founding';
+  }
+
   return 'app';
 }
 
@@ -31,23 +44,38 @@ function AppContent() {
   const setVisitors = useSetAtom(visitorsAtom);
   const [stage, setStage] = useState<AppStage>('boot');
   const [foundingJoinToken, setFoundingJoinToken] = useState<string | null>(null);
+  const [onboardingPrefill, setOnboardingPrefill] = useState<{
+    schoolName: string;
+    className: string;
+  } | null>(null);
 
   const hydrateApp = useCallback(() => {
     const profile = db.getProfile();
     if (profile) {
-      setUser(profile);
+      const repaired = ensureProfileName(profile);
+      setUser(repaired);
       setPosts(db.getPosts());
       setVisitors(db.getVisitors());
     }
   }, [setUser, setPosts, setVisitors]);
 
+  const enterApp = useCallback(() => {
+    setStage('app');
+    hydrateApp();
+    setPage('home');
+  }, [hydrateApp, setPage]);
+
   useEffect(() => {
     const foundingIntent = parseFoundingUrl();
     if (foundingIntent.joinToken) {
       setFoundingJoinToken(foundingIntent.joinToken);
-      setPage('founding');
-    } else if (foundingIntent.demo) {
-      setPage('founding');
+      setOnboardingPrefill(getOnboardingPrefillFromToken(foundingIntent.joinToken));
+    } else {
+      const pendingToken = peekJoinToken();
+      if (pendingToken) {
+        setFoundingJoinToken(pendingToken);
+        setOnboardingPrefill(getOnboardingPrefillFromToken(pendingToken));
+      }
     }
 
     if (handleDevReset()) {
@@ -59,45 +87,27 @@ function AppContent() {
       if (!isZaloLoggedIn()) {
         void import('@/lib/zalo-auth').then(({ loginWithZalo }) =>
           loginWithZalo().then(() => {
-            initDemoSession();
-            window.location.reload();
+            void initDemoSession().then(() => window.location.reload());
           }),
         );
         return;
       }
-      initDemoSession();
-      window.location.reload();
+      void initDemoSession().then(() => window.location.reload());
       return;
     }
 
     const next = resolveStage();
     setStage(next);
     if (next === 'app') {
-      hydrateApp();
+      void ensureHintSealOnProfile().then(() => hydrateApp());
     }
-  }, [hydrateApp, setPage]);
+  }, [hydrateApp]);
 
   if (stage === 'boot') {
     return (
       <div className="flex h-screen items-center justify-center bg-[#faf9f6] text-sm text-slate-500">
         {vi.app.loading}
       </div>
-    );
-  }
-
-  if (page === 'founding') {
-    return (
-      <FoundingPage
-        initialJoinToken={foundingJoinToken}
-        onBack={() => {
-          setFoundingJoinToken(null);
-          setPage('home');
-        }}
-        onEnterHome={() => {
-          setFoundingJoinToken(null);
-          setPage('home');
-        }}
-      />
     );
   }
 
@@ -108,9 +118,40 @@ function AppContent() {
   if (stage === 'onboarding') {
     return (
       <OnboardingPage
+        initialSchool={onboardingPrefill?.schoolName}
+        initialClass={onboardingPrefill?.className}
         onComplete={() => {
-          setStage('app');
-          hydrateApp();
+          const token = foundingJoinToken ?? consumeJoinToken();
+          if (token) {
+            setFoundingJoinToken(token);
+          }
+          const next = resolveStage();
+          setStage(next);
+          if (next === 'app') {
+            void ensureHintSealOnProfile().then(() => hydrateApp());
+          }
+        }}
+      />
+    );
+  }
+
+  if (stage === 'founding') {
+    const profile = db.getProfile();
+    if (!profile) {
+      setStage('onboarding');
+      return null;
+    }
+
+    const joinToken = foundingJoinToken ?? consumeJoinToken();
+
+    return (
+      <FoundingPage
+        schoolName={profile.schoolName}
+        className={profile.className}
+        joinToken={joinToken}
+        onComplete={() => {
+          setFoundingJoinToken(null);
+          enterApp();
         }}
       />
     );

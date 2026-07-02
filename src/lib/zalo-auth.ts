@@ -3,6 +3,25 @@ import { getZaloSessionKey } from '@/lib/session';
 
 export type ZaloUser = LoggedInUserConfig;
 
+const PLACEHOLDER_ZALO_NAMES = new Set(['user name', 'username', 'user', 'zalo user']);
+
+/** localhost Zalo SDK mock: name이 "User Name" 으로 고정됨 */
+export function isPlaceholderZaloName(name: string | undefined): boolean {
+  const normalized = name?.trim().toLowerCase() ?? '';
+  return !normalized || PLACEHOLDER_ZALO_NAMES.has(normalized);
+}
+
+function resolveZaloUser(user: ZaloUser): ZaloUser {
+  if (!isPlaceholderZaloName(user.name)) {
+    return user;
+  }
+  return {
+    ...user,
+    name: LOGGED_IN_ZALO_USER.name,
+    avatar: user.avatar ?? LOGGED_IN_ZALO_USER.avatar,
+  };
+}
+
 function readSession(): ZaloUser | null {
   try {
     const raw = localStorage.getItem(getZaloSessionKey());
@@ -28,11 +47,11 @@ export async function loginWithZalo(): Promise<ZaloUser> {
   try {
     const { getUserInfo } = await import('zmp-sdk/apis');
     const { userInfo } = await getUserInfo({ avatarType: 'normal' });
-    const user: ZaloUser = {
+    const user = resolveZaloUser({
       id: String(userInfo.id),
       name: userInfo.name,
       avatar: userInfo.avatar,
-    };
+    });
     saveSession(user);
     return user;
   } catch {
@@ -43,19 +62,13 @@ export async function loginWithZalo(): Promise<ZaloUser> {
 }
 
 export function getLoggedInZaloUser(): ZaloUser {
-  return readSession() ?? LOGGED_IN_ZALO_USER;
+  const session = readSession();
+  if (!session) return LOGGED_IN_ZALO_USER;
+  return resolveZaloUser(session);
 }
 
 export function logoutZalo(): void {
   localStorage.removeItem(getZaloSessionKey());
-}
-
-/** @deprecated loginWithZalo() 사용 */
-export async function getZaloUser(): Promise<ZaloUser> {
-  if (isZaloLoggedIn()) {
-    return getLoggedInZaloUser();
-  }
-  return loginWithZalo();
 }
 
 export function extractSurname(fullName: string): string {

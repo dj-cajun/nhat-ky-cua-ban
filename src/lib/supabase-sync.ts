@@ -1,10 +1,11 @@
 import { getSupabase } from '@/lib/supabase';
 import { ensureRemoteAvailable } from '@/lib/supabase-remote';
-import { encryptHintData, decryptHintData } from '@/lib/hint-crypto';
-import type { BoardType, FeedPost, HintData } from '@/types';
+import { migrateLegacyHintSeal, parseHintSeal, getShieldLabel } from '@/lib/hint-crypto';
+import type { BoardType, FeedPost, HintShield } from '@/types';
 import * as localDb from '@/lib/local-db';
 import { DEFAULT_POSTS } from '@/lib/seed-data';
 import { DEFAULT_STATUS_MESSAGE } from '@/config/app-content';
+import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 
 const SCHOOL_MAP: Record<string, string> = {
   'THPT Marie Curie': 'Ho Chi Minh',
@@ -38,8 +39,10 @@ export async function syncFromRemote(): Promise<boolean> {
 
     localDb.updateProfile({
       id: remoteProfile.id,
-      realName: remoteProfile.real_name,
-      surname: remoteProfile.surname,
+      realName: remoteProfile.real_name?.trim() && !isPlaceholderZaloName(remoteProfile.real_name)
+        ? remoteProfile.real_name
+        : profile.realName,
+      surname: remoteProfile.surname?.trim() || profile.surname,
       dotoriBalance: remoteProfile.dotori_balance,
       visitCountToday: remoteProfile.visit_count_today,
       visitCountTotal: remoteProfile.visit_count_total,
@@ -69,7 +72,7 @@ export async function pushProfileToRemote(
   realName: string,
   schoolName: string,
   className: string,
-  hint: HintData,
+  hintSeal: string,
 ): Promise<void> {
   if (!(await ensureRemoteAvailable())) return;
   const supabase = getSupabase();
@@ -80,7 +83,6 @@ export async function pushProfileToRemote(
     if (!classId) return;
 
     const surname = realName.split(/\s+/)[0] ?? realName;
-    const encrypted = encryptHintData(hint);
 
     await supabase.from('profiles').upsert(
       {
@@ -88,7 +90,7 @@ export async function pushProfileToRemote(
         real_name: realName,
         surname,
         class_id: classId,
-        hint_data: encrypted,
+        hint_data: hintSeal,
         status_message: DEFAULT_STATUS_MESSAGE,
       },
       { onConflict: 'zalo_id' },
@@ -300,8 +302,24 @@ function mergeRemotePosts(
   localDb.setPosts(merged);
 }
 
-export function getDecryptedHint(): HintData | null {
+export async function ensureHintSealOnProfile(): Promise<void> {
+  const profile = localDb.getProfile();
+  if (!profile?.hintEncrypted) return;
+  if (parseHintSeal(profile.hintEncrypted)) return;
+
+  const migrated = await migrateLegacyHintSeal(profile.hintEncrypted, profile.surname);
+  if (migrated) {
+    localDb.updateProfile({ hintEncrypted: migrated });
+  }
+}
+
+function getHintSeal() {
   const profile = localDb.getProfile();
   if (!profile?.hintEncrypted) return null;
-  return decryptHintData(profile.hintEncrypted);
+  return parseHintSeal(profile.hintEncrypted);
+}
+
+export function getHintShieldText(shield: HintShield): string | null {
+  const seal = getHintSeal();
+  return seal ? getShieldLabel(seal, shield) : null;
 }

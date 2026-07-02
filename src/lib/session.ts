@@ -13,6 +13,7 @@ const APP_DATA_KEYS = [
   'diary_comments',
   'diary_nominations',
   'diary_class_foundings',
+  'diary_founding_gates',
 ] as const;
 
 export function isOnboarded(): boolean {
@@ -21,10 +22,6 @@ export function isOnboarded(): boolean {
 
 export function markOnboarded(): void {
   localStorage.setItem(ONBOARDING_KEY, 'true');
-}
-
-export function clearOnboarding(): void {
-  localStorage.removeItem(ONBOARDING_KEY);
 }
 
 export function getZaloSessionKey(): string {

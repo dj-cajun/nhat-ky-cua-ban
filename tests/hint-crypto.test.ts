@@ -2,7 +2,13 @@
  * @vitest-environment happy-dom
  */
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { encryptHintData, decryptHintData, formatHintShield } from '@/lib/hint-crypto';
+import {
+  formatHintShield,
+  hashHintField,
+  parseHintSeal,
+  sealHintData,
+  verifyHintField,
+} from '@/lib/hint-crypto';
 import type { HintData } from '@/types';
 
 const sampleHint: HintData = {
@@ -21,11 +27,21 @@ describe('hint-crypto', () => {
     localStorage.clear();
   });
 
-  it('encrypts and decrypts hint data', () => {
-    const encrypted = encryptHintData(sampleHint);
-    expect(encrypted).not.toContain('female');
-    const decrypted = decryptHintData(encrypted);
-    expect(decrypted).toEqual(sampleHint);
+  it('seals hint data without storing raw values', async () => {
+    const sealed = await sealHintData(sampleHint, 'Nguyễn');
+    expect(sealed).not.toContain('female');
+    expect(sealed).not.toContain('170-175');
+
+    const parsed = parseHintSeal(sealed);
+    expect(parsed?.v).toBe(1);
+    expect(parsed?.shields.height).toContain('170');
+    expect(parsed?.shields.surname).toBe('Họ: Nguyễn');
+  });
+
+  it('verifies hashed hint fields', async () => {
+    const digest = await hashHintField('gender', 'female');
+    expect(await verifyHintField('gender', 'female', digest)).toBe(true);
+    expect(await verifyHintField('gender', 'male', digest)).toBe(false);
   });
 
   it('formats hint shield labels', () => {

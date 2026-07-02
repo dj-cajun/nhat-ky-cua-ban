@@ -12,24 +12,26 @@ import { currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
 interface OnboardingPageProps {
   onComplete: () => void;
+  initialSchool?: string;
+  initialClass?: string;
 }
 
-export function OnboardingPage({ onComplete }: OnboardingPageProps) {
+export function OnboardingPage({ onComplete, initialSchool, initialClass }: OnboardingPageProps) {
   const setUser = useSetAtom(currentUserAtom);
   const setPosts = useSetAtom(postsAtom);
   const setVisitors = useSetAtom(visitorsAtom);
   const zaloUser = getLoggedInZaloUser();
 
   const [step, setStep] = useState(0);
-  const [school, setSchool] = useState(REGION.defaultSchool);
-  const [className, setClassName] = useState(REGION.defaultClass);
+  const [school, setSchool] = useState(initialSchool || REGION.defaultSchool);
+  const [className, setClassName] = useState(initialClass || REGION.defaultClass);
   const [hint, setHint] = useState<HintData>({ ...DEFAULT_HINT });
 
   const canProceed =
     step === 0 ? Boolean(school && className) : step === 1 ? true : false;
 
-  const finish = () => {
-    const profile = db.initProfile(
+  const finish = async () => {
+    const profile = await db.initProfile(
       zaloUser.id,
       zaloUser.name,
       school,
@@ -161,13 +163,13 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
         <button
           type="button"
           disabled={!canProceed}
-          onClick={() => {
-            if (step < 1) {
-              setStep(1);
-            } else {
-              finish();
-            }
-          }}
+            onClick={() => {
+              if (step < 1) {
+                setStep(1);
+              } else {
+                void finish();
+              }
+            }}
           className="diary-border min-h-[48px] flex-1 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white disabled:opacity-40"
         >
           {step < 1 ? vi.onboarding.next : vi.onboarding.start}

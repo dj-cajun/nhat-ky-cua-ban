@@ -1,5 +1,14 @@
-/** 흑백 라인아트 스타일 프로필 실루엣 */
-export function ProfileAvatar({ className = '' }: { className?: string }) {
+type ProfileAvatarProps = {
+  className?: string;
+  avatarUrl?: string;
+};
+
+/** 흑백 라인아트 스타일 프로필 실루엣 (사진 없을 때) */
+export function ProfileAvatar({ className = '', avatarUrl }: ProfileAvatarProps) {
+  if (avatarUrl) {
+    return <img src={avatarUrl} alt="" className={className} draggable={false} />;
+  }
+
   return (
     <svg
       viewBox="0 0 72 72"

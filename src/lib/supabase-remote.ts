@@ -42,8 +42,3 @@ export async function ensureRemoteAvailable(): Promise<boolean> {
 
   return checkPromise;
 }
-
-export function resetRemoteAvailability(): void {
-  remoteAvailable = null;
-  checkPromise = null;
-}

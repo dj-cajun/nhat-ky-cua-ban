@@ -28,8 +28,3 @@ export const FOUNDING_TTL_MS = 24 * 60 * 60 * 1000;
 export function buildClassKey(schoolName: string, className: string): string {
   return `${schoolName}::${className}`;
 }
-
-export function parseClassKey(classKey: string): { schoolName: string; className: string } {
-  const [schoolName, className] = classKey.split('::');
-  return { schoolName: schoolName ?? '', className: className ?? '' };
-}
