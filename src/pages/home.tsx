@@ -9,7 +9,9 @@ import { SwipeCardStack } from '@/components/home/SwipeCardStack';
 import { RealtimeToast } from '@/components/common/RealtimeToast';
 import { VoteLockOverlay } from '@/components/vote/VoteLockOverlay';
 import { PostComposer } from '@/components/feed/PostComposer';
+import { AffiliateCurator } from '@/components/home/AffiliateCurator';
 import { useVoteScheduler, useVoteNotifications } from '@/hooks/useVoteScheduler';
+import { useDbSync } from '@/hooks/useDbSync';
 import { viewModeAtom, showVoteOverlayAtom } from '@/stores/atoms';
 
 export function HomePage() {
@@ -20,6 +22,7 @@ export function HomePage() {
 
   useVoteScheduler();
   useVoteNotifications();
+  useDbSync();
 
   const canWrite = viewMode === 'my' || viewMode === 'stranger';
 
@@ -45,6 +48,7 @@ export function HomePage() {
           <CalendarWidget />
           <PhotoAlbumWidget />
         </div>
+        <AffiliateCurator />
         <SwipeCardStack />
       </div>
 

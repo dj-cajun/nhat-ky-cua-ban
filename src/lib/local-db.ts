@@ -20,6 +20,7 @@ const KEYS = {
   votes: 'diary_votes',
   dotoriMissions: 'diary_dotori_missions',
   comments: 'diary_comments',
+  nominations: 'diary_nominations',
 } as const;
 
 export interface StoredProfile extends UserProfile {
@@ -32,6 +33,14 @@ export interface VoteRecord {
   questionIndex: number;
   selectedUserId: string;
   hintShield: string;
+  date: string;
+}
+
+export interface Nomination {
+  targetUserId: string;
+  voterId: string;
+  hintShield: string;
+  hintText: string;
   date: string;
 }
 
@@ -93,6 +102,7 @@ export function initLocalDb(
   write(KEYS.photo, { imageUrl: '', caption: '우리단짝단짝' } satisfies PhotoAlbum);
   write(KEYS.votes, [] satisfies VoteRecord[]);
   write(KEYS.comments, [] satisfies Comment[]);
+  write(KEYS.nominations, [] satisfies Nomination[]);
   write(KEYS.dotoriMissions, { shopee: false, tiktok: false, video: 0 });
 
   return profile;
@@ -210,6 +220,22 @@ export function getClassmates(): UserProfile[] {
 
 export function getClassmateById(id: string): UserProfile | undefined {
   return CLASSMATES.find((c) => c.id === id);
+}
+
+export function setPosts(posts: Record<BoardType, FeedPost[]>): void {
+  write(KEYS.posts, posts);
+}
+
+export function addNomination(nomination: Nomination): void {
+  const list = read<Nomination[]>(KEYS.nominations, []);
+  list.push(nomination);
+  write(KEYS.nominations, list);
+}
+
+export function getNominationsForUser(userId: string, date: string): Nomination[] {
+  return read<Nomination[]>(KEYS.nominations, []).filter(
+    (n) => n.targetUserId === userId && n.date === date,
+  );
 }
 
 export function getDotoriMissions(): { shopee: boolean; tiktok: boolean; video: number } {

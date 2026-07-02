@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useSetAtom } from 'jotai';
 import type { HintShield } from '@/types';
 import { db } from '@/lib/db';
+import { formatHintShield } from '@/lib/hint-crypto';
+import { getDecryptedHint } from '@/lib/supabase-sync';
 import { todayDateStr } from '@/lib/vote-service';
 import { generateVoteQuestions, HINT_SHIELD_OPTIONS } from '@/lib/vote-service';
 import { voteLockAtom, showVoteOverlayAtom } from '@/stores/atoms';
@@ -29,12 +31,29 @@ export function VoteLockOverlay() {
 
     if (!shield) return;
 
+    const profile = db.getProfile();
+    const hint = getDecryptedHint();
+    const hintText =
+      hint && profile
+        ? formatHintShield(shield, hint, profile.surname)
+        : shield;
+
     db.saveVote({
       questionIndex: current.index,
       selectedUserId: selected,
       hintShield: shield,
       date: todayDateStr(),
     });
+
+    if (profile) {
+      db.addNomination({
+        targetUserId: selected,
+        voterId: profile.id,
+        hintShield: shield,
+        hintText,
+        date: todayDateStr(),
+      });
+    }
 
     if (step < total - 1) {
       setStep((s) => s + 1);

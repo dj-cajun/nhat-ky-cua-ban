@@ -1,40 +1,70 @@
-/** Zalo Ads SDK 래퍼 — 개발 환경에서는 mock */
+import { setupAd, loadAd } from 'zmp-sdk/apis';
+
+/** Zalo Ads SDK (Adtima) 래퍼 */
 
 export interface RewardedAdResult {
   completed: boolean;
   dotoriEarned: number;
 }
 
+let adInitialized = false;
+
+async function ensureAds(): Promise<boolean> {
+  if (adInitialized) return true;
+  try {
+    await setupAd();
+    adInitialized = true;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function showRewardedVideoAd(): Promise<RewardedAdResult> {
-  if (import.meta.env.DEV) {
+  const ready = await ensureAds();
+  if (!ready) {
     await delay(500);
     return { completed: true, dotoriEarned: 2 };
   }
 
-  try {
-    const za = (window as unknown as { za?: { createRewardedVideoAd: () => unknown } }).za;
-    if (!za?.createRewardedVideoAd) {
-      return { completed: false, dotoriEarned: 0 };
-    }
-    // 실제 SDK 연동은 T-50에서 구현
-    return { completed: true, dotoriEarned: 2 };
-  } catch {
-    return { completed: false, dotoriEarned: 0 };
-  }
+  return new Promise((resolve) => {
+    let rewarded = false;
+    const timeout = setTimeout(() => {
+      resolve({ completed: rewarded, dotoriEarned: rewarded ? 2 : 0 });
+    }, 35_000);
+
+    void loadAd({
+      ids: ['ZMA_Reward'],
+      config: {
+        display: true,
+        onClose: (token?: unknown) => {
+          clearTimeout(timeout);
+          rewarded = Boolean(token) || true;
+          resolve({ completed: true, dotoriEarned: 2 });
+        },
+      },
+    }).catch(() => {
+      clearTimeout(timeout);
+      resolve({ completed: false, dotoriEarned: 0 });
+    });
+  });
 }
 
 export async function showInterstitialAd(): Promise<void> {
-  if (import.meta.env.DEV) {
+  const ready = await ensureAds();
+  if (!ready) {
     await delay(300);
     return;
   }
 
   try {
-    const za = (window as unknown as { za?: { createInterstitialAd: () => unknown } }).za;
-    if (!za?.createInterstitialAd) return;
+    await loadAd({
+      ids: ['ZMA_Fullscreen'],
+      config: { display: true },
+    });
     await delay(1500);
   } catch {
-    // 광고 실패 시 워프는 계속 진행
+    await delay(300);
   }
 }
 

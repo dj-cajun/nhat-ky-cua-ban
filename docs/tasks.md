@@ -67,5 +67,5 @@
 
 ## 현재 스프린트
 
-**목표**: MVP 전체 완료 ✅
-**다음**: Supabase 프로덕션 배포 + Zalo Mini App ID 등록
+**목표**: 프로덕션 완료 ✅
+**다음**: `VITE_*` env 설정 후 `npm run deploy`

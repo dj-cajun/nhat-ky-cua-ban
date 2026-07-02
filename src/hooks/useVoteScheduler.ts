@@ -8,6 +8,15 @@ import {
   voteLockAtom,
 } from '@/stores/atoms';
 
+async function sendVotePushNotification(): Promise<void> {
+  try {
+    const { requestSendNotification } = await import('zmp-sdk/apis');
+    await requestSendNotification();
+  } catch {
+    // Zalo 환경 외 무시
+  }
+}
+
 /** 17:00 VN 투표 Lock 스케줄러 */
 export function useVoteScheduler(): void {
   const setVoteLock = useSetAtom(voteLockAtom);
@@ -23,6 +32,11 @@ export function useVoteScheduler(): void {
       const shouldLock = (isVoteHourVN() || forceDemo) && !db.isVoteComplete();
 
       if (shouldLock) {
+        const pushed = localStorage.getItem(`vote_push_${todayDateStr()}`);
+        if (!pushed) {
+          localStorage.setItem(`vote_push_${todayDateStr()}`, 'true');
+          void sendVotePushNotification();
+        }
         setVoteLock(true);
         setShowVote(true);
         setActiveBoard('vote');
@@ -41,9 +55,11 @@ export function useVoteScheduler(): void {
 export function useVoteNotifications(): void {
   useEffect(() => {
     const check = () => {
-      const votes = db.getVotes().filter((v) => v.date === todayDateStr());
-      const notified = localStorage.getItem(`vote_notified_${todayDateStr()}`);
+      const today = todayDateStr();
+      const notified = localStorage.getItem(`vote_notified_${today}`);
       if (notified) return;
+
+      const forceDemo = new URLSearchParams(window.location.search).get('notify') === 'demo';
 
       const vnHour = parseInt(
         new Intl.DateTimeFormat('en-US', {
@@ -54,22 +70,25 @@ export function useVoteNotifications(): void {
         10,
       );
 
-      if (vnHour >= 21 && votes.length > 0) {
-        const profile = db.getProfile();
-        if (!profile) return;
+      if (!forceDemo && vnHour < 21) return;
 
-        const nominated = votes.find((v) => v.selectedUserId === profile.id);
-        if (nominated) {
-          localStorage.setItem(`vote_notified_${todayDateStr()}`, 'true');
-          void import('@/lib/realtime').then(({ emitRealtime }) => {
-            emitRealtime({
-              type: 'vote_nomination',
-              message: '누군가 당신을 지목했습니다!',
-              hint: nominated.hintShield,
-            });
-          });
-        }
-      }
+      const profile = db.getProfile();
+      if (!profile) return;
+
+      const nominations = db.getNominations(profile.id, today);
+      if (nominations.length === 0 && !forceDemo) return;
+
+      const nomination = nominations[0];
+      const hintText = nomination?.hintText ?? '키 170~175cm';
+
+      localStorage.setItem(`vote_notified_${today}`, 'true');
+      void import('@/lib/realtime').then(({ emitRealtime }) => {
+        emitRealtime({
+          type: 'vote_nomination',
+          message: '누군가 당신을 지목했습니다.',
+          hint: hintText,
+        });
+      });
     };
 
     check();
