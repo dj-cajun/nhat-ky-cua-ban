@@ -96,6 +96,11 @@ body {
     @apply flex shrink-0 items-center justify-between border-t-2 border-black bg-white px-2 py-1.5 text-[10px];
   }
 
+  .cy-board-nav-btn {
+    @apply flex h-9 min-w-9 items-center justify-center rounded border-2 border-black bg-white text-sm font-bold leading-none active:bg-y2k-pink-light disabled:opacity-40;
+    box-shadow: 2px 2px 0 0 #000;
+  }
+
   .cy-write-btn {
     @apply rounded-md border-[2.5px] border-black px-4 py-1.5 text-xs font-bold text-black transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
     background-color: #ff6eb4;

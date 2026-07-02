@@ -50,6 +50,8 @@ export const vi = {
     swipeBoard: '◀ vuốt ▶',
     swipeCard: '▲▼ thẻ',
     swipeBoardNav: '◀▶ bảng',
+    navCard: 'thẻ',
+    navBoard: 'bảng',
     write: 'Viết',
     liveUpdate: 'LIVE UPDATE',
     lock: '🔒 KHÓA',
