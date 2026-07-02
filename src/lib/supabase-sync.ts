@@ -5,9 +5,17 @@ import * as localDb from '@/lib/local-db';
 import { DEFAULT_POSTS } from '@/lib/seed-data';
 
 const SCHOOL_MAP: Record<string, string> = {
+  'THPT Marie Curie': 'Ho Chi Minh',
+  'THPT Lê Hồng Phong': 'Ho Chi Minh',
+  'THPT Nguyễn Thị Minh Khai': 'Ho Chi Minh',
+  'THPT Trần Phú': 'Ho Chi Minh',
+  'THPT Phổ Thông Năng Khiếu': 'Ho Chi Minh',
+  'THPT Bùi Thị Xuân': 'Ho Chi Minh',
+  'THPT Gia Định': 'Ho Chi Minh',
+  'THPT Lương Thế Vinh': 'Ho Chi Minh',
+  // 구버전 호환
   'Marie Curie': 'Ho Chi Minh',
   'Lê Hồng Phong': 'Ho Chi Minh',
-  'Nguyễn Thị Minh Khai': 'Hanoi',
 };
 
 /** Supabase ↔ localStorage 동기화 */

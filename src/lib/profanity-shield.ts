@@ -153,7 +153,9 @@ const LEET_MAP: Record<string, string> = {
   '$': 's',
 };
 
-/** 기본 블랙리스트 (서버 DB와 동기화 예정) */
+import { EXTRA_PROFANITY_WORDS } from '@/config/app-content';
+
+/** 기본 블랙리스트 + 프리셋 추가 금지어 */
 const DEFAULT_BLACKLIST = [
   'ditme',
   'dit',
@@ -173,6 +175,7 @@ const DEFAULT_BLACKLIST = [
   '지랄',
   '개새',
   '좆',
+  ...EXTRA_PROFANITY_WORDS,
 ];
 
 export function removeSpacingAndDots(text: string): string {

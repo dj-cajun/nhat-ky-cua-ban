@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
 import { Provider as JotaiProvider, useAtomValue, useSetAtom } from 'jotai';
+import { useEffect } from 'react';
 import { HomePage } from '@/pages/home';
 import { OnboardingPage } from '@/pages/onboarding';
 import { DotoriPage } from '@/pages/dotori';
 import { db } from '@/lib/db';
+import { initDemoSession, isDemoMode } from '@/lib/demo-init';
 import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
 function AppContent() {
@@ -16,6 +17,12 @@ function AppContent() {
   const onboarded = localStorage.getItem('onboarding_complete') === 'true';
 
   useEffect(() => {
+    if (!onboarded && isDemoMode()) {
+      initDemoSession();
+      window.location.reload();
+      return;
+    }
+
     if (onboarded) {
       const profile = db.getProfile();
       if (profile) {

@@ -9,7 +9,14 @@ import type {
 } from '@/types';
 import { encryptHintData } from '@/lib/hint-crypto';
 import { CLASSMATES, DEFAULT_POSTS, DEFAULT_VISITORS } from '@/lib/seed-data';
-import { DEFAULT_STATUS_MESSAGE, DEFAULT_DOTORI_BALANCE } from '@/config/app-content';
+import {
+  DEFAULT_STATUS_MESSAGE,
+  DEFAULT_DOTORI_BALANCE,
+  DEFAULT_VISIT_TODAY,
+  DEFAULT_VISIT_TOTAL,
+  SEED_CALENDAR,
+  SEED_PHOTO_CAPTION,
+} from '@/config/app-content';
 
 const KEYS = {
   profile: 'diary_profile',
@@ -87,8 +94,8 @@ export function initLocalDb(
     classId: `${schoolName}-${className}`,
     statusMessage: DEFAULT_STATUS_MESSAGE,
     dotoriBalance: DEFAULT_DOTORI_BALANCE,
-    visitCountToday: 24,
-    visitCountTotal: 1204,
+    visitCountToday: DEFAULT_VISIT_TODAY,
+    visitCountTotal: DEFAULT_VISIT_TOTAL,
     hintEncrypted: encryptHintData(hint),
   };
 
@@ -96,11 +103,8 @@ export function initLocalDb(
   write(KEYS.hint, profile.hintEncrypted);
   write(KEYS.posts, DEFAULT_POSTS);
   write(KEYS.visitors, DEFAULT_VISITORS);
-  write(KEYS.calendar, [
-    { date: todayStr(), content: '오늘개빡침' },
-    { date: offsetDate(-1), content: '걔랑눈맞춤' },
-  ] satisfies CalendarEntry[]);
-  write(KEYS.photo, { imageUrl: '', caption: '우리단짝단짝' } satisfies PhotoAlbum);
+  write(KEYS.calendar, SEED_CALENDAR satisfies CalendarEntry[]);
+  write(KEYS.photo, { imageUrl: '', caption: SEED_PHOTO_CAPTION } satisfies PhotoAlbum);
   write(KEYS.votes, [] satisfies VoteRecord[]);
   write(KEYS.comments, [] satisfies Comment[]);
   write(KEYS.nominations, [] satisfies Nomination[]);
@@ -257,10 +261,4 @@ export function completeDotoriMission(mission: 'shopee' | 'tiktok' | 'video'): n
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-function offsetDate(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
 }

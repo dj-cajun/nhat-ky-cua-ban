@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSetAtom } from 'jotai';
 import type { HintData } from '@/types';
-import { SCHOOLS, CLASSES } from '@/config/app-content';
+import { SCHOOLS, CLASSES, REGION, DEFAULT_HINT } from '@/config/app-content';
 import { getLoggedInZaloUser } from '@/lib/zalo-auth';
 import { db } from '@/lib/db';
 import { emitRealtime } from '@/lib/realtime';
@@ -19,14 +19,9 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   const zaloUser = getLoggedInZaloUser();
 
   const [step, setStep] = useState(0);
-  const [school, setSchool] = useState('');
-  const [className, setClassName] = useState('');
-  const [hint, setHint] = useState<HintData>({
-    gender: 'female',
-    heightRange: '160-165',
-    mbtiPrefix: 'E',
-    commute: 'motorbike',
-  });
+  const [school, setSchool] = useState(REGION.defaultSchool);
+  const [className, setClassName] = useState(REGION.defaultClass);
+  const [hint, setHint] = useState<HintData>({ ...DEFAULT_HINT });
 
   const canProceed =
     step === 0 ? Boolean(school && className) : step === 1 ? true : false;
