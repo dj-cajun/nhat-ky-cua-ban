@@ -12,16 +12,10 @@ type AlbumPageProps = {
   onBack: () => void;
 };
 
-const PIN_RATIOS = ['3/4', '4/5', '1/1', '5/6', '2/3'] as const;
-
-function pinAspectRatio(photo: PhotoCard, index: number): string {
-  const seed = photo.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  return PIN_RATIOS[(seed + index) % PIN_RATIOS.length];
-}
-
 export function AlbumPage({ onBack }: AlbumPageProps) {
   const viewMode = useAtomValue(viewModeAtom);
   const [photos, setPhotos] = useState(() => db.getPhotoGallery());
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftCaption, setDraftCaption] = useState('');
   const [draftImage, setDraftImage] = useState('');
@@ -29,10 +23,20 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
   const [picking, setPicking] = useState(false);
 
   const canEdit = viewMode === 'my';
+  const viewingPhoto = viewingId ? photos.find((photo) => photo.id === viewingId) : null;
   const editingPhoto = editingId ? photos.find((photo) => photo.id === editingId) : null;
 
   const refreshPhotos = () => {
     setPhotos(db.getPhotoGallery());
+  };
+
+  const openViewer = (photo: PhotoCard) => {
+    setViewingId(photo.id);
+    setError('');
+  };
+
+  const closeViewer = () => {
+    setViewingId(null);
   };
 
   const openEdit = (photo: PhotoCard) => {
@@ -40,6 +44,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
     setEditingId(photo.id);
     setDraftCaption(photo.caption);
     setDraftImage(photo.imageUrl);
+    setViewingId(null);
     setError('');
   };
 
@@ -120,18 +125,14 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
             </button>
           ) : (
             <div className="cy-pinterest-grid">
-              {photos.map((photo, index) => (
+              {photos.map((photo) => (
                 <button
                   key={photo.id}
                   type="button"
-                  onClick={() => openEdit(photo)}
-                  disabled={!canEdit}
-                  className="cy-pinterest-pin text-left disabled:cursor-default"
+                  onClick={() => openViewer(photo)}
+                  className="cy-pinterest-pin text-left"
                 >
-                  <div
-                    className="cy-pinterest-pin-image"
-                    style={{ aspectRatio: pinAspectRatio(photo, index) }}
-                  >
+                  <div className="cy-pinterest-pin-image">
                     <img src={photo.imageUrl} alt="" draggable={false} loading="lazy" />
                   </div>
                   <p className="cy-pinterest-pin-caption">
@@ -156,7 +157,9 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
             </div>
           )}
 
-          {error && !editingId && <p className="mt-2 px-1 text-xs text-red-600">{error}</p>}
+          {error && !editingId && !viewingId && (
+            <p className="mt-2 px-1 text-xs text-red-600">{error}</p>
+          )}
         </section>
 
         {canEdit && photos.length > 0 && (
@@ -172,6 +175,40 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
           </div>
         )}
       </div>
+
+      {viewingPhoto && (
+        <div className="cy-photo-lightbox">
+          <header className="flex shrink-0 items-center justify-between px-4 py-3 text-white">
+            <button type="button" onClick={closeViewer} className="text-xs font-bold">
+              {vi.album.viewClose}
+            </button>
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={() => openEdit(viewingPhoto)}
+                className="text-xs font-bold text-y2k-pink-light"
+              >
+                {vi.album.edit}
+              </button>
+            ) : (
+              <span className="w-8" />
+            )}
+          </header>
+
+          <div className="cy-photo-lightbox-stage">
+            <img
+              src={viewingPhoto.imageUrl}
+              alt=""
+              draggable={false}
+              className="cy-photo-lightbox-image"
+            />
+          </div>
+
+          <p className="shrink-0 px-4 pb-4 text-center text-sm font-bold text-white">
+            {viewingPhoto.caption || vi.home.captionPlaceholder}
+          </p>
+        </div>
+      )}
 
       {editingPhoto && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -189,13 +226,8 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
               disabled={picking}
               className="cy-card-inset mb-3 w-full overflow-hidden"
             >
-              <div className="relative aspect-[3/4] w-full overflow-hidden bg-black">
-                <img
-                  src={draftImage}
-                  alt=""
-                  draggable={false}
-                  className="absolute inset-0 h-full w-full object-cover object-center"
-                />
+              <div className="cy-photo-edit-preview">
+                <img src={draftImage} alt="" draggable={false} />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-xs font-bold text-white">
                   {picking ? vi.album.uploading : vi.home.choosePhoto}
                 </span>

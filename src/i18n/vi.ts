@@ -97,6 +97,7 @@ export const vi = {
     uploading: 'Đang tải…',
     maxPhotos: (n: number) => `Tối đa ${n} ảnh`,
     emptyUpload: 'Chạm để tải ảnh đầu tiên',
+    viewClose: 'Đóng',
   },
   realtime: {
     hintLabel: 'Gợi ý:',

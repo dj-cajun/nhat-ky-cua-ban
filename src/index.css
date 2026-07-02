@@ -160,8 +160,50 @@ body {
     @apply border-0 bg-transparent text-zinc-900;
   }
 
+  .cy-today-count--open {
+    background-color: #ffb6d9;
+  }
+
   .cy-today-count:active {
     color: #ff6eb4;
+  }
+
+  .cy-today-dropdown {
+    @apply absolute left-0 top-[calc(100%+6px)] z-40 min-w-[12.5rem] max-w-[15rem] overflow-hidden rounded-md border-2 border-black bg-white py-1;
+    box-shadow: 4px 4px 0 0 #000;
+  }
+
+  .cy-today-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-left: 2px solid #000;
+    border-top: 2px solid #000;
+    transform: rotate(45deg);
+  }
+
+  .cy-today-dropdown-title {
+    @apply border-b border-zinc-200 px-3 py-1.5 text-[10px] font-bold text-zinc-500;
+  }
+
+  .cy-today-dropdown-empty {
+    @apply px-3 py-2 text-center text-[11px] text-zinc-500;
+  }
+
+  .cy-today-dropdown-list {
+    @apply max-h-32 overflow-y-auto;
+  }
+
+  .cy-today-dropdown-item {
+    @apply border-b border-zinc-200 px-3 py-2 text-[11px] last:border-b-0;
+  }
+
+  .cy-today-dropdown-item:active {
+    background-color: rgb(255 182 217 / 0.35);
   }
 
   .cy-album-frame {
@@ -199,8 +241,36 @@ body {
   }
 
   .cy-pinterest-pin-image img {
-    @apply h-full w-full object-cover object-center;
+    @apply block h-auto w-full;
     filter: grayscale(100%) contrast(1.12);
+  }
+
+  .cy-photo-lightbox {
+    @apply fixed inset-0 z-50 flex flex-col;
+    background-color: rgb(0 0 0 / 0.92);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .cy-photo-lightbox-stage {
+    @apply flex min-h-0 flex-1 items-center justify-center px-3 py-2;
+  }
+
+  .cy-photo-lightbox-image {
+    @apply max-h-full max-w-full;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .cy-photo-edit-preview {
+    @apply relative max-h-[50vh] w-full overflow-hidden bg-black;
+  }
+
+  .cy-photo-edit-preview img {
+    @apply mx-auto block max-h-[50vh] w-auto max-w-full;
+    height: auto;
+    object-fit: contain;
   }
 
   .cy-pinterest-pin-caption {
