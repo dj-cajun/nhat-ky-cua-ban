@@ -25,7 +25,7 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
   };
 
   return (
-    <div className="mx-auto flex h-screen max-w-md flex-col justify-between overflow-hidden bg-[#faf9f6] p-6">
+    <div className="page-shell justify-between p-6">
       <div className="flex flex-1 flex-col justify-center">
         <p className="mb-2 text-xs font-medium text-emerald-700">{vi.app.tagline}</p>
         <h1 className="mb-2 text-2xl font-bold leading-tight">{APP_META.name}</h1>

@@ -70,62 +70,66 @@ export function VoteLockOverlay() {
   if (!current) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="diary-panel flex max-h-[90vh] w-full max-w-sm flex-col p-4">
-        <div className="mb-3 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
+      <div className="diary-panel flex max-h-[85dvh] w-full max-w-sm flex-col p-4">
+        <div className="mb-3 shrink-0 flex items-center justify-between">
           <h2 className="text-sm font-bold">{vi.vote.title}</h2>
           <span className="text-xs text-slate-500">
             {step + 1} / {total}
           </span>
         </div>
 
-        <p className="mb-4 text-sm font-medium">{current.text}</p>
+        <p className="mb-3 shrink-0 text-sm font-medium">{current.text}</p>
 
-        {phase === 'vote' ? (
-          <div className="mb-4 space-y-2 overflow-y-auto">
-            {current.options.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setSelected(opt.id)}
-                className={`diary-border w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selected === opt.id ? 'bg-amber-100 font-bold' : 'bg-white'
-                }`}
-              >
-                {opt.name}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="mb-4 space-y-2">
-            <p className="text-xs text-slate-600">{vi.vote.shieldPick}</p>
-            {HINT_SHIELD_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setShield(opt.value)}
-                className={`diary-border w-full rounded-lg px-3 py-2 text-left text-sm ${
-                  shield === opt.value ? 'bg-amber-100 font-bold' : 'bg-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {phase === 'vote' ? (
+            <div className="mb-2 space-y-2">
+              {current.options.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setSelected(opt.id)}
+                  className={`diary-border w-full rounded-lg px-3 py-3 text-left text-sm ${
+                    selected === opt.id ? 'bg-amber-100 font-bold' : 'bg-white'
+                  }`}
+                >
+                  {opt.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="mb-2 space-y-2">
+              <p className="text-xs text-slate-600">{vi.vote.shieldPick}</p>
+              {HINT_SHIELD_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setShield(opt.value)}
+                  className={`diary-border w-full rounded-lg px-3 py-2 text-left text-sm ${
+                    shield === opt.value ? 'bg-amber-100 font-bold' : 'bg-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <button
-          type="button"
-          disabled={phase === 'vote' ? !selected : !shield}
-          onClick={submitAnswer}
-          className="diary-border rounded-lg bg-slate-800 py-3 text-sm font-bold text-white disabled:opacity-40"
-        >
-          {step < total - 1 || phase === 'vote' ? vi.vote.next : vi.vote.done}
-        </button>
+        <div className="shrink-0 pt-2">
+          <button
+            type="button"
+            disabled={phase === 'vote' ? !selected : !shield}
+            onClick={submitAnswer}
+            className="diary-border min-h-[48px] w-full rounded-lg bg-slate-800 py-3 text-sm font-bold text-white disabled:opacity-40"
+          >
+            {step < total - 1 || phase === 'vote' ? vi.vote.next : vi.vote.done}
+          </button>
 
-        <p className="mt-2 text-center text-[10px] text-slate-400">
-          {vi.vote.lockNote}
-        </p>
+          <p className="mt-2 text-center text-[10px] text-slate-400">
+            {vi.vote.lockNote}
+          </p>
+        </div>
       </div>
     </div>
   );

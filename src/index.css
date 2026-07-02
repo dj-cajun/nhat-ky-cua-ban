@@ -10,6 +10,7 @@ html,
 body,
 #root {
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -18,6 +19,8 @@ body {
   background-color: #faf9f6;
   font-family: 'Noto Sans KR', system-ui, sans-serif;
   color: #1e293b;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer components {
@@ -27,5 +30,15 @@ body {
 
   .diary-panel {
     @apply diary-border rounded-lg bg-[#faf9f6];
+  }
+
+  /** 모바일 전체 화면 — 하단 버튼이 잘리지 않도록 */
+  .page-shell {
+    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden bg-[#faf9f6];
+  }
+
+  .page-footer {
+    @apply shrink-0 bg-[#faf9f6] pt-3;
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
   }
 }

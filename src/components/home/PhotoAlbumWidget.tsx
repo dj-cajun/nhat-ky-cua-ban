@@ -46,7 +46,7 @@ export function PhotoAlbumWidget() {
       </div>
 
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
           <div className="diary-panel w-full max-w-xs p-4">
             <h3 className="mb-2 text-sm font-bold">{vi.home.captionTitle}</h3>
             <p className="mb-2 text-xs text-slate-500">{vi.home.maxChars(MAX_CAPTION_CHARS)}</p>
@@ -62,18 +62,18 @@ export function PhotoAlbumWidget() {
               {draft.length}/{MAX_CAPTION_CHARS}
             </p>
             {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="diary-border flex-1 rounded py-2 text-sm"
+                className="diary-border min-h-[44px] flex-1 rounded py-2 text-sm"
               >
                 {vi.home.cancel}
               </button>
               <button
                 type="button"
                 onClick={saveCaption}
-                className="diary-border flex-1 rounded bg-slate-800 py-2 text-sm text-white"
+                className="diary-border min-h-[44px] flex-1 rounded bg-slate-800 py-2 text-sm text-white"
               >
                 {vi.home.save}
               </button>
