@@ -117,7 +117,7 @@ export function getProfile(): StoredProfile | null {
   return read<StoredProfile | null>(KEYS.profile, null);
 }
 
-export function updateProfile(patch: Partial<UserProfile>): StoredProfile | null {
+export function updateProfile(patch: Partial<StoredProfile>): StoredProfile | null {
   const profile = getProfile();
   if (!profile) return null;
   const updated = { ...profile, ...patch };

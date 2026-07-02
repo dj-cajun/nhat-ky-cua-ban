@@ -16,9 +16,9 @@ export function useRealtimeToasts(): ToastMessage[] {
 
   useEffect(() => {
     const profile = db.getProfile();
-    if (profile) {
-      initSupabaseRealtime(profile.classId);
-    }
+    const cleanupRealtime = profile
+      ? initSupabaseRealtime(profile.remoteClassId)
+      : null;
     simulateRealtimeDemo();
 
     const unsub = subscribeRealtime((event) => {
@@ -35,7 +35,10 @@ export function useRealtimeToasts(): ToastMessage[] {
       }, 5000);
     });
 
-    return unsub;
+    return () => {
+      unsub();
+      cleanupRealtime?.();
+    };
   }, []);
 
   return toasts;

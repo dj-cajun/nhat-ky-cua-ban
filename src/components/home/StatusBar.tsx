@@ -7,12 +7,12 @@ export function StatusBar() {
   const setPage = useSetAtom(appPageAtom);
 
   return (
-    <header className="diary-border flex shrink-0 items-center justify-between rounded-lg px-3 py-2 text-xs font-medium">
-      <div className="flex gap-3">
+    <header className="cy-card flex shrink-0 items-center justify-between px-3 py-1.5 font-mono text-[11px]">
+      <div className="flex items-center gap-2 font-bold tracking-tight">
         <span>
           TODAY <strong className="text-sm">{user.visitCountToday}</strong>
         </span>
-        <span className="text-slate-500">|</span>
+        <span className="text-zinc-400">|</span>
         <span>
           TOTAL <strong className="text-sm">{user.visitCountTotal}</strong>
         </span>
@@ -20,11 +20,11 @@ export function StatusBar() {
       <button
         type="button"
         onClick={() => setPage('dotori')}
-        className="diary-border flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5"
+        className="cy-badge-blue"
         aria-label={vi.status.dotoriAria}
       >
-        <span>🌰</span>
-        <strong className="text-sm">{user.dotoriBalance}</strong>
+        <span className="text-[10px]">●</span>
+        <strong>{user.dotoriBalance}</strong>
       </button>
     </header>
   );

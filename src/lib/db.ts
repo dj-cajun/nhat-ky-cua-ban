@@ -1,6 +1,7 @@
 import type { FeedPost, UserProfile, Visitor, HintData } from '@/types';
 import * as localDb from '@/lib/local-db';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { isRemoteEnabled } from '@/lib/supabase-remote';
 import {
   pushProfileToRemote,
   pushPostToRemote,
@@ -62,6 +63,6 @@ export const db = {
   completeMission: localDb.completeDotoriMission,
   addNomination: localDb.addNomination,
   getNominations: localDb.getNominationsForUser,
-  isRemote: () => isSupabaseConfigured(),
+  isRemote: () => isSupabaseConfigured() && isRemoteEnabled(),
   syncFromRemote,
 };

@@ -1,4 +1,5 @@
-import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
+import { ensureRemoteAvailable } from '@/lib/supabase-remote';
 import { encryptHintData, decryptHintData } from '@/lib/hint-crypto';
 import type { BoardType, FeedPost, HintData } from '@/types';
 import * as localDb from '@/lib/local-db';
@@ -21,7 +22,7 @@ const SCHOOL_MAP: Record<string, string> = {
 
 /** Supabase ↔ localStorage 동기화 */
 export async function syncFromRemote(): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+  if (!(await ensureRemoteAvailable())) return false;
   const supabase = getSupabase();
   const profile = localDb.getProfile();
   if (!supabase || !profile?.zaloId) return false;
@@ -43,6 +44,7 @@ export async function syncFromRemote(): Promise<boolean> {
       visitCountToday: remoteProfile.visit_count_today,
       visitCountTotal: remoteProfile.visit_count_total,
       statusMessage: remoteProfile.status_message ?? '',
+      remoteClassId: remoteProfile.class_id,
     });
 
     const { data: posts } = await supabase
@@ -69,7 +71,7 @@ export async function pushProfileToRemote(
   className: string,
   hint: HintData,
 ): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  if (!(await ensureRemoteAvailable())) return;
   const supabase = getSupabase();
   if (!supabase) return;
 
@@ -91,13 +93,15 @@ export async function pushProfileToRemote(
       },
       { onConflict: 'zalo_id' },
     );
+
+    localDb.updateProfile({ remoteClassId: classId });
   } catch {
     // 로컬 모드 유지
   }
 }
 
 export async function pushPostToRemote(post: FeedPost): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  if (!(await ensureRemoteAvailable())) return;
   const supabase = getSupabase();
   const profile = localDb.getProfile();
   if (!supabase || !profile) return;
@@ -125,7 +129,7 @@ export async function pushCommentToRemote(
   postId: string,
   content: string,
 ): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  if (!(await ensureRemoteAvailable())) return;
   const supabase = getSupabase();
   const profile = localDb.getProfile();
   if (!supabase || !profile) return;
@@ -147,7 +151,7 @@ export async function pushVoteToRemote(
   hintShield: string,
   sessionDate: string,
 ): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  if (!(await ensureRemoteAvailable())) return;
   const supabase = getSupabase();
   const profile = localDb.getProfile();
   if (!supabase || !profile) return;
@@ -188,58 +192,66 @@ async function ensureClass(schoolName: string, className: string): Promise<strin
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const city = SCHOOL_MAP[schoolName] ?? 'Ho Chi Minh';
+  try {
+    const city = SCHOOL_MAP[schoolName] ?? 'Ho Chi Minh';
 
-  let schoolId: string | undefined;
-  const { data: existingSchool } = await supabase
-    .from('schools')
-    .select('id')
-    .eq('name', schoolName)
-    .maybeSingle();
-
-  if (existingSchool) {
-    schoolId = existingSchool.id;
-  } else {
-    const { data: inserted } = await supabase
+    let schoolId: string | undefined;
+    const { data: existingSchool } = await supabase
       .from('schools')
-      .insert({ name: schoolName, city })
+      .select('id')
+      .eq('name', schoolName)
+      .maybeSingle();
+
+    if (existingSchool) {
+      schoolId = existingSchool.id;
+    } else {
+      const { data: inserted } = await supabase
+        .from('schools')
+        .insert({ name: schoolName, city })
+        .select('id')
+        .single();
+      schoolId = inserted?.id;
+    }
+
+    if (!schoolId) return null;
+
+    const { data: existingClass } = await supabase
+      .from('classes')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('name', className)
+      .maybeSingle();
+
+    if (existingClass) return existingClass.id;
+
+    const { data: insertedClass } = await supabase
+      .from('classes')
+      .insert({ school_id: schoolId, name: className })
       .select('id')
       .single();
-    schoolId = inserted?.id;
+
+    return insertedClass?.id ?? null;
+  } catch {
+    return null;
   }
-
-  if (!schoolId) return null;
-
-  const { data: existingClass } = await supabase
-    .from('classes')
-    .select('id')
-    .eq('school_id', schoolId)
-    .eq('name', className)
-    .maybeSingle();
-
-  if (existingClass) return existingClass.id;
-
-  const { data: insertedClass } = await supabase
-    .from('classes')
-    .insert({ school_id: schoolId, name: className })
-    .select('id')
-    .single();
-
-  return insertedClass?.id ?? null;
 }
 
 async function resolveClassId(schoolName: string, className: string): Promise<string | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const { data } = await supabase
-    .from('classes')
-    .select('id, schools!inner(name)')
-    .eq('name', className)
-    .eq('schools.name', schoolName)
-    .maybeSingle();
+  try {
+    const { data } = await supabase
+      .from('classes')
+      .select('id, schools!inner(name)')
+      .eq('name', className)
+      .eq('schools.name', schoolName)
+      .maybeSingle();
 
-  return data?.id ?? ensureClass(schoolName, className);
+    return data?.id ?? ensureClass(schoolName, className);
+  } catch {
+    return null;
+  }
 }
 
 function mergeRemotePosts(

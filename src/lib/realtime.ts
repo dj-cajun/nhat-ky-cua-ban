@@ -1,4 +1,5 @@
 import { REALTIME_MESSAGES } from '@/config/app-content';
+import { ensureRemoteAvailable, isUuid } from '@/lib/supabase-remote';
 
 type RealtimeEvent =
   | { type: 'member_joined'; message: string }
@@ -18,37 +19,50 @@ export function emitRealtime(event: RealtimeEvent): void {
   listeners.forEach((l) => l(event));
 }
 
-/** Supabase Realtime (khi có env) */
-export function initSupabaseRealtime(classId: string): (() => void) | null {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
+/** Supabase Realtime — remoteClassId(UUID)가 있을 때만 구독 */
+export function initSupabaseRealtime(remoteClassId: string | undefined): (() => void) | null {
+  if (!remoteClassId || !isUuid(remoteClassId)) return null;
+
+  let disposed = false;
+  let removeChannel: (() => void) | null = null;
 
   void (async () => {
+    if (!(await ensureRemoteAvailable())) return;
+
     try {
       const { getSupabase } = await import('@/lib/supabase');
       const supabase = getSupabase();
-      if (!supabase) return;
+      if (!supabase || disposed) return;
 
       const channel = supabase
-        .channel(`class:${classId}`)
+        .channel(`class:${remoteClassId}`)
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'posts', filter: `class_id=eq.${classId}` },
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'posts',
+            filter: `class_id=eq.${remoteClassId}`,
+          },
           () => {
             emitRealtime({ type: 'new_post', message: REALTIME_MESSAGES.newSchoolPost });
           },
         )
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'profiles', filter: `class_id=eq.${classId}` },
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'profiles',
+            filter: `class_id=eq.${remoteClassId}`,
+          },
           () => {
             emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
           },
         )
         .subscribe();
 
-      return () => {
+      removeChannel = () => {
         void supabase.removeChannel(channel);
       };
     } catch {
@@ -56,7 +70,10 @@ export function initSupabaseRealtime(classId: string): (() => void) | null {
     }
   })();
 
-  return null;
+  return () => {
+    disposed = true;
+    removeChannel?.();
+  };
 }
 
 /** Demo realtime events */

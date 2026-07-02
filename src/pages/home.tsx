@@ -9,7 +9,6 @@ import { SwipeCardStack } from '@/components/home/SwipeCardStack';
 import { RealtimeToast } from '@/components/common/RealtimeToast';
 import { VoteLockOverlay } from '@/components/vote/VoteLockOverlay';
 import { PostComposer } from '@/components/feed/PostComposer';
-import { AffiliateCurator } from '@/components/home/AffiliateCurator';
 import { useVoteScheduler, useVoteNotifications } from '@/hooks/useVoteScheduler';
 import { useDbSync } from '@/hooks/useDbSync';
 import { viewModeAtom, showVoteOverlayAtom } from '@/stores/atoms';
@@ -28,40 +27,32 @@ export function HomePage() {
   const canWrite = viewMode === 'my' || viewMode === 'stranger';
 
   return (
-    <div className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-[#faf9f6] p-2">
+    <div className="cy-shell">
       <RealtimeToast />
 
       {viewMode === 'stranger' && (
         <button
           type="button"
           onClick={() => setViewMode('my')}
-          className="diary-border mb-2 shrink-0 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold"
+          className="cy-hard-btn mb-1 shrink-0 rounded-lg border-[2.5px] border-black bg-y2k-pink-light px-3 py-1.5 text-xs font-bold"
         >
           {vi.home.backToMine}
         </button>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className="cy-canvas">
         <StatusBar />
         <ProfileCard />
         {viewMode === 'my' && <VisitorTicker />}
-        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-2" style={{ height: '28%' }}>
+        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-2" style={{ height: '26%' }}>
           <CalendarWidget />
           <PhotoAlbumWidget />
         </div>
-        <AffiliateCurator />
-        <SwipeCardStack />
+        <SwipeCardStack
+          canWrite={canWrite}
+          onWrite={() => setShowComposer(true)}
+        />
       </div>
-
-      {canWrite && (
-        <button
-          type="button"
-          onClick={() => setShowComposer(true)}
-          className="diary-border fixed bottom-4 right-4 z-30 rounded-full bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow-lg"
-        >
-          {viewMode === 'my' ? vi.home.secretCard : vi.home.guestbook}
-        </button>
-      )}
 
       {showComposer && <PostComposer onClose={() => setShowComposer(false)} />}
       {showVote && <VoteLockOverlay />}

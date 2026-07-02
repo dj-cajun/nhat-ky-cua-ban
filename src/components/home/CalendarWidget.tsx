@@ -54,16 +54,13 @@ export function CalendarWidget() {
 
   return (
     <>
-      <div className="diary-panel flex h-full flex-col p-2">
-        <div className="mb-1 flex items-center gap-1 text-xs font-bold">
-          <span>📅</span>
-          <span>
-            {year}.{month + 1}
-          </span>
+      <div className="cy-card flex h-full flex-col p-1.5">
+        <div className="mb-0.5 font-mono text-[11px] font-bold">
+          {year}.{month + 1}
         </div>
-        <div className="grid flex-1 grid-cols-7 gap-0.5 text-[10px]">
+        <div className="grid flex-1 grid-cols-7 gap-px text-[9px]">
           {vi.calendarDays.map((d, i) => (
-            <div key={`${d}-${i}`} className="text-center text-slate-500">
+            <div key={`${d}-${i}`} className="text-center text-zinc-500">
               {d}
             </div>
           ))}
@@ -80,8 +77,8 @@ export function CalendarWidget() {
                 key={day}
                 type="button"
                 onClick={() => openModal(day)}
-                className={`diary-border flex aspect-square items-center justify-center rounded text-[10px] ${
-                  isToday ? 'bg-amber-100 font-bold' : 'bg-white'
+                className={`flex aspect-square items-center justify-center rounded-sm border border-transparent text-[9px] ${
+                  isToday ? 'cy-today' : 'bg-white'
                 } ${hasEntry ? 'underline' : ''}`}
               >
                 {day}
@@ -93,18 +90,18 @@ export function CalendarWidget() {
 
       {selectedDate && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
-          <div className="diary-panel w-full max-w-xs p-4">
+          <div className="cy-card w-full max-w-xs p-4">
             <h3 className="mb-2 text-sm font-bold">{vi.home.calendarTitle(selectedDate)}</h3>
-            <p className="mb-2 text-xs text-slate-500">{vi.home.maxChars(MAX_DIARY_CHARS)}</p>
+            <p className="mb-2 text-xs text-zinc-500">{vi.home.maxChars(MAX_DIARY_CHARS)}</p>
             <input
               type="text"
               value={draft}
               maxLength={MAX_DIARY_CHARS}
               onChange={(e) => setDraft(e.target.value)}
-              className="diary-border mb-2 w-full rounded px-2 py-2 text-center text-sm"
+              className="cy-card-inset mb-2 w-full rounded px-2 py-2 text-center text-sm"
               placeholder={vi.home.calendarPlaceholder}
             />
-            <p className="mb-2 text-right text-xs text-slate-500">
+            <p className="mb-2 text-right text-xs text-zinc-500">
               {draft.length}/{MAX_DIARY_CHARS}
             </p>
             {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
@@ -112,14 +109,14 @@ export function CalendarWidget() {
               <button
                 type="button"
                 onClick={() => setSelectedDate(null)}
-                className="diary-border min-h-[44px] flex-1 rounded py-2 text-sm"
+                className="cy-hard-btn min-h-[44px] flex-1 rounded bg-white py-2 text-sm"
               >
                 {vi.home.cancel}
               </button>
               <button
                 type="button"
                 onClick={saveEntry}
-                className="diary-border min-h-[44px] flex-1 rounded bg-slate-800 py-2 text-sm text-white"
+                className="cy-write-btn min-h-[44px] flex-1 py-2 text-sm"
               >
                 {vi.home.save}
               </button>

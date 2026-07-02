@@ -48,7 +48,10 @@ export const vi = {
     guestbook: '✍️ Sổ lưu bút',
     noPosts: 'Chưa có bài viết',
     swipeBoard: '◀ vuốt ▶',
-    swipeCard: '▲▼ thẻ · ◀▶ bảng',
+    swipeCard: '▲▼ thẻ',
+    swipeBoardNav: '◀▶ bảng',
+    write: 'Viết',
+    liveUpdate: 'LIVE UPDATE',
     lock: '🔒 KHÓA',
     anonymous: '🤫 Ẩn danh',
     recentVisitors: '👀 Khách vừa ghé:',
@@ -70,6 +73,12 @@ export const vi = {
     vote: 'Kho phiếu bầu',
     guestbook: 'Sổ lưu bút',
   } satisfies Record<BoardType, string>,
+  realtime: {
+    hintLabel: 'Gợi ý:',
+    memberJoined: 'Bạn cùng lớp vừa vào.',
+    newSchoolPost: 'Có bài mới trên bảng tin trường.',
+    voteNomination: 'Ai đó đã chọn bạn.',
+  },
   feed: {
     close: '← Đóng',
     detail: 'Chi tiết',
@@ -123,11 +132,6 @@ export const vi = {
   },
   status: {
     dotoriAria: 'Trạm nạp Dotori',
-  },
-  realtime: {
-    memberJoined: 'Bạn cùng lớp vừa vào.',
-    newSchoolPost: 'Có bài mới trên bảng tin trường.',
-    voteNomination: 'Ai đó đã chọn bạn.',
   },
   profanity: {
     blocked: 'Nội dung có từ ngữ không phù hợp.',

@@ -39,7 +39,12 @@ function MediaIcons({ post }: { post: FeedPost }) {
   );
 }
 
-export function SwipeCardStack() {
+type SwipeCardStackProps = {
+  onWrite?: () => void;
+  canWrite?: boolean;
+};
+
+export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProps) {
   const [activeBoard, setActiveBoard] = useAtom(activeBoardAtom);
   const [cardIndex, setCardIndex] = useAtom(cardIndexAtom);
   const allPosts = useAtomValue(postsAtom);
@@ -98,8 +103,10 @@ export function SwipeCardStack() {
 
   if (!currentPost) {
     return (
-      <section className="diary-panel flex flex-1 items-center justify-center p-4 text-sm text-slate-500">
-        {vi.home.noPosts}
+      <section className="cy-board flex flex-1 items-center justify-center">
+        <div className="cy-board-body flex w-full items-center justify-center text-sm text-zinc-400">
+          {vi.home.noPosts}
+        </div>
       </section>
     );
   }
@@ -107,39 +114,55 @@ export function SwipeCardStack() {
   return (
     <>
       <section
-        className={`diary-panel flex min-h-0 flex-1 flex-col p-3 ${voteLock ? 'pointer-events-none opacity-90' : ''}`}
+        className={`cy-board min-h-0 flex-1 ${voteLock ? 'pointer-events-none opacity-90' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="mb-2 flex items-center justify-between text-xs">
-          <span className="font-bold">📖 [ {BOARD_LABELS[activeBoard]} ]</span>
-          <span className="text-slate-500">{vi.home.swipeBoard} {voteLock && vi.home.lock}</span>
+        <div className="cy-board-header">
+          <span>[ {BOARD_LABELS[activeBoard]} ]</span>
+          <span className="cy-pink-text text-[10px] tracking-widest">
+            {vi.home.liveUpdate}
+            {voteLock && ` ${vi.home.lock}`}
+          </span>
         </div>
 
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => !voteLock && setSelectedPost(currentPost)}
-          onKeyDown={(e) => e.key === 'Enter' && !voteLock && setSelectedPost(currentPost)}
-          className="diary-border flex min-h-0 flex-1 cursor-pointer flex-col rounded-lg bg-white p-3 text-left"
-        >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              void handleAuthorWarp(currentPost);
-            }}
-            className="mb-2 w-fit text-xs font-bold text-slate-800 underline"
+        <div className="cy-board-body">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => !voteLock && setSelectedPost(currentPost)}
+            onKeyDown={(e) => e.key === 'Enter' && !voteLock && setSelectedPost(currentPost)}
+            className="cy-board-post"
           >
-            {vi.home.anonymous}
-          </button>
-          <p className="flex-1 whitespace-pre-line text-sm leading-relaxed">
-            {truncateContent(currentPost.content)}
-            <MediaIcons post={currentPost} />
-          </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleAuthorWarp(currentPost);
+              }}
+              className="mb-2 w-fit text-xs font-bold text-yellow-300 underline"
+            >
+              {vi.home.anonymous}
+            </button>
+            <p className="flex-1 whitespace-pre-line text-sm leading-relaxed text-zinc-100">
+              {truncateContent(currentPost.content)}
+              <MediaIcons post={currentPost} />
+            </p>
+          </div>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-slate-400">{vi.home.swipeCard}</p>
+        <div className="cy-board-footer">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <span>{vi.home.swipeCard}</span>
+            <span className="text-zinc-300">·</span>
+            <span>{vi.home.swipeBoardNav}</span>
+          </div>
+          {canWrite && onWrite && (
+            <button type="button" onClick={onWrite} className="cy-write-btn">
+              {vi.home.write}
+            </button>
+          )}
+        </div>
       </section>
 
       {selectedPost && (

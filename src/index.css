@@ -16,29 +16,134 @@ body,
 
 body {
   margin: 0;
-  background-color: #faf9f6;
-  font-family: 'Noto Sans KR', system-ui, sans-serif;
-  color: #1e293b;
+  background: linear-gradient(160deg, #ffd6ec 0%, #e8d4ff 45%, #ffc8e8 100%);
+  font-family: 'Gothic A1', 'Noto Sans KR', system-ui, sans-serif;
+  color: #111;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer components {
+  /* ─── Y2K / Cyworld design tokens ─── */
+  .cy-shell {
+    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden p-2;
+    background: linear-gradient(160deg, #ffd6ec 0%, #e8d4ff 50%, #ffc8e8 100%);
+  }
+
+  .cy-canvas {
+    @apply flex min-h-0 flex-1 flex-col gap-2 rounded-xl border-[2.5px] border-black p-2;
+    background-color: #fefefe;
+    background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+    background-size: 11px 11px;
+    box-shadow: 5px 5px 0 0 #000;
+  }
+
+  .cy-card {
+    @apply rounded-lg border-[2.5px] border-black bg-white;
+    box-shadow: 3px 3px 0 0 #000;
+  }
+
+  .cy-card-inset {
+    @apply rounded-md border-2 border-black bg-white;
+  }
+
+  .cy-hard-btn {
+    @apply border-[2.5px] border-black font-bold transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
+    box-shadow: 3px 3px 0 0 #000;
+  }
+
+  .cy-pink {
+    background-color: #ff6eb4;
+  }
+
+  .cy-pink-text {
+    color: #ff6eb4;
+  }
+
+  .cy-badge-pink {
+    @apply rounded border-2 border-black px-2 py-0.5 text-xs font-bold;
+    background-color: #ffb6d9;
+  }
+
+  .cy-badge-blue {
+    @apply flex items-center gap-1 rounded-full border-2 border-black px-2.5 py-0.5 text-xs font-bold text-white;
+    background: linear-gradient(180deg, #6eb5ff 0%, #3b8bff 100%);
+    box-shadow: 2px 2px 0 0 #000;
+  }
+
+  .cy-board {
+    @apply flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border-[2.5px] border-black;
+    box-shadow: 4px 4px 0 0 #000;
+  }
+
+  .cy-board-header {
+    @apply flex shrink-0 items-center justify-between border-b-2 border-black px-3 py-1.5 text-[11px] font-bold tracking-wide text-white;
+    background: #111;
+  }
+
+  .cy-board-body {
+    @apply min-h-0 flex-1 overflow-hidden p-2;
+    background: #2d2d2d;
+    border: 3px solid #ff6eb4;
+    border-top: none;
+  }
+
+  .cy-board-post {
+    @apply flex h-full cursor-pointer flex-col rounded border-2 border-[#ff6eb4] bg-[#3a3a3a] p-3 text-left text-white;
+  }
+
+  .cy-board-footer {
+    @apply flex shrink-0 items-center justify-between border-t-2 border-black bg-white px-2 py-1.5 text-[10px];
+  }
+
+  .cy-write-btn {
+    @apply rounded-md border-[2.5px] border-black px-4 py-1.5 text-xs font-bold text-black transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
+    background-color: #ff6eb4;
+    box-shadow: 3px 3px 0 0 #000;
+  }
+
+  .cy-avatar {
+    @apply flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-md border-2 border-black bg-white;
+  }
+
+  .cy-avatar img,
+  .cy-avatar svg {
+    @apply h-full w-full object-cover;
+    filter: grayscale(100%) contrast(1.1);
+  }
+
+  .cy-pill {
+    @apply shrink-0 rounded-full border-2 border-black bg-white px-2.5 py-0.5 text-[11px] font-semibold;
+    box-shadow: 2px 2px 0 0 #000;
+  }
+
+  .cy-pill:hover {
+    background-color: #ffe0f0;
+  }
+
+  .cy-today {
+    @apply border-2 border-black font-bold;
+    background-color: #ff6eb4 !important;
+    color: #fff;
+  }
+
+  /* legacy aliases */
   .diary-border {
-    @apply border-[1.5px] border-slate-800;
+    @apply border-[2.5px] border-black;
   }
 
   .diary-panel {
-    @apply diary-border rounded-lg bg-[#faf9f6];
+    @apply rounded-lg border-[2.5px] border-black bg-white;
+    box-shadow: 3px 3px 0 0 #000;
   }
 
-  /** 모바일 전체 화면 — 하단 버튼이 잘리지 않도록 */
   .page-shell {
-    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden bg-[#faf9f6];
+    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden;
+    background: linear-gradient(160deg, #ffd6ec 0%, #e8d4ff 50%, #ffc8e8 100%);
   }
 
   .page-footer {
-    @apply shrink-0 bg-[#faf9f6] pt-3;
+    @apply shrink-0 bg-transparent pt-3;
     padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
   }
 }

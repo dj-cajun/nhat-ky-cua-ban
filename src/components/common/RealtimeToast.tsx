@@ -1,4 +1,5 @@
 import { useRealtimeToasts } from '@/hooks/useRealtime';
+import { vi } from '@/i18n/vi';
 
 export function RealtimeToast() {
   const toasts = useRealtimeToasts();
@@ -10,13 +11,15 @@ export function RealtimeToast() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`diary-border pointer-events-auto w-full max-w-md rounded-lg px-4 py-3 text-center text-sm font-medium shadow-md ${
-            toast.type === 'vote' ? 'bg-amber-100' : 'bg-white'
+          className={`cy-card pointer-events-auto w-full max-w-md px-4 py-3 text-center text-sm font-medium ${
+            toast.type === 'vote' ? 'bg-y2k-pink-light' : 'bg-white'
           }`}
         >
           {toast.text}
           {toast.hint && (
-            <p className="mt-1 text-xs text-slate-600">힌트: {toast.hint}</p>
+            <p className="mt-1 text-xs text-zinc-600">
+              {vi.realtime.hintLabel} {toast.hint}
+            </p>
           )}
         </div>
       ))}

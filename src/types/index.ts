@@ -11,6 +11,8 @@ export interface UserProfile {
   schoolName: string;
   className: string;
   classId?: string;
+  /** Supabase classes.id (UUID) */
+  remoteClassId?: string;
   avatarUrl?: string;
   statusMessage: string;
   dotoriBalance: number;
