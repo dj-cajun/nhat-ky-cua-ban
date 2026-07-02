@@ -42,6 +42,8 @@ export const SEED_GUESTBOOK_POSTS = preset.SEED_GUESTBOOK_POSTS;
 export const SEED_VOTE_POSTS = preset.SEED_VOTE_POSTS;
 export const SEED_CALENDAR = preset.SEED_CALENDAR;
 export const SEED_PHOTO_CAPTION = preset.SEED_PHOTO_CAPTION;
+export const SEED_PHOTO_URL = preset.SEED_PHOTO_URL;
+export const SEED_PHOTO_GALLERY = preset.SEED_PHOTO_GALLERY;
 
 export const AFFILIATE_ITEMS = preset.AFFILIATE_ITEMS;
 export const OFFERWALL_URLS = preset.OFFERWALL_URLS;

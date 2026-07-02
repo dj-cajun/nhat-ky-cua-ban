@@ -1,32 +1,34 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
+import {
+  getTodayVN,
+  getVNWeekFromSunday,
+  isSameVNDate,
+  toDateKey,
+  type VNDate,
+} from '@/lib/vn-calendar';
 import { MAX_DIARY_CHARS } from '@/types';
 import { vi } from '@/i18n/vi';
 
-const today = new Date();
-const year = today.getFullYear();
-const month = today.getMonth();
-
-function getDaysInMonth(y: number, m: number): number {
-  return new Date(y, m + 1, 0).getDate();
-}
-
-function getFirstDayOfWeek(y: number, m: number): number {
-  return new Date(y, m, 1).getDay();
+function displayMemo(content: string | undefined): string {
+  const text = content?.trim() ?? '';
+  if (!text) return '·';
+  return text.length > MAX_DIARY_CHARS ? `${text.slice(0, MAX_DIARY_CHARS)}…` : text;
 }
 
 export function CalendarWidget() {
+  const today = useMemo(() => getTodayVN(), []);
+  const weekDates = useMemo(() => getVNWeekFromSunday(today), [today]);
   const [entries, setEntries] = useState(db.getCalendar());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
 
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfWeek(year, month);
+  const headerLabel = `${today.year}.${today.month}`;
 
-  const openModal = (day: number) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const openModal = (date: VNDate) => {
+    const dateStr = toDateKey(date);
     const existing = entries.find((e) => e.date === dateStr);
     setSelectedDate(dateStr);
     setDraft(existing?.content ?? '');
@@ -41,47 +43,46 @@ export function CalendarWidget() {
     }
     if (!selectedDate) return;
 
-    db.saveCalendar(selectedDate, draft);
+    db.saveCalendar(selectedDate, draft.trim());
     setEntries(db.getCalendar());
     setSelectedDate(null);
     setDraft('');
   };
 
-  const cells: (number | null)[] = [
-    ...Array.from({ length: firstDay }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-
   return (
     <>
       <div className="cy-card flex h-full flex-col p-1.5">
-        <div className="mb-0.5 font-mono text-[11px] font-bold">
-          {year}.{month + 1}
+        <div className="mb-0.5 shrink-0 font-mono text-[10px] font-bold leading-tight">
+          <div>{headerLabel}</div>
+          <div className="text-[8px] font-normal text-zinc-500">CN → T7</div>
         </div>
-        <div className="grid flex-1 grid-cols-7 gap-px text-[9px]">
-          {vi.calendarDays.map((d, i) => (
-            <div key={`${d}-${i}`} className="text-center text-zinc-500">
-              {d}
-            </div>
-          ))}
-          {cells.map((day, idx) => {
-            if (day === null) {
-              return <div key={`empty-${idx}`} />;
-            }
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const hasEntry = entries.some((e) => e.date === dateStr);
-            const isToday = day === today.getDate();
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {weekDates.map((date, index) => {
+            const dateStr = toDateKey(date);
+            const entry = entries.find((e) => e.date === dateStr);
+            const isToday = isSameVNDate(date, today);
+            const dayLabel = vi.calendarDays[index];
 
             return (
               <button
-                key={day}
+                key={dateStr}
                 type="button"
-                onClick={() => openModal(day)}
-                className={`flex aspect-square items-center justify-center rounded-sm border border-transparent text-[9px] ${
-                  isToday ? 'cy-today' : 'bg-white'
-                } ${hasEntry ? 'underline' : ''}`}
+                onClick={() => openModal(date)}
+                className="flex min-h-0 flex-1 items-center gap-0.5 border-b border-zinc-200/80 py-px text-left last:border-b-0"
               >
-                {day}
+                <span className="w-4 shrink-0 text-center font-mono text-[7px] font-bold text-zinc-400">
+                  {dayLabel}
+                </span>
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center font-mono text-[9px] font-bold leading-none ${
+                    isToday ? 'cy-today rounded-sm' : 'text-zinc-800'
+                  }`}
+                >
+                  {date.day}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-mono text-[8px] leading-tight text-zinc-600">
+                  {displayMemo(entry?.content)}
+                </span>
               </button>
             );
           })}

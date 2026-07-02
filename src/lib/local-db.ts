@@ -4,6 +4,7 @@ import type {
   FeedPost,
   HintData,
   PhotoAlbum,
+  PhotoCard,
   UserProfile,
   Visitor,
 } from '@/types';
@@ -16,7 +17,33 @@ import {
   DEFAULT_VISIT_TOTAL,
   SEED_CALENDAR,
   SEED_PHOTO_CAPTION,
+  SEED_PHOTO_GALLERY,
+  SEED_PHOTO_URL,
 } from '@/config/app-content';
+
+type StoredPhotoData = { photos: PhotoCard[] } | PhotoAlbum;
+
+function normalizePhotoGallery(raw: StoredPhotoData | null): PhotoCard[] {
+  if (raw && 'photos' in raw && Array.isArray(raw.photos) && raw.photos.length > 0) {
+    return raw.photos.map((photo) => ({
+      id: photo.id,
+      imageUrl: photo.imageUrl || SEED_PHOTO_URL,
+      caption: photo.caption || SEED_PHOTO_CAPTION,
+    }));
+  }
+
+  if (raw && 'imageUrl' in raw) {
+    return [
+      {
+        id: 'photo-1',
+        imageUrl: raw.imageUrl || SEED_PHOTO_URL,
+        caption: raw.caption || SEED_PHOTO_CAPTION,
+      },
+    ];
+  }
+
+  return SEED_PHOTO_GALLERY.map((photo) => ({ ...photo }));
+}
 
 const KEYS = {
   profile: 'diary_profile',
@@ -104,7 +131,7 @@ export function initLocalDb(
   write(KEYS.posts, DEFAULT_POSTS);
   write(KEYS.visitors, DEFAULT_VISITORS);
   write(KEYS.calendar, SEED_CALENDAR satisfies CalendarEntry[]);
-  write(KEYS.photo, { imageUrl: '', caption: SEED_PHOTO_CAPTION } satisfies PhotoAlbum);
+  write(KEYS.photo, { photos: SEED_PHOTO_GALLERY.map((photo) => ({ ...photo })) });
   write(KEYS.votes, [] satisfies VoteRecord[]);
   write(KEYS.comments, [] satisfies Comment[]);
   write(KEYS.nominations, [] satisfies Nomination[]);
@@ -148,6 +175,16 @@ export function getVisitors(): Visitor[] {
   return read(KEYS.visitors, DEFAULT_VISITORS);
 }
 
+export function getTodayVisitors(): Visitor[] {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  return getVisitors().filter((v) => {
+    const visitedDay = new Date(v.visitedAt).toLocaleDateString('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
+    return visitedDay === today;
+  });
+}
+
 export function addVisitor(visitor: Visitor): void {
   const visitors = getVisitors().filter((v) => v.id !== visitor.id);
   write(KEYS.visitors, [visitor, ...visitors].slice(0, 10));
@@ -163,13 +200,66 @@ export function saveCalendarEntry(date: string, content: string): void {
   write(KEYS.calendar, entries);
 }
 
+export function getPhotoGallery(): PhotoCard[] {
+  const raw = read<StoredPhotoData | null>(KEYS.photo, null);
+  return normalizePhotoGallery(raw);
+}
+
 export function getPhotoAlbum(): PhotoAlbum {
-  return read(KEYS.photo, { imageUrl: '', caption: '' });
+  const first = getPhotoGallery()[0];
+  return {
+    imageUrl: first?.imageUrl || SEED_PHOTO_URL,
+    caption: first?.caption || SEED_PHOTO_CAPTION,
+  };
+}
+
+export function savePhotoGallery(photos: PhotoCard[]): void {
+  write(KEYS.photo, { photos });
+}
+
+export function updatePhotoCard(id: string, patch: Partial<Pick<PhotoCard, 'imageUrl' | 'caption'>>): void {
+  const photos = getPhotoGallery().map((photo) =>
+    photo.id === id ? { ...photo, ...patch } : photo,
+  );
+  savePhotoGallery(photos);
+}
+
+export function addPhotoCard(imageUrl: string, caption = ''): PhotoCard {
+  const photos = getPhotoGallery();
+  const card: PhotoCard = {
+    id: `photo-${Date.now()}`,
+    imageUrl,
+    caption,
+  };
+  savePhotoGallery([...photos, card]);
+  return card;
+}
+
+export function savePhotoImage(imageUrl: string): void {
+  const photos = getPhotoGallery();
+  if (photos.length === 0) {
+    savePhotoGallery([{ id: 'photo-1', imageUrl, caption: SEED_PHOTO_CAPTION }]);
+    return;
+  }
+  updatePhotoCard(photos[0].id, { imageUrl });
 }
 
 export function savePhotoCaption(caption: string): void {
-  const album = getPhotoAlbum();
-  write(KEYS.photo, { ...album, caption });
+  const photos = getPhotoGallery();
+  if (photos.length === 0) {
+    savePhotoGallery([{ id: 'photo-1', imageUrl: SEED_PHOTO_URL, caption }]);
+    return;
+  }
+  updatePhotoCard(photos[0].id, { caption });
+}
+
+export function savePhotoAlbum(imageUrl: string, caption: string): void {
+  const photos = getPhotoGallery();
+  if (photos.length === 0) {
+    savePhotoGallery([{ id: 'photo-1', imageUrl, caption }]);
+    return;
+  }
+  updatePhotoCard(photos[0].id, { imageUrl, caption });
 }
 
 export function getVoteRecords(): VoteRecord[] {

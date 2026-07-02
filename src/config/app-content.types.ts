@@ -1,5 +1,7 @@
 /** 공통 타입 — 프리셋·app-content 공유 */
 
+import type { HintData } from '@/types';
+
 export interface LoggedInUserConfig {
   id: string;
   name: string;
@@ -20,6 +22,7 @@ export interface ClassmateSeed {
   realName: string;
   surname: string;
   statusMessage: string;
+  hint?: HintData;
 }
 
 export interface SeedPost {

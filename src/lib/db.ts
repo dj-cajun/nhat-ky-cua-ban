@@ -1,4 +1,4 @@
-import type { FeedPost, UserProfile, Visitor, HintData } from '@/types';
+import type { FeedPost, PhotoCard, UserProfile, Visitor, HintData } from '@/types';
 import * as localDb from '@/lib/local-db';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { isRemoteEnabled } from '@/lib/supabase-remote';
@@ -34,11 +34,19 @@ export const db = {
     return created;
   },
   getVisitors: () => localDb.getVisitors(),
+  getTodayVisitors: () => localDb.getTodayVisitors(),
   addVisitor: (v: Visitor) => localDb.addVisitor(v),
   getCalendar: () => localDb.getCalendarEntries(),
   saveCalendar: (date: string, content: string) => localDb.saveCalendarEntry(date, content),
   getPhoto: () => localDb.getPhotoAlbum(),
+  getPhotoGallery: () => localDb.getPhotoGallery(),
+  savePhotoGallery: (photos: PhotoCard[]) => localDb.savePhotoGallery(photos),
+  updatePhotoCard: (id: string, patch: Partial<Pick<PhotoCard, 'imageUrl' | 'caption'>>) =>
+    localDb.updatePhotoCard(id, patch),
+  addPhotoCard: (imageUrl: string, caption?: string) => localDb.addPhotoCard(imageUrl, caption),
   saveCaption: (caption: string) => localDb.savePhotoCaption(caption),
+  savePhoto: (imageUrl: string) => localDb.savePhotoImage(imageUrl),
+  savePhotoAlbum: (imageUrl: string, caption: string) => localDb.savePhotoAlbum(imageUrl, caption),
   getVotes: () => localDb.getVoteRecords(),
   saveVote: (record: localDb.VoteRecord) => {
     localDb.saveVoteRecord(record);

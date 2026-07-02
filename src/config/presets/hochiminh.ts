@@ -71,18 +71,18 @@ export const VOTE_QUESTIONS = [
 ];
 
 export const CLASSMATES_SEED = [
-  { id: 'cm-01', realName: 'Trần Văn Bình', surname: 'Trần', statusMessage: 'Tan học chạy xe về' },
-  { id: 'cm-02', realName: 'Lê Thị Hương', surname: 'Lê', statusMessage: 'Làm bài toán chưa?' },
-  { id: 'cm-03', realName: 'Phạm Quốc Huy', surname: 'Phạm', statusMessage: 'Hội thể thao vô địch' },
-  { id: 'cm-04', realName: 'Hoàng Minh Tú', surname: 'Hoàng', statusMessage: 'Mua trà sữa đi' },
-  { id: 'cm-05', realName: 'Đặng Thu Hà', surname: 'Đặng', statusMessage: 'K-pop số 1' },
-  { id: 'cm-06', realName: 'Võ Thanh Như', surname: 'Võ', statusMessage: 'Thi trượt rồi huhu' },
-  { id: 'cm-07', realName: 'Nguyễn Đức Anh', surname: 'Nguyễn', statusMessage: 'Đi Bến Thành ăn' },
-  { id: 'cm-08', realName: 'Phan Thị Mai', surname: 'Phan', statusMessage: 'Ai đi cafe hôm nay' },
-  { id: 'cm-09', realName: 'Đỗ Minh Khang', surname: 'Đỗ', statusMessage: 'Tập bóng đá' },
-  { id: 'cm-10', realName: 'Bùi Thảo Vy', surname: 'Bùi', statusMessage: 'Đang quay TikTok' },
-  { id: 'cm-11', realName: 'Huỳnh Quốc Bảo', surname: 'Huỳnh', statusMessage: 'Bị cấm chơi game' },
-  { id: 'cm-12', realName: 'Lý Ngọc Hân', surname: 'Lý', statusMessage: 'Đi thư viện' },
+  { id: 'cm-01', realName: 'Trần Văn Bình', surname: 'Trần', statusMessage: 'Tan học chạy xe về', hint: { gender: 'male' as const, heightRange: '168-172', mbtiPrefix: 'I', commute: 'motorbike' as const } },
+  { id: 'cm-02', realName: 'Lê Thị Hương', surname: 'Lê', statusMessage: 'Làm bài toán chưa?', hint: { gender: 'female' as const, heightRange: '160-165', mbtiPrefix: 'E', commute: 'motorbike' as const } },
+  { id: 'cm-03', realName: 'Phạm Quốc Huy', surname: 'Phạm', statusMessage: 'Hội thể thao vô địch', hint: { gender: 'male' as const, heightRange: '170-175', mbtiPrefix: 'E', commute: 'walk' as const } },
+  { id: 'cm-04', realName: 'Hoàng Minh Tú', surname: 'Hoàng', statusMessage: 'Mua trà sữa đi', hint: { gender: 'male' as const, heightRange: '165-170', mbtiPrefix: 'E', commute: 'bicycle' as const } },
+  { id: 'cm-05', realName: 'Đặng Thu Hà', surname: 'Đặng', statusMessage: 'K-pop số 1', hint: { gender: 'female' as const, heightRange: '158-162', mbtiPrefix: 'I', commute: 'bus' as const } },
+  { id: 'cm-06', realName: 'Võ Thanh Như', surname: 'Võ', statusMessage: 'Thi trượt rồi huhu', hint: { gender: 'female' as const, heightRange: '163-167', mbtiPrefix: 'I', commute: 'walk' as const } },
+  { id: 'cm-07', realName: 'Nguyễn Đức Anh', surname: 'Nguyễn', statusMessage: 'Đi Bến Thành ăn', hint: { gender: 'male' as const, heightRange: '172-176', mbtiPrefix: 'E', commute: 'bicycle' as const } },
+  { id: 'cm-08', realName: 'Phan Thị Mai', surname: 'Phan', statusMessage: 'Ai đi cafe hôm nay', hint: { gender: 'female' as const, heightRange: '161-165', mbtiPrefix: 'E', commute: 'motorbike' as const } },
+  { id: 'cm-09', realName: 'Đỗ Minh Khang', surname: 'Đỗ', statusMessage: 'Tập bóng đá', hint: { gender: 'male' as const, heightRange: '175-180', mbtiPrefix: 'E', commute: 'motorbike' as const } },
+  { id: 'cm-10', realName: 'Bùi Thảo Vy', surname: 'Bùi', statusMessage: 'Đang quay TikTok', hint: { gender: 'female' as const, heightRange: '159-163', mbtiPrefix: 'E', commute: 'bus' as const } },
+  { id: 'cm-11', realName: 'Huỳnh Quốc Bảo', surname: 'Huỳnh', statusMessage: 'Bị cấm chơi game', hint: { gender: 'male' as const, heightRange: '169-173', mbtiPrefix: 'I', commute: 'walk' as const } },
+  { id: 'cm-12', realName: 'Lý Ngọc Hân', surname: 'Lý', statusMessage: 'Đi thư viện', hint: { gender: 'female' as const, heightRange: '164-168', mbtiPrefix: 'I', commute: 'bicycle' as const } },
 ];
 
 export const SEED_VISITORS = [
@@ -145,12 +145,20 @@ export const SEED_VOTE_POSTS = [
 ];
 
 export const SEED_CALENDAR = [
-  { date: '2026-07-01', content: 'Nhìnnhau' },
-  { date: '2026-07-02', content: 'Bựcmình' },
-  { date: '2026-07-03', content: 'Hộithao' },
+  { date: '2026-07-01', content: 'Nhìn nhau cười' },
+  { date: '2026-07-02', content: 'Bực mình quá' },
+  { date: '2026-07-03', content: 'Hội thao vui' },
 ];
 
-export const SEED_PHOTO_CAPTION = 'bestfriend';
+export const SEED_PHOTO_CAPTION = 'BFF cùng lớp';
+export const SEED_PHOTO_URL = '/photo-album-default.svg';
+
+export const SEED_PHOTO_GALLERY = [
+  { id: 'photo-1', imageUrl: SEED_PHOTO_URL, caption: 'BFF cùng lớp' },
+  { id: 'photo-2', imageUrl: SEED_PHOTO_URL, caption: 'Hội thao vui' },
+  { id: 'photo-3', imageUrl: SEED_PHOTO_URL, caption: 'Căng tin trưa' },
+  { id: 'photo-4', imageUrl: SEED_PHOTO_URL, caption: 'Sau giờ học' },
+] as const;
 
 export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   {

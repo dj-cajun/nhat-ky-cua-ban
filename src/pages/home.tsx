@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { StatusBar } from '@/components/home/StatusBar';
 import { ProfileCard } from '@/components/home/ProfileCard';
-import { VisitorTicker } from '@/components/home/VisitorTicker';
 import { CalendarWidget } from '@/components/home/CalendarWidget';
 import { PhotoAlbumWidget } from '@/components/home/PhotoAlbumWidget';
 import { SwipeCardStack } from '@/components/home/SwipeCardStack';
@@ -43,8 +42,7 @@ export function HomePage() {
       <div className="cy-canvas">
         <StatusBar />
         <ProfileCard />
-        {viewMode === 'my' && <VisitorTicker />}
-        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-2" style={{ height: '26%' }}>
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-hidden">
           <CalendarWidget />
           <PhotoAlbumWidget />
         </div>

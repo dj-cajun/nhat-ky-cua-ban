@@ -10,16 +10,19 @@ import { currentUserAtom, postsAtom, viewModeAtom, strangerHostIdAtom } from '@/
 
 interface PostComposerProps {
   onClose: () => void;
+  initialBoard?: BoardType;
 }
 
-export function PostComposer({ onClose }: PostComposerProps) {
+export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
   const viewMode = useAtomValue(viewModeAtom);
   const user = useAtomValue(currentUserAtom);
   const hostId = useAtomValue(strangerHostIdAtom);
   const setPosts = useSetAtom(postsAtom);
 
   const [content, setContent] = useState('');
-  const [board, setBoard] = useState<BoardType>(viewMode === 'my' ? 'diary' : 'guestbook');
+  const [board, setBoard] = useState<BoardType>(
+    initialBoard ?? (viewMode === 'my' ? 'diary' : 'guestbook'),
+  );
   const [hasPhoto, setHasPhoto] = useState(false);
   const [hasLink, setHasLink] = useState(false);
   const [error, setError] = useState('');

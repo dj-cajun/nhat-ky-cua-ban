@@ -71,6 +71,27 @@ body {
     box-shadow: 2px 2px 0 0 #000;
   }
 
+  .cy-board-preview {
+    @apply flex shrink-0 flex-col overflow-hidden rounded-lg border-[2.5px] border-black bg-white;
+    box-shadow: 4px 4px 0 0 #000;
+  }
+
+  .cy-board-preview-home {
+    height: 16.5rem;
+  }
+
+  .cy-board-preview-home--writable {
+    height: 19rem;
+  }
+
+  .cy-board-section-title {
+    @apply flex h-7 shrink-0 items-center px-3 text-left text-xs font-bold text-zinc-900;
+  }
+
+  .cy-board-post-row {
+    @apply flex h-5 shrink-0 items-center gap-1.5 px-3 text-left text-[11px] leading-none;
+  }
+
   .cy-board {
     @apply flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border-[2.5px] border-black;
     box-shadow: 4px 4px 0 0 #000;
@@ -97,8 +118,12 @@ body {
   }
 
   .cy-board-nav-btn {
-    @apply flex h-9 min-w-9 items-center justify-center rounded border-2 border-black bg-white text-sm font-bold leading-none active:bg-y2k-pink-light disabled:opacity-40;
+    @apply flex h-9 min-w-9 items-center justify-center rounded border-2 border-black bg-white text-sm font-bold leading-none disabled:opacity-40;
     box-shadow: 2px 2px 0 0 #000;
+  }
+
+  .cy-board-nav-btn:active:not(:disabled) {
+    background-color: #ffb6d9;
   }
 
   .cy-write-btn {
@@ -126,10 +151,73 @@ body {
     background-color: #ffe0f0;
   }
 
-  .cy-today {
-    @apply border-2 border-black font-bold;
-    background-color: #ff6eb4 !important;
-    color: #fff;
+  .cy-album-widget {
+    @apply flex h-full min-h-0 flex-col overflow-hidden rounded-lg border-[2.5px] border-black bg-white p-1.5;
+    box-shadow: 4px 4px 0 0 #000;
+  }
+
+  .cy-today-count {
+    @apply border-0 bg-transparent text-zinc-900;
+  }
+
+  .cy-today-count:active {
+    color: #ff6eb4;
+  }
+
+  .cy-album-frame {
+    @apply flex min-h-0 flex-1 flex-col overflow-hidden;
+  }
+
+  .cy-album-screen {
+    @apply relative min-h-0 w-full flex-1 overflow-hidden bg-black;
+  }
+
+  .cy-album-screen img {
+    @apply absolute inset-0 h-full w-full object-cover object-center;
+    filter: grayscale(100%) contrast(1.12);
+  }
+
+  .cy-photo-stack {
+    aspect-ratio: 3 / 4;
+    min-height: 0;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .cy-photo-card {
+    @apply relative h-full w-full overflow-hidden rounded-2xl border-[2.5px] border-black bg-white;
+    box-shadow: 6px 6px 0 0 #000;
+  }
+
+  .cy-photo-card--back {
+    box-shadow: 3px 3px 0 0 #000;
+  }
+
+  .cy-photo-card img {
+    @apply h-full w-full object-cover object-center;
+    filter: grayscale(100%) contrast(1.12);
+  }
+
+  .cy-photo-caption {
+    @apply absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-4 pb-4 pt-10 text-center text-sm font-bold text-white;
+  }
+
+  .cy-photo-empty {
+    @apply border-dashed;
+    background-color: rgb(255 182 217 / 0.2);
+  }
+
+  .cy-photo-swipe-hint {
+    @apply absolute top-6 rounded-md border-2 border-black px-3 py-1 text-lg font-bold;
+    box-shadow: 2px 2px 0 0 #000;
+  }
+
+  .cy-photo-swipe-hint--next {
+    @apply right-4 bg-y2k-pink-light;
+  }
+
+  .cy-photo-swipe-hint--prev {
+    @apply left-4 bg-white;
   }
 
   /* legacy aliases */

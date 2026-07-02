@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue } from 'jotai';
 import type { FeedPost } from '@/types';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
-import { showInterstitialAd } from '@/lib/zalo-ads';
 import { vi } from '@/i18n/vi';
-import { strangerUserAtom, viewModeAtom, strangerHostIdAtom, currentUserAtom } from '@/stores/atoms';
+import { currentUserAtom } from '@/stores/atoms';
+import { AnonymousMark } from '@/components/feed/AnonymousMark';
 
 interface FeedDetailModalProps {
   post: FeedPost;
@@ -13,24 +13,11 @@ interface FeedDetailModalProps {
 }
 
 export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
-  const setViewMode = useSetAtom(viewModeAtom);
-  const setStrangerUser = useSetAtom(strangerUserAtom);
-  const setHostId = useSetAtom(strangerHostIdAtom);
   const currentUser = useAtomValue(currentUserAtom);
 
   const [comments, setComments] = useState(() => db.getComments(post.id));
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
-
-  const handleWarp = async () => {
-    const classmate = db.getClassmateById(post.authorId);
-    if (!classmate) return;
-    await showInterstitialAd();
-    setStrangerUser(classmate);
-    setHostId(post.authorId);
-    setViewMode('stranger');
-    onClose();
-  };
 
   const handleComment = () => {
     const check = assertCleanText(draft);
@@ -56,9 +43,9 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <button type="button" onClick={() => void handleWarp()} className="mb-3 text-sm font-bold underline">
-          {vi.home.anonymous} / Ẩn danh
-        </button>
+        <div className="mb-3">
+          <AnonymousMark post={post} onWarp={onClose} />
+        </div>
 
         <p className="mb-4 whitespace-pre-line text-base leading-relaxed">{post.content}</p>
 
@@ -77,7 +64,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
             )}
             {comments.map((c) => (
               <div key={c.id} className="text-xs">
-                <span className="font-bold">{vi.home.anonymous}</span>
+                <span className="font-bold">{vi.home.anonymousMark}</span>
                 <span className="ml-2">{c.content}</span>
               </div>
             ))}

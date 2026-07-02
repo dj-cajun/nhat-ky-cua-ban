@@ -4,6 +4,8 @@ import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { OnboardingPage } from '@/pages/onboarding';
 import { DotoriPage } from '@/pages/dotori';
+import { BoardPage } from '@/pages/board';
+import { AlbumPage } from '@/pages/album';
 import { db } from '@/lib/db';
 import { initDemoSession, isDemoMode } from '@/lib/demo-init';
 import { isZaloLoggedIn } from '@/lib/zalo-auth';
@@ -94,6 +96,14 @@ function AppContent() {
         onLogout={() => setStage('login')}
       />
     );
+  }
+
+  if (page === 'board') {
+    return <BoardPage onBack={() => setPage('home')} />;
+  }
+
+  if (page === 'album') {
+    return <AlbumPage onBack={() => setPage('home')} />;
   }
 
   return <HomePage />;
