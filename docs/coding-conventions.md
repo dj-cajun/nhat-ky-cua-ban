@@ -46,19 +46,19 @@ interface DiaryEntry {
 
 ---
 
-## 4. React / Next.js
+## 4. React / Zalo Mini App
 
-- Server Components 기본, `'use client'`는 상호작용 필요 시만
-- 데이터 fetching: Server Component 또는 Server Action
-- 폼: React Hook Form + Zod validation
-- 상태: 로컬은 `useState`, 서버 상태는 Server Component 재검증
+- Vite + React SPA, 모든 페이지는 Client Component
+- 상태: Jotai atoms (전역), `useState` (로컬 UI)
+- 데이터 fetching: Supabase client + Realtime 구독
+- 폼: controlled input + `maxLength` + Profanity Shield
 
 ```typescript
-// ✅ Server Action 예시
-'use server';
-
-export async function createEntry(formData: FormData) {
-  // validation → supabase insert → revalidatePath
+// ✅ 입력 검증 예시
+const check = assertCleanText(draft);
+if (!check.ok) {
+  setError(check.message);
+  return;
 }
 ```
 
