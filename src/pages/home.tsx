@@ -13,6 +13,7 @@ import { AffiliateCurator } from '@/components/home/AffiliateCurator';
 import { useVoteScheduler, useVoteNotifications } from '@/hooks/useVoteScheduler';
 import { useDbSync } from '@/hooks/useDbSync';
 import { viewModeAtom, showVoteOverlayAtom } from '@/stores/atoms';
+import { vi } from '@/i18n/vi';
 
 export function HomePage() {
   const viewMode = useAtomValue(viewModeAtom);
@@ -36,7 +37,7 @@ export function HomePage() {
           onClick={() => setViewMode('my')}
           className="diary-border mb-2 shrink-0 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold"
         >
-          ← 내 다이어리로 돌아가기
+          {vi.home.backToMine}
         </button>
       )}
 
@@ -58,7 +59,7 @@ export function HomePage() {
           onClick={() => setShowComposer(true)}
           className="diary-border fixed bottom-4 right-4 z-30 rounded-full bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow-lg"
         >
-          {viewMode === 'my' ? '🤫 비밀 카드' : '✍️ 방명록'}
+          {viewMode === 'my' ? vi.home.secretCard : vi.home.guestbook}
         </button>
       )}
 

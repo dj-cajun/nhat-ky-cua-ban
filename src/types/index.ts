@@ -54,10 +54,10 @@ export interface HintData {
 }
 
 export const BOARD_LABELS: Record<BoardType, string> = {
-  diary: '일기장',
-  school: '학교 전체게시판',
-  vote: '투표 아카이브',
-  guestbook: '방명록',
+  diary: 'Nhật ký',
+  school: 'Bảng tin toàn trường',
+  vote: 'Kho phiếu bầu',
+  guestbook: 'Sổ lưu bút',
 };
 
 export const MAX_DIARY_CHARS = 5;

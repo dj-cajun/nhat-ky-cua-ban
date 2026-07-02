@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
 import { MAX_CAPTION_CHARS } from '@/types';
+import { vi } from '@/i18n/vi';
 
 export function PhotoAlbumWidget() {
   const album = db.getPhoto();
@@ -27,7 +28,7 @@ export function PhotoAlbumWidget() {
       <div className="diary-panel flex h-full flex-col p-2">
         <div className="mb-1 flex items-center gap-1 text-xs font-bold">
           <span>📷</span>
-          <span>미니 사진첩</span>
+          <span>{vi.home.photoAlbum}</span>
         </div>
         <div className="diary-border mb-1 flex flex-1 items-center justify-center rounded bg-slate-100 text-3xl">
           🖼️
@@ -40,22 +41,22 @@ export function PhotoAlbumWidget() {
           }}
           className="diary-border truncate rounded bg-white px-2 py-1 text-center text-xs"
         >
-          {caption || '캡션 입력 (10자)'}
+          {caption || vi.home.captionPlaceholder}
         </button>
       </div>
 
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="diary-panel w-full max-w-xs p-4">
-            <h3 className="mb-2 text-sm font-bold">사진 캡션</h3>
-            <p className="mb-2 text-xs text-slate-500">정확히 최대 {MAX_CAPTION_CHARS}글자</p>
+            <h3 className="mb-2 text-sm font-bold">{vi.home.captionTitle}</h3>
+            <p className="mb-2 text-xs text-slate-500">{vi.home.maxChars(MAX_CAPTION_CHARS)}</p>
             <input
               type="text"
               value={draft}
               maxLength={MAX_CAPTION_CHARS}
               onChange={(e) => setDraft(e.target.value)}
               className="diary-border mb-2 w-full rounded px-2 py-2 text-center text-sm"
-              placeholder="방과후스쿠터"
+              placeholder={vi.home.photoPlaceholder}
             />
             <p className="mb-2 text-right text-xs text-slate-500">
               {draft.length}/{MAX_CAPTION_CHARS}
@@ -67,14 +68,14 @@ export function PhotoAlbumWidget() {
                 onClick={() => setIsEditing(false)}
                 className="diary-border flex-1 rounded py-2 text-sm"
               >
-                취소
+                {vi.home.cancel}
               </button>
               <button
                 type="button"
                 onClick={saveCaption}
                 className="diary-border flex-1 rounded bg-slate-800 py-2 text-sm text-white"
               >
-                저장
+                {vi.home.save}
               </button>
             </div>
           </div>

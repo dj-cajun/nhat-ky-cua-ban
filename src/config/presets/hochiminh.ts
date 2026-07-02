@@ -1,11 +1,10 @@
 /**
- * 호치민(Hồ Chí Minh) 고등학교 데모 프리셋
- * 다른 지역으로 교체 시: app-content.ts에서 import 경로만 변경
+ * Preset Hồ Chí Minh — trường THPT demo
  */
 import type { LoggedInUserConfig, AffiliateItemConfig } from '@/config/app-content.types';
 
 export const REGION_ID = 'hochiminh';
-export const REGION_LABEL = '호치민 (Hồ Chí Minh)';
+export const REGION_LABEL = 'Hồ Chí Minh';
 
 export const REGION = {
   city: 'Ho Chi Minh',
@@ -16,23 +15,21 @@ export const REGION = {
   district: 'Quận 3',
 };
 
-// ─── 1. 로그인 유저 (Zalo 이미 로그인 가정) ───
 export const LOGGED_IN_ZALO_USER: LoggedInUserConfig = {
   id: 'zalo-hcm-marie-11a-001',
   name: 'Nguyễn Minh Anh',
   avatar: undefined,
 };
 
-// ─── 2. 호치민 실제·유명 고등학교 ───
 export const SCHOOLS = [
-  'THPT Marie Curie',           // 마리 퀴리 (Quận 3)
-  'THPT Lê Hồng Phong',         // 레홍퐁 (Quận 5)
-  'THPT Nguyễn Thị Minh Khai',  // 응우옌 티 민 카이 (Quận 3)
-  'THPT Trần Phú',              // 찬푸 (Quận 5)
-  'THPT Phổ Thông Năng Khiếu',  // 능력우수고 (Quận 1)
-  'THPT Bùi Thị Xuân',          // 부이 티 쑤안 (Quận 1)
-  'THPT Gia Định',              // 자딘 (Bình Thạnh)
-  'THPT Lương Thế Vinh',         // 루엉 테 빈 (Thủ Đức)
+  'THPT Marie Curie',
+  'THPT Lê Hồng Phong',
+  'THPT Nguyễn Thị Minh Khai',
+  'THPT Trần Phú',
+  'THPT Phổ Thông Năng Khiếu',
+  'THPT Bùi Thị Xuân',
+  'THPT Gia Định',
+  'THPT Lương Thế Vinh',
 ];
 
 export const CLASSES = [
@@ -46,8 +43,7 @@ export const CLASSES = [
   'Lớp 12B',
 ];
 
-// ─── 3. 프로필 기본값 ───
-export const DEFAULT_STATUS_MESSAGE = '오늘 나랑 눈 마주치고 웃은 애 있음...';
+export const DEFAULT_STATUS_MESSAGE = 'Hôm nay có ai nhìn mình rồi cười...';
 export const DEFAULT_DOTORI_BALANCE = 5;
 export const DEFAULT_VISIT_TODAY = 24;
 export const DEFAULT_VISIT_TOTAL = 1204;
@@ -59,83 +55,79 @@ export const DEFAULT_HINT = {
   commute: 'motorbike' as const,
 };
 
-// ─── 4. 5시 투표 12문항 ───
 export const VOTE_QUESTIONS = [
-  '우리 반에서 가장 인싸인 사람은?',
-  '가장 조용한 사람은?',
-  '연애 상대로 가장 괜찮은 사람은?',
-  '가장 웃긴 사람은?',
-  '시험을 가장 잘 보는 사람은?',
-  '운동을 가장 잘하는 사람은?',
-  '노래를 가장 잘하는 사람은?',
-  '패션 센스가 가장 좋은 사람은?',
-  '가장 친절한 사람은?',
-  '비밀을 가장 잘 지키는 사람은?',
-  '매점에서 가장 자주 보이는 사람은?',
-  '졸업 후 가장 성공할 사람은?',
+  'Ai là người nổi bật nhất lớp?',
+  'Ai là người trầm nhất?',
+  'Ai hợp làm người yêu nhất?',
+  'Ai là người hài hước nhất?',
+  'Ai học giỏi nhất?',
+  'Ai chơi thể thao giỏi nhất?',
+  'Ai hát hay nhất?',
+  'Ai mặc đẹp nhất?',
+  'Ai tốt bụng nhất?',
+  'Ai giữ bí mật tốt nhất?',
+  'Ai hay gặp nhất ở căng tin?',
+  'Ai sẽ thành công nhất sau này?',
 ];
 
-// ─── 5. Marie Curie 11A 반 친구 12명 (투표 4지선다용) ───
 export const CLASSMATES_SEED = [
-  { id: 'cm-01', realName: 'Trần Văn Bình', surname: 'Trần', statusMessage: '방과후 스쿠터 타고 감' },
-  { id: 'cm-02', realName: 'Lê Thị Hương', surname: 'Lê', statusMessage: '수학 숙제 다 했나' },
-  { id: 'cm-03', realName: 'Phạm Quốc Huy', surname: 'Phạm', statusMessage: '체육대회 우승각' },
-  { id: 'cm-04', realName: 'Hoàng Minh Tú', surname: 'Hoàng', statusMessage: '밀크티 사줘' },
-  { id: 'cm-05', realName: 'Đặng Thu Hà', surname: 'Đặng', statusMessage: 'K-pop 최고' },
-  { id: 'cm-06', realName: 'Võ Thanh Như', surname: 'Võ', statusMessage: '시험 망함 ㅠ' },
-  { id: 'cm-07', realName: 'Nguyễn Đức Anh', surname: 'Nguyễn', statusMessage: 'Bến Thành 맛집 탐방중' },
-  { id: 'cm-08', realName: 'Phan Thị Mai', surname: 'Phan', statusMessage: '오늘 카페 갈사람' },
-  { id: 'cm-09', realName: 'Đỗ Minh Khang', surname: 'Đỗ', statusMessage: 'bóng đá 연습' },
-  { id: 'cm-10', realName: 'Bùi Thảo Vy', surname: 'Bùi', statusMessage: 'TikTok 찍는중' },
-  { id: 'cm-11', realName: 'Huỳnh Quốc Bảo', surname: 'Huỳnh', statusMessage: '게임 금지됐다' },
-  { id: 'cm-12', realName: 'Lý Ngọc Hân', surname: 'Lý', statusMessage: '도서관 가는중' },
+  { id: 'cm-01', realName: 'Trần Văn Bình', surname: 'Trần', statusMessage: 'Tan học chạy xe về' },
+  { id: 'cm-02', realName: 'Lê Thị Hương', surname: 'Lê', statusMessage: 'Làm bài toán chưa?' },
+  { id: 'cm-03', realName: 'Phạm Quốc Huy', surname: 'Phạm', statusMessage: 'Hội thể thao vô địch' },
+  { id: 'cm-04', realName: 'Hoàng Minh Tú', surname: 'Hoàng', statusMessage: 'Mua trà sữa đi' },
+  { id: 'cm-05', realName: 'Đặng Thu Hà', surname: 'Đặng', statusMessage: 'K-pop số 1' },
+  { id: 'cm-06', realName: 'Võ Thanh Như', surname: 'Võ', statusMessage: 'Thi trượt rồi huhu' },
+  { id: 'cm-07', realName: 'Nguyễn Đức Anh', surname: 'Nguyễn', statusMessage: 'Đi Bến Thành ăn' },
+  { id: 'cm-08', realName: 'Phan Thị Mai', surname: 'Phan', statusMessage: 'Ai đi cafe hôm nay' },
+  { id: 'cm-09', realName: 'Đỗ Minh Khang', surname: 'Đỗ', statusMessage: 'Tập bóng đá' },
+  { id: 'cm-10', realName: 'Bùi Thảo Vy', surname: 'Bùi', statusMessage: 'Đang quay TikTok' },
+  { id: 'cm-11', realName: 'Huỳnh Quốc Bảo', surname: 'Huỳnh', statusMessage: 'Bị cấm chơi game' },
+  { id: 'cm-12', realName: 'Lý Ngọc Hân', surname: 'Lý', statusMessage: 'Đi thư viện' },
 ];
 
-// ─── 6. 초기 방문자 (성씨만 노출) ───
 export const SEED_VISITORS = [
   { id: 'cm-02', surname: 'Lê' },
   { id: 'cm-03', surname: 'Phạm' },
   { id: 'cm-07', surname: 'Nguyễn' },
 ];
 
-// ─── 7. 초기 게시글 ───
 export const SEED_DIARY_POSTS = [
-  { authorId: 'zalo-hcm-marie-11a-001', content: '수학시험망함', hasPhoto: false, hasVideo: false, hasLink: false },
-  { authorId: 'zalo-hcm-marie-11a-001', content: '걔랑눈맞춤ㅋ', hasPhoto: false, hasVideo: false, hasLink: false },
+  { authorId: 'zalo-hcm-marie-11a-001', content: 'Thitrượt', hasPhoto: false, hasVideo: false, hasLink: false },
+  { authorId: 'zalo-hcm-marie-11a-001', content: 'Nhìnnhaukk', hasPhoto: false, hasVideo: false, hasLink: false },
 ];
 
 export const SEED_SCHOOL_POSTS = [
   {
     authorId: 'cm-03',
-    content: '오늘 2층 매점 뒤에서 담배 피우다 교장 선생님이랑 마주친 새끼 누구냐 ㅋㅋㅋ',
+    content: 'Hôm nay ai hút thuốc sau căng tin tầng 2 gặp thầy hiệu trưởng vậy =)))',
     hasPhoto: true,
     hasVideo: false,
     hasLink: true,
   },
   {
     authorId: 'cm-02',
-    content: '내일 Marie Curie 체육대회 준비 다 했나? Quận 3 운동장 7시!',
+    content: 'Ngày mai Marie Curie hội thao sẵn sàng chưa? Sân Quận 3 7h!',
     hasPhoto: false,
     hasVideo: true,
     hasLink: false,
   },
   {
     authorId: 'cm-10',
-    content: 'Landmark 81 앞에서 누가 소리지른거야 다 들림',
+    content: 'Ai la to trước Landmark 81 vậy, nghe hết cả lớp',
     hasPhoto: true,
     hasVideo: false,
     hasLink: false,
   },
   {
     authorId: 'cm-06',
-    content: 'Tocotoco 2층 매점 옆 새로 생긴거 먹어봤는데 개맛있음',
+    content: 'Tocotoco mới bên căng tin ngon lắm nha',
     hasPhoto: false,
     hasVideo: false,
     hasLink: true,
   },
   {
     authorId: 'cm-11',
-    content: 'Lê Hồng Phong 애들이 우리 학교 게시판에 글쓰지마라 ㅋㅋ',
+    content: 'Lớp Lê Hồng Phong đừng vào bảng tin trường mình nữa =))',
     hasPhoto: false,
     hasVideo: false,
     hasLink: false,
@@ -143,29 +135,27 @@ export const SEED_SCHOOL_POSTS = [
 ];
 
 export const SEED_GUESTBOOK_POSTS = [
-  { authorId: 'cm-04', content: '다이어리 잘 꾸몄네 ㅋㅋ', targetUserId: 'zalo-hcm-marie-11a-001' },
-  { authorId: 'cm-08', content: '오늘카페갈래?', targetUserId: 'zalo-hcm-marie-11a-001' },
+  { authorId: 'cm-04', content: 'Nhật ký đẹp quá kk', targetUserId: 'zalo-hcm-marie-11a-001' },
+  { authorId: 'cm-08', content: 'Đicafekhông?', targetUserId: 'zalo-hcm-marie-11a-001' },
 ];
 
 export const SEED_VOTE_POSTS = [
-  { authorId: 'cm-01', content: '오늘 투표: 가장 인싸인 사람은?' },
-  { authorId: 'cm-05', content: '어제 투표 결과 개웃겼음 ㅋㅋ' },
+  { authorId: 'cm-01', content: 'Bỏ phiếu hôm nay: Ai nổi bật nhất?' },
+  { authorId: 'cm-05', content: 'Kết quả bỏ phiếu hôm qua cười chết =))' },
 ];
 
-// ─── 8. 캘린더·사진첩 시드 ───
 export const SEED_CALENDAR = [
-  { date: '2026-07-01', content: '걔랑눈맞춤' },
-  { date: '2026-07-02', content: '오늘개빡침' },
-  { date: '2026-07-03', content: '체육대회' },
+  { date: '2026-07-01', content: 'Nhìnnhau' },
+  { date: '2026-07-02', content: 'Bựcmình' },
+  { date: '2026-07-03', content: 'Hộithao' },
 ];
 
-export const SEED_PHOTO_CAPTION = '우리단짝단짝';
+export const SEED_PHOTO_CAPTION = 'bestfriend';
 
-// ─── 9. 제휴 커머스 (호치민·10대 타깃) ───
 export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   {
     id: 'hcm-1',
-    name: 'Tocotoco 밀크티',
+    name: 'Trà sữa Tocotoco',
     emoji: '🧋',
     price: '25k',
     url: 'https://shopee.vn/search?keyword=tocotoco',
@@ -173,7 +163,7 @@ export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   },
   {
     id: 'hcm-2',
-    name: '오토바이 헬멧',
+    name: 'Mũ bảo hiểm',
     emoji: '🪖',
     price: '150k',
     url: 'https://shopee.vn/search?keyword=mũ+bảo+hiểm',
@@ -181,7 +171,7 @@ export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   },
   {
     id: 'hcm-3',
-    name: 'K-pop 앨범',
+    name: 'Album K-pop',
     emoji: '💿',
     price: '320k',
     url: 'https://shopee.vn/search?keyword=kpop+album',
@@ -189,15 +179,15 @@ export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   },
   {
     id: 'hcm-4',
-    name: 'Bến Thành 근처 호스텔',
+    name: 'Hostel Bến Thành',
     emoji: '🏨',
-    price: '200k/박',
+    price: '200k/đêm',
     url: 'https://www.agoda.com/search?city=13170',
     platform: 'agoda',
   },
   {
     id: 'hcm-5',
-    name: '틱톡 인기템',
+    name: 'Hot TikTok',
     emoji: '🎵',
     price: '49k',
     url: 'https://shop.tiktok.com',
@@ -205,7 +195,7 @@ export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   },
   {
     id: 'hcm-6',
-    name: '학교가방',
+    name: 'Balo học sinh',
     emoji: '🎒',
     price: '89k',
     url: 'https://shopee.vn/search?keyword=balo+học+sinh',
@@ -213,14 +203,12 @@ export const AFFILIATE_ITEMS: AffiliateItemConfig[] = [
   },
 ];
 
-// ─── 10. 오퍼월 ───
 export const OFFERWALL_URLS = {
   shopee: 'https://shopee.vn',
   tiktok: 'https://www.tiktok.com',
   lazada: 'https://www.lazada.vn',
 };
 
-// ─── 11. 비속어 추가 (베트남어·한국어) ───
 export const EXTRA_PROFANITY_WORDS = [
   'ditme',
   'dmm',
@@ -235,16 +223,14 @@ export const EXTRA_PROFANITY_WORDS = [
   '좆',
 ];
 
-// ─── 12. 알림 문구 (베트남어 병기) ───
 export const REALTIME_MESSAGES = {
-  memberJoined: '같은반 친구가 들어왔습니다. / Bạn cùng lớp vừa vào.',
-  newSchoolPost: '학교게시판에 새로운 글이 올라왔습니다. / Có bài mới trên bảng tin.',
-  voteNomination: '누군가 당신을 지목했습니다. / Ai đó đã chọn bạn.',
+  memberJoined: 'Bạn cùng lớp vừa vào.',
+  newSchoolPost: 'Có bài mới trên bảng tin trường.',
+  voteNomination: 'Ai đó đã chọn bạn.',
 };
 
-// ─── 13. 앱 메타 ───
 export const APP_META = {
   name: 'Nhật ký của bạn',
-  nameKo: '너의 다이어리',
-  slogan: '100% 익명으로 쓰고, 성씨와 일기로 훔쳐보는 우리 반 수사극',
+  nameKo: 'Nhật ký của bạn',
+  slogan: '100% ẩn danh — điều tra lớp học bằng Họ và nhật ký',
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
 import { MAX_DIARY_CHARS } from '@/types';
+import { vi } from '@/i18n/vi';
 
 const today = new Date();
 const year = today.getFullYear();
@@ -61,7 +62,7 @@ export function CalendarWidget() {
           </span>
         </div>
         <div className="grid flex-1 grid-cols-7 gap-0.5 text-[10px]">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          {vi.calendarDays.map((d, i) => (
             <div key={`${d}-${i}`} className="text-center text-slate-500">
               {d}
             </div>
@@ -93,15 +94,15 @@ export function CalendarWidget() {
       {selectedDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="diary-panel w-full max-w-xs p-4">
-            <h3 className="mb-2 text-sm font-bold">일기 ({selectedDate})</h3>
-            <p className="mb-2 text-xs text-slate-500">정확히 최대 {MAX_DIARY_CHARS}글자</p>
+            <h3 className="mb-2 text-sm font-bold">{vi.home.calendarTitle(selectedDate)}</h3>
+            <p className="mb-2 text-xs text-slate-500">{vi.home.maxChars(MAX_DIARY_CHARS)}</p>
             <input
               type="text"
               value={draft}
               maxLength={MAX_DIARY_CHARS}
               onChange={(e) => setDraft(e.target.value)}
               className="diary-border mb-2 w-full rounded px-2 py-2 text-center text-sm"
-              placeholder="오늘개빡침"
+              placeholder={vi.home.calendarPlaceholder}
             />
             <p className="mb-2 text-right text-xs text-slate-500">
               {draft.length}/{MAX_DIARY_CHARS}
@@ -113,14 +114,14 @@ export function CalendarWidget() {
                 onClick={() => setSelectedDate(null)}
                 className="diary-border flex-1 rounded py-2 text-sm"
               >
-                취소
+                {vi.home.cancel}
               </button>
               <button
                 type="button"
                 onClick={saveEntry}
                 className="diary-border flex-1 rounded bg-slate-800 py-2 text-sm text-white"
               >
-                저장
+                {vi.home.save}
               </button>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { BoardType, FeedPost } from '@/types';
-import { BOARD_LABELS } from '@/types';
+import { BOARD_LABELS } from '@/i18n/vi';
+import { vi } from '@/i18n/vi';
 import { db } from '@/lib/db';
 import { showInterstitialAd } from '@/lib/zalo-ads';
 import {
@@ -98,7 +99,7 @@ export function SwipeCardStack() {
   if (!currentPost) {
     return (
       <section className="diary-panel flex flex-1 items-center justify-center p-4 text-sm text-slate-500">
-        게시글이 없습니다
+        {vi.home.noPosts}
       </section>
     );
   }
@@ -112,7 +113,7 @@ export function SwipeCardStack() {
       >
         <div className="mb-2 flex items-center justify-between text-xs">
           <span className="font-bold">📖 [ {BOARD_LABELS[activeBoard]} ]</span>
-          <span className="text-slate-500">◀ 스와이프 ▶ {voteLock && '🔒 LOCK'}</span>
+          <span className="text-slate-500">{vi.home.swipeBoard} {voteLock && vi.home.lock}</span>
         </div>
 
         <div
@@ -130,7 +131,7 @@ export function SwipeCardStack() {
             }}
             className="mb-2 w-fit text-xs font-bold text-slate-800 underline"
           >
-            🤫 익명
+            {vi.home.anonymous}
           </button>
           <p className="flex-1 whitespace-pre-line text-sm leading-relaxed">
             {truncateContent(currentPost.content)}
@@ -138,7 +139,7 @@ export function SwipeCardStack() {
           </p>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-slate-400">▲▼ 카드 · ◀▶ 게시판</p>
+        <p className="mt-2 text-center text-[10px] text-slate-400">{vi.home.swipeCard}</p>
       </section>
 
       {selectedPost && (

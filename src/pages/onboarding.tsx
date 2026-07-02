@@ -6,6 +6,8 @@ import { getLoggedInZaloUser } from '@/lib/zalo-auth';
 import { db } from '@/lib/db';
 import { emitRealtime } from '@/lib/realtime';
 import { REALTIME_MESSAGES } from '@/config/app-content';
+import { markOnboarded } from '@/lib/session';
+import { vi } from '@/i18n/vi';
 import { currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
 interface OnboardingPageProps {
@@ -37,7 +39,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
     setUser(profile);
     setPosts(db.getPosts());
     setVisitors(db.getVisitors());
-    localStorage.setItem('onboarding_complete', 'true');
+    markOnboarded();
     emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
     onComplete();
   };
@@ -45,35 +47,35 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   return (
     <div className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-[#faf9f6] p-4">
       <h1 className="mb-1 text-xl font-bold">Nhật ký của bạn</h1>
-      <p className="mb-4 text-sm text-slate-600">학교·학급만 선택하면 바로 시작</p>
+      <p className="mb-4 text-sm text-slate-600">{vi.onboarding.subtitle}</p>
 
       <p className="diary-border mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-        ✓ Zalo 로그인 완료 · {zaloUser.name}
+        {vi.onboarding.zaloDone} {zaloUser.name}
       </p>
 
       {step === 0 && (
         <section className="diary-panel flex-1 p-4">
-          <h2 className="mb-4 text-sm font-bold">학교 · 학급 선택</h2>
-          <label className="mb-3 block text-xs">학교</label>
+          <h2 className="mb-4 text-sm font-bold">{vi.onboarding.schoolClass}</h2>
+          <label className="mb-3 block text-xs">{vi.onboarding.school}</label>
           <select
             value={school}
             onChange={(e) => setSchool(e.target.value)}
             className="diary-border mb-4 w-full rounded px-3 py-2 text-sm"
           >
-            <option value="">선택하세요</option>
+            <option value="">{vi.onboarding.select}</option>
             {SCHOOLS.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
             ))}
           </select>
-          <label className="mb-3 block text-xs">학급 (Lớp)</label>
+          <label className="mb-3 block text-xs">{vi.onboarding.class}</label>
           <select
             value={className}
             onChange={(e) => setClassName(e.target.value)}
             className="diary-border w-full rounded px-3 py-2 text-sm"
           >
-            <option value="">선택하세요</option>
+            <option value="">{vi.onboarding.select}</option>
             {CLASSES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -85,10 +87,10 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
 
       {step === 1 && (
         <section className="diary-panel flex-1 space-y-4 overflow-y-auto p-4">
-          <h2 className="text-sm font-bold">힌트 데이터 (투표 실드용)</h2>
-          <p className="text-xs text-slate-500">암호화되어 저장됩니다</p>
+          <h2 className="text-sm font-bold">{vi.onboarding.hintTitle}</h2>
+          <p className="text-xs text-slate-500">{vi.onboarding.hintEncrypted}</p>
           <div>
-            <label className="mb-1 block text-xs">성별</label>
+            <label className="mb-1 block text-xs">{vi.onboarding.gender}</label>
             <select
               value={hint.gender}
               onChange={(e) =>
@@ -96,13 +98,13 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
               }
               className="diary-border w-full rounded px-3 py-2 text-sm"
             >
-              <option value="female">여성</option>
-              <option value="male">남성</option>
-              <option value="other">기타</option>
+              <option value="female">{vi.onboarding.female}</option>
+              <option value="male">{vi.onboarding.male}</option>
+              <option value="other">{vi.onboarding.other}</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs">키 범위</label>
+            <label className="mb-1 block text-xs">{vi.onboarding.height}</label>
             <select
               value={hint.heightRange}
               onChange={(e) => setHint({ ...hint, heightRange: e.target.value })}
@@ -115,18 +117,18 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs">MBTI 앞자리</label>
+            <label className="mb-1 block text-xs">{vi.onboarding.mbti}</label>
             <select
               value={hint.mbtiPrefix}
               onChange={(e) => setHint({ ...hint, mbtiPrefix: e.target.value })}
               className="diary-border w-full rounded px-3 py-2 text-sm"
             >
-              <option value="E">E (외향)</option>
-              <option value="I">I (내향)</option>
+              <option value="E">{vi.onboarding.extrovert}</option>
+              <option value="I">{vi.onboarding.introvert}</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs">등교 수단</label>
+            <label className="mb-1 block text-xs">{vi.onboarding.commute}</label>
             <select
               value={hint.commute}
               onChange={(e) =>
@@ -134,10 +136,10 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
               }
               className="diary-border w-full rounded px-3 py-2 text-sm"
             >
-              <option value="motorbike">오토바이</option>
-              <option value="bicycle">자전거</option>
-              <option value="walk">도보</option>
-              <option value="bus">버스</option>
+              <option value="motorbike">{vi.onboarding.motorbike}</option>
+              <option value="bicycle">{vi.onboarding.bicycle}</option>
+              <option value="walk">{vi.onboarding.walk}</option>
+              <option value="bus">{vi.onboarding.bus}</option>
             </select>
           </div>
         </section>
@@ -150,7 +152,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
             onClick={() => setStep((s) => s - 1)}
             className="diary-border flex-1 rounded-lg py-3 text-sm"
           >
-            이전
+            {vi.onboarding.back}
           </button>
         )}
         <button
@@ -165,7 +167,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
           }}
           className="diary-border flex-1 rounded-lg bg-slate-800 py-3 text-sm text-white disabled:opacity-40"
         >
-          {step < 1 ? '다음' : '시작하기'}
+          {step < 1 ? vi.onboarding.next : vi.onboarding.start}
         </button>
       </div>
     </div>

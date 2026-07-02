@@ -35,14 +35,14 @@ describe('normalizeForProfanityCheck', () => {
 
 describe('assertCleanText', () => {
   it('returns ok for clean text', () => {
-    expect(assertCleanText('안녕하세요')).toEqual({ ok: true });
+    expect(assertCleanText('Xin chào')).toEqual({ ok: true });
   });
 
   it('returns error for blocked text', () => {
     const result = assertCleanText('l0n');
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('부적절');
+      expect(result.message).toContain('không phù hợp');
     }
   });
 });

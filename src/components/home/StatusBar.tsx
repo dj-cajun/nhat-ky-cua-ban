@@ -1,4 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai';
+import { vi } from '@/i18n/vi';
 import { displayUserAtom, appPageAtom } from '@/stores/atoms';
 
 export function StatusBar() {
@@ -20,7 +21,7 @@ export function StatusBar() {
         type="button"
         onClick={() => setPage('dotori')}
         className="diary-border flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5"
-        aria-label="도토리 충전소"
+        aria-label={vi.status.dotoriAria}
       >
         <span>🌰</span>
         <strong className="text-sm">{user.dotoriBalance}</strong>

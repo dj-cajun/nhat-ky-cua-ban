@@ -4,6 +4,7 @@ import type { FeedPost } from '@/types';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
 import { showInterstitialAd } from '@/lib/zalo-ads';
+import { vi } from '@/i18n/vi';
 import { strangerUserAtom, viewModeAtom, strangerHostIdAtom, currentUserAtom } from '@/stores/atoms';
 
 interface FeedDetailModalProps {
@@ -48,35 +49,35 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
     <div className="fixed inset-0 z-50 flex flex-col bg-[#faf9f6]">
       <header className="diary-border flex items-center justify-between p-3">
         <button type="button" onClick={onClose} className="text-sm font-bold">
-          ← 닫기
+          {vi.feed.close}
         </button>
-        <span className="text-sm font-bold">상세</span>
+        <span className="text-sm font-bold">{vi.feed.detail}</span>
         <span className="w-10" />
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
         <button type="button" onClick={() => void handleWarp()} className="mb-3 text-sm font-bold underline">
-          🤫 익명 / Ẩn danh
+          {vi.home.anonymous} / Ẩn danh
         </button>
 
         <p className="mb-4 whitespace-pre-line text-base leading-relaxed">{post.content}</p>
 
         {(post.hasPhoto || post.hasVideo) && (
           <div className="diary-border mb-4 flex aspect-video items-center justify-center rounded-lg bg-slate-100">
-            {post.hasPhoto && <span className="text-4xl">📸 미디어</span>}
-            {post.hasVideo && <span className="text-4xl">🎥 영상</span>}
+            {post.hasPhoto && <span className="text-4xl">{vi.feed.media}</span>}
+            {post.hasVideo && <span className="text-4xl">{vi.feed.video}</span>}
           </div>
         )}
 
         <section className="diary-panel p-3">
-          <h4 className="mb-2 text-sm font-bold">댓글</h4>
+          <h4 className="mb-2 text-sm font-bold">{vi.feed.comments}</h4>
           <div className="mb-3 space-y-2">
             {comments.length === 0 && (
-              <p className="text-xs text-slate-400">아직 댓글이 없습니다</p>
+              <p className="text-xs text-slate-400">{vi.feed.noComments}</p>
             )}
             {comments.map((c) => (
               <div key={c.id} className="text-xs">
-                <span className="font-bold">🤫 익명</span>
+                <span className="font-bold">{vi.home.anonymous}</span>
                 <span className="ml-2">{c.content}</span>
               </div>
             ))}
@@ -86,7 +87,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="익명 댓글..."
+              placeholder={vi.feed.commentPlaceholder}
               className="diary-border flex-1 rounded px-3 py-2 text-sm"
             />
             <button
@@ -94,7 +95,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
               onClick={handleComment}
               className="diary-border rounded bg-slate-800 px-3 text-sm text-white"
             >
-              등록
+              {vi.feed.submit}
             </button>
           </div>
           {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

@@ -3,6 +3,7 @@ import { encryptHintData, decryptHintData } from '@/lib/hint-crypto';
 import type { BoardType, FeedPost, HintData } from '@/types';
 import * as localDb from '@/lib/local-db';
 import { DEFAULT_POSTS } from '@/lib/seed-data';
+import { DEFAULT_STATUS_MESSAGE } from '@/config/app-content';
 
 const SCHOOL_MAP: Record<string, string> = {
   'THPT Marie Curie': 'Ho Chi Minh',
@@ -86,7 +87,7 @@ export async function pushProfileToRemote(
         surname,
         class_id: classId,
         hint_data: encrypted,
-        status_message: '오늘 나랑 눈 마주치고 웃은 애...',
+        status_message: DEFAULT_STATUS_MESSAGE,
       },
       { onConflict: 'zalo_id' },
     );

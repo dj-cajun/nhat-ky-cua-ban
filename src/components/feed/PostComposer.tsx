@@ -4,6 +4,8 @@ import type { BoardType } from '@/types';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
 import { emitRealtime } from '@/lib/realtime';
+import { REALTIME_MESSAGES } from '@/config/app-content';
+import { vi } from '@/i18n/vi';
 import { currentUserAtom, postsAtom, viewModeAtom, strangerHostIdAtom } from '@/stores/atoms';
 
 interface PostComposerProps {
@@ -26,10 +28,10 @@ export function PostComposer({ onClose }: PostComposerProps) {
 
   const title =
     boardType === 'diary'
-      ? '🤫 비밀 카드 쓰기'
+      ? vi.feed.writeSecret
       : boardType === 'school'
-        ? '📢 학교 게시판'
-        : '✍️ 방명록 카드';
+        ? vi.feed.schoolBoard
+        : vi.feed.guestbookCard;
 
   const handleSubmit = () => {
     const check = assertCleanText(content);
@@ -38,7 +40,7 @@ export function PostComposer({ onClose }: PostComposerProps) {
       return;
     }
     if (!content.trim()) {
-      setError('내용을 입력하세요.');
+      setError(vi.feed.emptyContent);
       return;
     }
 
@@ -57,7 +59,7 @@ export function PostComposer({ onClose }: PostComposerProps) {
     if (boardType === 'school' || boardType === 'diary') {
       emitRealtime({
         type: 'new_post',
-        message: '학교게시판에 새로운 글이 올라왔습니다.',
+        message: REALTIME_MESSAGES.newSchoolPost,
       });
     }
 
@@ -82,14 +84,14 @@ export function PostComposer({ onClose }: PostComposerProps) {
                 onClick={() => setBoard('diary')}
                 className={`diary-border rounded px-2 py-1 ${board === 'diary' ? 'bg-amber-100 font-bold' : ''}`}
               >
-                비밀 카드
+                {vi.feed.secretTab}
               </button>
               <button
                 type="button"
                 onClick={() => setBoard('school')}
                 className={`diary-border rounded px-2 py-1 ${board === 'school' ? 'bg-amber-100 font-bold' : ''}`}
               >
-                학교 게시판
+                {vi.feed.schoolTab}
               </button>
             </>
           )}
@@ -100,18 +102,18 @@ export function PostComposer({ onClose }: PostComposerProps) {
           onChange={(e) => setContent(e.target.value)}
           rows={4}
           maxLength={200}
-          placeholder={viewMode === 'my' ? '비밀 이야기...' : '방명록 남기기...'}
+          placeholder={viewMode === 'my' ? vi.feed.placeholderMy : vi.feed.placeholderGuest}
           className="diary-border mb-2 w-full resize-none rounded-lg p-3 text-sm"
         />
 
         <div className="mb-3 flex gap-3 text-xs">
           <label className="flex items-center gap-1">
             <input type="checkbox" checked={hasPhoto} onChange={(e) => setHasPhoto(e.target.checked)} />
-            📸 사진
+            {vi.feed.photo}
           </label>
           <label className="flex items-center gap-1">
             <input type="checkbox" checked={hasLink} onChange={(e) => setHasLink(e.target.checked)} />
-            🔗 링크
+            {vi.feed.link}
           </label>
         </div>
 
@@ -122,7 +124,7 @@ export function PostComposer({ onClose }: PostComposerProps) {
           onClick={handleSubmit}
           className="diary-border w-full rounded-lg bg-slate-800 py-3 text-sm font-bold text-white"
         >
-          게시
+          {vi.feed.publish}
         </button>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { formatHintShield } from '@/lib/hint-crypto';
 import { getDecryptedHint } from '@/lib/supabase-sync';
 import { todayDateStr } from '@/lib/vote-service';
 import { generateVoteQuestions, HINT_SHIELD_OPTIONS } from '@/lib/vote-service';
+import { vi } from '@/i18n/vi';
 import { voteLockAtom, showVoteOverlayAtom } from '@/stores/atoms';
 
 export function VoteLockOverlay() {
@@ -72,7 +73,7 @@ export function VoteLockOverlay() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="diary-panel flex max-h-[90vh] w-full max-w-sm flex-col p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold">🔒 5시 실명 투표</h2>
+          <h2 className="text-sm font-bold">{vi.vote.title}</h2>
           <span className="text-xs text-slate-500">
             {step + 1} / {total}
           </span>
@@ -97,7 +98,7 @@ export function VoteLockOverlay() {
           </div>
         ) : (
           <div className="mb-4 space-y-2">
-            <p className="text-xs text-slate-600">힌트 실드 선택 (1종)</p>
+            <p className="text-xs text-slate-600">{vi.vote.shieldPick}</p>
             {HINT_SHIELD_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -119,11 +120,11 @@ export function VoteLockOverlay() {
           onClick={submitAnswer}
           className="diary-border rounded-lg bg-slate-800 py-3 text-sm font-bold text-white disabled:opacity-40"
         >
-          {step < total - 1 || phase === 'vote' ? '다음' : '투표 완료 · Lock 해제'}
+          {step < total - 1 || phase === 'vote' ? vi.vote.next : vi.vote.done}
         </button>
 
         <p className="mt-2 text-center text-[10px] text-slate-400">
-          12문항 완료 전까지 스와이프·워프 불가
+          {vi.vote.lockNote}
         </p>
       </div>
     </div>

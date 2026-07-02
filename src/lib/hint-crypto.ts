@@ -1,4 +1,5 @@
 import type { HintData, HintShield } from '@/types';
+import { vi } from '@/i18n/vi';
 
 const STORAGE_KEY = 'diary_hint_key';
 
@@ -43,20 +44,24 @@ export function formatHintShield(
     case 'surname':
       return `Họ: ${surname}`;
     case 'height':
-      return `키 ${hint.heightRange.replace('-', '~')}cm`;
+      return vi.hintFormat.height(hint.heightRange);
     case 'gender':
-      return hint.gender === 'male' ? '성별: 남' : hint.gender === 'female' ? '성별: 여' : '성별: 기타';
+      return hint.gender === 'male'
+        ? vi.hintFormat.genderMale
+        : hint.gender === 'female'
+          ? vi.hintFormat.genderFemale
+          : vi.hintFormat.genderOther;
     case 'commute': {
       const labels: Record<HintData['commute'], string> = {
-        motorbike: '오토바이',
-        bicycle: '자전거',
-        walk: '도보',
-        bus: '버스',
-        other: '기타',
+        motorbike: vi.hintFormat.commuteMotorbike,
+        bicycle: vi.hintFormat.commuteBicycle,
+        walk: vi.hintFormat.commuteWalk,
+        bus: vi.hintFormat.commuteBus,
+        other: vi.hintFormat.commuteOther,
       };
-      return `등교: ${labels[hint.commute]}`;
+      return vi.hintFormat.commute(labels[hint.commute]);
     }
     default:
-      return '힌트 없음';
+      return vi.hintFormat.none;
   }
 }

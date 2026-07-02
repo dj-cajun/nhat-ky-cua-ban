@@ -1,9 +1,10 @@
 import { AFFILIATE_ITEMS } from '@/lib/affiliate-data';
+import { vi } from '@/i18n/vi';
 
 export function AffiliateCurator() {
   return (
     <section className="diary-border shrink-0 overflow-hidden rounded-lg px-2 py-1.5">
-      <p className="mb-1 text-[10px] font-bold text-slate-600">🛍️ 우리 반 인싸 추천 아이템</p>
+      <p className="mb-1 text-[10px] font-bold text-slate-600">{vi.home.affiliateTitle}</p>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {AFFILIATE_ITEMS.map((item) => (
           <a

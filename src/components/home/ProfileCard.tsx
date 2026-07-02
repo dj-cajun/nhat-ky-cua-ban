@@ -1,4 +1,5 @@
 import { useAtomValue } from 'jotai';
+import { vi } from '@/i18n/vi';
 import { displayUserAtom, viewModeAtom } from '@/stores/atoms';
 
 function DetectiveSilhouette() {
@@ -7,7 +8,7 @@ function DetectiveSilhouette() {
       className="diary-border flex h-14 w-14 items-center justify-center rounded-md bg-slate-200"
       aria-hidden
     >
-      <span className="text-2xl grayscale" title="탐정 실루엣">
+      <span className="text-2xl grayscale" title={vi.home.detective}>
         🕵️
       </span>
     </div>

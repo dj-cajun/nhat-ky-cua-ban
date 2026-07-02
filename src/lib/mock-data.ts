@@ -1,4 +1,5 @@
 import type { CalendarEntry, FeedPost, UserProfile, Visitor } from '@/types';
+import { DEFAULT_STATUS_MESSAGE } from '@/config/app-content';
 
 export const mockCurrentUser: UserProfile = {
   id: 'user-1',
@@ -6,7 +7,7 @@ export const mockCurrentUser: UserProfile = {
   surname: 'Nguyễn',
   schoolName: 'Marie Curie',
   className: 'Lớp 11A',
-  statusMessage: '오늘 나랑 눈 마주치고 웃은 애...',
+  statusMessage: DEFAULT_STATUS_MESSAGE,
   dotoriBalance: 5,
   visitCountToday: 24,
   visitCountTotal: 1204,
@@ -18,7 +19,7 @@ export const mockStrangerUser: UserProfile = {
   surname: 'Trần',
   schoolName: 'Marie Curie',
   className: 'Lớp 11A',
-  statusMessage: '방과후 스쿠터 타고 감',
+  statusMessage: 'Tan học chạy xe về',
   dotoriBalance: 3,
   visitCountToday: 12,
   visitCountTotal: 456,
@@ -30,8 +31,8 @@ export const mockVisitors: Visitor[] = [
 ];
 
 export const mockCalendarEntries: CalendarEntry[] = [
-  { date: '2026-07-01', content: '걔랑눈맞춤' },
-  { date: '2026-07-02', content: '오늘개빡침' },
+  { date: '2026-07-01', content: 'Nhìnnhau' },
+  { date: '2026-07-02', content: 'Bựcmình' },
 ];
 
 export const mockPosts: Record<string, FeedPost[]> = {
@@ -40,7 +41,7 @@ export const mockPosts: Record<string, FeedPost[]> = {
       id: 'd1',
       authorId: 'user-1',
       boardType: 'diary',
-      content: '수학시험 망함 ㅠㅠ',
+      content: 'Thitrượt huhu',
       hasPhoto: false,
       hasVideo: false,
       hasLink: false,
@@ -53,7 +54,7 @@ export const mockPosts: Record<string, FeedPost[]> = {
       authorId: 'user-3',
       boardType: 'school',
       content:
-        '오늘 2층 매점 뒤에서 담배 피우다 교장 선생님이랑 마주친 새끼 누구냐 진짜 개웃기네',
+        'Hôm nay ai hút thuốc sau căng tin tầng 2 gặp thầy hiệu trưởng vậy =)))',
       hasPhoto: true,
       hasVideo: false,
       hasLink: true,
@@ -63,7 +64,7 @@ export const mockPosts: Record<string, FeedPost[]> = {
       id: 's2',
       authorId: 'user-2',
       boardType: 'school',
-      content: '내일 체육대회 준비 다 했나?',
+      content: 'Ngày mai hội thao sẵn sàng chưa?',
       hasPhoto: false,
       hasVideo: true,
       hasLink: false,
@@ -75,7 +76,7 @@ export const mockPosts: Record<string, FeedPost[]> = {
       id: 'v1',
       authorId: 'user-1',
       boardType: 'vote',
-      content: '오늘 투표: 가장 인싸인 사람은?',
+      content: 'Bỏ phiếu hôm nay: Ai nổi bật nhất?',
       hasPhoto: false,
       hasVideo: false,
       hasLink: false,
@@ -87,7 +88,7 @@ export const mockPosts: Record<string, FeedPost[]> = {
       id: 'g1',
       authorId: 'user-4',
       boardType: 'guestbook',
-      content: '다이어리 잘 꾸몄네 ㅋㅋ',
+      content: 'Nhật ký đẹp quá kk',
       hasPhoto: false,
       hasVideo: false,
       hasLink: false,

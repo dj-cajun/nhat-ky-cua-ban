@@ -1,9 +1,8 @@
 /**
- * Profanity Shield Engine — 3단계 정규화 후 블랙리스트 비교
- * 1. Spacing/Dot 제거
- * 2. 베트남어 성조 기호 제거
- * 3. Leet Decode (0→o, 1→i 등)
+ * Profanity Shield Engine
  */
+
+import { vi } from '@/i18n/vi';
 
 const VIETNAMESE_TONE_MAP: Record<string, string> = {
   à: 'a',
@@ -229,7 +228,7 @@ export function assertCleanText(
 ): { ok: true } | { ok: false; message: string } {
   const result = checkProfanity(text, blacklist);
   if (result.blocked) {
-    return { ok: false, message: '부적절한 표현이 포함되어 있습니다.' };
+    return { ok: false, message: vi.profanity.blocked };
   }
   return { ok: true };
 }

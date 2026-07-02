@@ -1,3 +1,5 @@
+import { REALTIME_MESSAGES } from '@/config/app-content';
+
 type RealtimeEvent =
   | { type: 'member_joined'; message: string }
   | { type: 'new_post'; message: string; boardType?: string }
@@ -16,13 +18,12 @@ export function emitRealtime(event: RealtimeEvent): void {
   listeners.forEach((l) => l(event));
 }
 
-/** Supabase Realtime 연동 (env 설정 시) */
+/** Supabase Realtime (khi có env) */
 export function initSupabaseRealtime(classId: string): (() => void) | null {
   const url = import.meta.env.VITE_SUPABASE_URL;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
 
-  // 비동기 초기화 — 실패해도 로컬 이벤트 버스로 동작
   void (async () => {
     try {
       const { getSupabase } = await import('@/lib/supabase');
@@ -35,14 +36,14 @@ export function initSupabaseRealtime(classId: string): (() => void) | null {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'posts', filter: `class_id=eq.${classId}` },
           () => {
-            emitRealtime({ type: 'new_post', message: '학교게시판에 새로운 글이 올라왔습니다.' });
+            emitRealtime({ type: 'new_post', message: REALTIME_MESSAGES.newSchoolPost });
           },
         )
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'profiles', filter: `class_id=eq.${classId}` },
           () => {
-            emitRealtime({ type: 'member_joined', message: '같은반 친구가 들어왔습니다.' });
+            emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
           },
         )
         .subscribe();
@@ -51,19 +52,19 @@ export function initSupabaseRealtime(classId: string): (() => void) | null {
         void supabase.removeChannel(channel);
       };
     } catch {
-      // 로컬 모드 유지
+      // local mode
     }
   })();
 
   return null;
 }
 
-/** 데모용 이벤트 시뮬레이션 */
+/** Demo realtime events */
 export function simulateRealtimeDemo(): void {
   setTimeout(() => {
-    emitRealtime({ type: 'member_joined', message: '같은반 친구가 들어왔습니다.' });
+    emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
   }, 4000);
   setTimeout(() => {
-    emitRealtime({ type: 'new_post', message: '학교게시판에 새로운 글이 올라왔습니다.' });
+    emitRealtime({ type: 'new_post', message: REALTIME_MESSAGES.newSchoolPost });
   }, 8000);
 }

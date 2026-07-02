@@ -8,6 +8,7 @@ import {
   DEFAULT_HINT,
 } from '@/config/app-content';
 import { db } from '@/lib/db';
+import { isOnboarded, markOnboarded } from '@/lib/session';
 import { emitRealtime } from '@/lib/realtime';
 import { REALTIME_MESSAGES } from '@/config/app-content';
 
@@ -16,7 +17,7 @@ export function isDemoMode(): boolean {
 }
 
 export function initDemoSession(): boolean {
-  if (localStorage.getItem('onboarding_complete') === 'true') {
+  if (isOnboarded()) {
     return false;
   }
 
@@ -28,7 +29,7 @@ export function initDemoSession(): boolean {
     DEFAULT_HINT,
   );
 
-  localStorage.setItem('onboarding_complete', 'true');
+  markOnboarded();
   emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
   return true;
 }

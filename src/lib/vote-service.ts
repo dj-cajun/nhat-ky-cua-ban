@@ -1,6 +1,7 @@
 import type { HintShield } from '@/types';
 import { getClassmates } from '@/lib/local-db';
 import { VOTE_QUESTIONS } from '@/lib/seed-data';
+import { vi } from '@/i18n/vi';
 
 export interface VoteQuestion {
   index: number;
@@ -20,10 +21,10 @@ export function generateVoteQuestions(): VoteQuestion[] {
 }
 
 export const HINT_SHIELD_OPTIONS: { value: HintShield; label: string }[] = [
-  { value: 'surname', label: '성씨 (Họ)' },
-  { value: 'height', label: '키 범위' },
-  { value: 'gender', label: '성별' },
-  { value: 'commute', label: '등교 수단' },
+  { value: 'surname', label: vi.hintShield.surname },
+  { value: 'height', label: vi.hintShield.height },
+  { value: 'gender', label: vi.hintShield.gender },
+  { value: 'commute', label: vi.hintShield.commute },
 ];
 
 /** 베트남 시간 17:00~17:59 여부 */

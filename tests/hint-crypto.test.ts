@@ -31,6 +31,6 @@ describe('hint-crypto', () => {
   it('formats hint shield labels', () => {
     expect(formatHintShield('surname', sampleHint, 'Nguyễn')).toBe('Họ: Nguyễn');
     expect(formatHintShield('height', sampleHint, 'Nguyễn')).toContain('170');
-    expect(formatHintShield('commute', sampleHint, 'Nguyễn')).toContain('오토바이');
+    expect(formatHintShield('commute', sampleHint, 'Nguyễn')).toContain('Xe máy');
   });
 });
