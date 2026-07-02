@@ -184,6 +184,42 @@ body {
     user-select: none;
   }
 
+  .cy-pinterest-grid {
+    column-count: 2;
+    column-gap: 0.5rem;
+  }
+
+  .cy-pinterest-pin {
+    @apply mb-2 inline-block w-full break-inside-avoid overflow-hidden rounded-lg border-[2.5px] border-black bg-white;
+    box-shadow: 3px 3px 0 0 #000;
+  }
+
+  .cy-pinterest-pin-image {
+    @apply relative w-full overflow-hidden bg-black;
+  }
+
+  .cy-pinterest-pin-image img {
+    @apply h-full w-full object-cover object-center;
+    filter: grayscale(100%) contrast(1.12);
+  }
+
+  .cy-pinterest-pin-caption {
+    @apply truncate px-2 py-1.5 text-center text-[10px] font-bold text-zinc-700;
+  }
+
+  .cy-pinterest-pin-add .cy-pinterest-pin-image {
+    background-color: rgb(255 182 217 / 0.25);
+  }
+
+  .cy-pinterest-pin-add .cy-pinterest-pin-image span {
+    @apply font-bold text-zinc-600;
+  }
+
+  .cy-pinterest-pin:active:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 0 #000;
+  }
+
   .cy-photo-card {
     @apply relative h-full w-full overflow-hidden rounded-2xl border-[2.5px] border-black bg-white;
     box-shadow: 6px 6px 0 0 #000;
