@@ -53,7 +53,11 @@ function NavBtn({
       type="button"
       aria-label={label}
       disabled={disabled}
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      onTouchEnd={(e) => e.stopPropagation()}
       className="cy-board-nav-btn"
     >
       {label}
@@ -78,7 +82,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
   const touchStart = useRef({ x: 0, y: 0 });
 
-  const posts = allPosts[activeBoard] ?? [];
+  const posts = Array.isArray(allPosts?.[activeBoard]) ? allPosts[activeBoard] : [];
   const postCount = posts.length;
   const safeIndex = postCount > 0 ? cardIndex % postCount : 0;
   const currentPost = postCount > 0 ? posts[safeIndex] : null;
@@ -145,9 +149,9 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
   return (
     <>
       <section
-        className={`cy-board min-h-0 flex-1 touch-pan-y ${voteLock ? 'pointer-events-none opacity-90' : ''}`}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        className={`cy-board min-h-0 flex-1 touch-pan-y ${voteLock ? 'opacity-90' : ''}`}
+        onTouchStart={voteLock ? undefined : handleTouchStart}
+        onTouchEnd={voteLock ? undefined : handleTouchEnd}
       >
         <div className="cy-board-header">
           <span>[ {BOARD_LABELS[activeBoard]} ]</span>
@@ -188,18 +192,25 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
           )}
         </div>
 
-        <div className="cy-board-footer">
-          <div className="flex items-center gap-1.5 text-zinc-500">
+        <div className="cy-board-footer gap-1">
+          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
             <NavBtn label="▲" onClick={goPrevCard} disabled={voteLock || postCount === 0} />
             <NavBtn label="▼" onClick={goNextCard} disabled={voteLock || postCount === 0} />
-            <span className="px-0.5 text-[10px]">{vi.home.navCard}</span>
-            <span className="text-zinc-300">·</span>
+            <span className="shrink-0 px-0.5 text-[10px]">{vi.home.navCard}</span>
+            <span className="shrink-0 text-zinc-300">·</span>
             <NavBtn label="◀" onClick={goPrevBoard} disabled={voteLock} />
             <NavBtn label="▶" onClick={goNextBoard} disabled={voteLock} />
-            <span className="px-0.5 text-[10px]">{vi.home.navBoard}</span>
+            <span className="shrink-0 px-0.5 text-[10px]">{vi.home.navBoard}</span>
           </div>
           {canWrite && onWrite && (
-            <button type="button" onClick={onWrite} className="cy-write-btn">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onWrite();
+              }}
+              className="cy-write-btn shrink-0"
+            >
               {vi.home.write}
             </button>
           )}
