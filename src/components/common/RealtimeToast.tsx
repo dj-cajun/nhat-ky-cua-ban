@@ -1,48 +1,7 @@
-import { useEffect, useState } from 'react';
-
-interface ToastMessage {
-  id: number;
-  text: string;
-}
-
-let toastId = 0;
+import { useRealtimeToasts } from '@/hooks/useRealtime';
 
 export function RealtimeToast() {
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
-  useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    // 데모: 3초 후 가입 알림, 6초 후 새 글 알림
-    timers.push(
-      setTimeout(() => {
-        const id = ++toastId;
-        setToasts((prev) => [...prev, { id, text: '같은반 친구가 들어왔습니다.' }]);
-        timers.push(
-          setTimeout(() => {
-            setToasts((prev) => prev.filter((t) => t.id !== id));
-          }, 4000),
-        );
-      }, 3000),
-    );
-
-    timers.push(
-      setTimeout(() => {
-        const id = ++toastId;
-        setToasts((prev) => [
-          ...prev,
-          { id, text: '학교게시판에 새로운 글이 올라왔습니다.' },
-        ]);
-        timers.push(
-          setTimeout(() => {
-            setToasts((prev) => prev.filter((t) => t.id !== id));
-          }, 4000),
-        );
-      }, 6000),
-    );
-
-    return () => timers.forEach(clearTimeout);
-  }, []);
+  const toasts = useRealtimeToasts();
 
   if (toasts.length === 0) return null;
 
@@ -51,9 +10,14 @@ export function RealtimeToast() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="diary-border pointer-events-auto w-full max-w-md rounded-lg bg-white px-4 py-3 text-center text-sm font-medium shadow-md"
+          className={`diary-border pointer-events-auto w-full max-w-md rounded-lg px-4 py-3 text-center text-sm font-medium shadow-md ${
+            toast.type === 'vote' ? 'bg-amber-100' : 'bg-white'
+          }`}
         >
           {toast.text}
+          {toast.hint && (
+            <p className="mt-1 text-xs text-slate-600">힌트: {toast.hint}</p>
+          )}
         </div>
       ))}
     </div>

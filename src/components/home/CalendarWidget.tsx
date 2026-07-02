@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { assertCleanText } from '@/lib/profanity-shield';
-import { mockCalendarEntries } from '@/lib/mock-data';
+import { db } from '@/lib/db';
 import { MAX_DIARY_CHARS } from '@/types';
 
 const today = new Date();
@@ -16,7 +16,7 @@ function getFirstDayOfWeek(y: number, m: number): number {
 }
 
 export function CalendarWidget() {
-  const [entries, setEntries] = useState(mockCalendarEntries);
+  const [entries, setEntries] = useState(db.getCalendar());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
@@ -40,13 +40,8 @@ export function CalendarWidget() {
     }
     if (!selectedDate) return;
 
-    setEntries((prev) => {
-      const filtered = prev.filter((e) => e.date !== selectedDate);
-      if (draft.trim()) {
-        return [...filtered, { date: selectedDate, content: draft.trim() }];
-      }
-      return filtered;
-    });
+    db.saveCalendar(selectedDate, draft);
+    setEntries(db.getCalendar());
     setSelectedDate(null);
     setDraft('');
   };
@@ -66,8 +61,8 @@ export function CalendarWidget() {
           </span>
         </div>
         <div className="grid flex-1 grid-cols-7 gap-0.5 text-[10px]">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
-            <div key={d} className="text-center text-slate-500">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <div key={`${d}-${i}`} className="text-center text-slate-500">
               {d}
             </div>
           ))}

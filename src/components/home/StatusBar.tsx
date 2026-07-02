@@ -1,8 +1,9 @@
-import { useAtomValue } from 'jotai';
-import { displayUserAtom } from '@/stores/atoms';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { displayUserAtom, appPageAtom } from '@/stores/atoms';
 
 export function StatusBar() {
   const user = useAtomValue(displayUserAtom);
+  const setPage = useSetAtom(appPageAtom);
 
   return (
     <header className="diary-border flex shrink-0 items-center justify-between rounded-lg px-3 py-2 text-xs font-medium">
@@ -17,6 +18,7 @@ export function StatusBar() {
       </div>
       <button
         type="button"
+        onClick={() => setPage('dotori')}
         className="diary-border flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5"
         aria-label="도토리 충전소"
       >

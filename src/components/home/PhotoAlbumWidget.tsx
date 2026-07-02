@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { assertCleanText } from '@/lib/profanity-shield';
+import { db } from '@/lib/db';
 import { MAX_CAPTION_CHARS } from '@/types';
 
 export function PhotoAlbumWidget() {
-  const [caption, setCaption] = useState('우리단짝단짝');
+  const album = db.getPhoto();
+  const [caption, setCaption] = useState(album.caption);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(caption);
   const [error, setError] = useState('');
@@ -14,6 +16,7 @@ export function PhotoAlbumWidget() {
       setError(check.message);
       return;
     }
+    db.saveCaption(draft.trim());
     setCaption(draft.trim());
     setIsEditing(false);
     setError('');

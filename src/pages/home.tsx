@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { StatusBar } from '@/components/home/StatusBar';
 import { ProfileCard } from '@/components/home/ProfileCard';
@@ -6,11 +7,21 @@ import { CalendarWidget } from '@/components/home/CalendarWidget';
 import { PhotoAlbumWidget } from '@/components/home/PhotoAlbumWidget';
 import { SwipeCardStack } from '@/components/home/SwipeCardStack';
 import { RealtimeToast } from '@/components/common/RealtimeToast';
-import { viewModeAtom } from '@/stores/atoms';
+import { VoteLockOverlay } from '@/components/vote/VoteLockOverlay';
+import { PostComposer } from '@/components/feed/PostComposer';
+import { useVoteScheduler, useVoteNotifications } from '@/hooks/useVoteScheduler';
+import { viewModeAtom, showVoteOverlayAtom } from '@/stores/atoms';
 
 export function HomePage() {
   const viewMode = useAtomValue(viewModeAtom);
+  const showVote = useAtomValue(showVoteOverlayAtom);
   const setViewMode = useSetAtom(viewModeAtom);
+  const [showComposer, setShowComposer] = useState(false);
+
+  useVoteScheduler();
+  useVoteNotifications();
+
+  const canWrite = viewMode === 'my' || viewMode === 'stranger';
 
   return (
     <div className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-[#faf9f6] p-2">
@@ -36,6 +47,19 @@ export function HomePage() {
         </div>
         <SwipeCardStack />
       </div>
+
+      {canWrite && (
+        <button
+          type="button"
+          onClick={() => setShowComposer(true)}
+          className="diary-border fixed bottom-4 right-4 z-30 rounded-full bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow-lg"
+        >
+          {viewMode === 'my' ? '🤫 비밀 카드' : '✍️ 방명록'}
+        </button>
+      )}
+
+      {showComposer && <PostComposer onClose={() => setShowComposer(false)} />}
+      {showVote && <VoteLockOverlay />}
     </div>
   );
 }

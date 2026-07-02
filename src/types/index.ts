@@ -10,6 +10,7 @@ export interface UserProfile {
   surname: string;
   schoolName: string;
   className: string;
+  classId?: string;
   avatarUrl?: string;
   statusMessage: string;
   dotoriBalance: number;
@@ -36,6 +37,7 @@ export interface FeedPost {
   hasVideo: boolean;
   hasLink: boolean;
   createdAt: string;
+  targetUserId?: string;
 }
 
 export interface Visitor {

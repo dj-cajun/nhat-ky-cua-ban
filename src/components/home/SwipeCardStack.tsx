@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { BoardType, FeedPost } from '@/types';
 import { BOARD_LABELS } from '@/types';
-import { mockPosts, mockStrangerUser } from '@/lib/mock-data';
+import { db } from '@/lib/db';
 import { showInterstitialAd } from '@/lib/zalo-ads';
 import {
   activeBoardAtom,
@@ -10,6 +10,8 @@ import {
   strangerUserAtom,
   viewModeAtom,
   voteLockAtom,
+  postsAtom,
+  strangerHostIdAtom,
 } from '@/stores/atoms';
 import { FeedDetailModal } from '@/components/feed/FeedDetailModal';
 
@@ -39,14 +41,16 @@ function MediaIcons({ post }: { post: FeedPost }) {
 export function SwipeCardStack() {
   const [activeBoard, setActiveBoard] = useAtom(activeBoardAtom);
   const [cardIndex, setCardIndex] = useAtom(cardIndexAtom);
+  const allPosts = useAtomValue(postsAtom);
   const voteLock = useAtomValue(voteLockAtom);
   const setViewMode = useSetAtom(viewModeAtom);
   const setStrangerUser = useSetAtom(strangerUserAtom);
+  const setHostId = useSetAtom(strangerHostIdAtom);
 
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
   const touchStart = useRef({ x: 0, y: 0 });
 
-  const posts = mockPosts[activeBoard] ?? [];
+  const posts = allPosts[activeBoard] ?? [];
   const currentPost = posts[cardIndex % Math.max(posts.length, 1)];
   const boardIndex = BOARD_ORDER.indexOf(activeBoard);
 
@@ -65,7 +69,6 @@ export function SwipeCardStack() {
     const threshold = 50;
 
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
-      // 가로 스와이프: 게시판 전환
       const nextIndex =
         dx > 0
           ? (boardIndex - 1 + BOARD_ORDER.length) % BOARD_ORDER.length
@@ -73,7 +76,6 @@ export function SwipeCardStack() {
       setActiveBoard(BOARD_ORDER[nextIndex]);
       setCardIndex(0);
     } else if (Math.abs(dy) > threshold) {
-      // 세로 스와이프: 카드 넘김
       if (dy < 0) {
         setCardIndex((i) => i + 1);
       } else {
@@ -84,8 +86,12 @@ export function SwipeCardStack() {
 
   const handleAuthorWarp = async (post: FeedPost) => {
     if (voteLock) return;
+    const classmate = db.getClassmateById(post.authorId);
+    if (!classmate) return;
+
     await showInterstitialAd();
-    setStrangerUser({ ...mockStrangerUser, id: post.authorId });
+    setStrangerUser(classmate);
+    setHostId(post.authorId);
     setViewMode('stranger');
   };
 
@@ -100,21 +106,21 @@ export function SwipeCardStack() {
   return (
     <>
       <section
-        className={`diary-panel flex min-h-0 flex-1 flex-col p-3 ${voteLock ? 'opacity-90' : ''}`}
+        className={`diary-panel flex min-h-0 flex-1 flex-col p-3 ${voteLock ? 'pointer-events-none opacity-90' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
         <div className="mb-2 flex items-center justify-between text-xs">
           <span className="font-bold">📖 [ {BOARD_LABELS[activeBoard]} ]</span>
-          <span className="text-slate-500">
-            ◀ 스와이프 ▶ {voteLock && '🔒 LOCK'}
-          </span>
+          <span className="text-slate-500">◀ 스와이프 ▶ {voteLock && '🔒 LOCK'}</span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setSelectedPost(currentPost)}
-          className="diary-border flex min-h-0 flex-1 flex-col rounded-lg bg-white p-3 text-left"
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => !voteLock && setSelectedPost(currentPost)}
+          onKeyDown={(e) => e.key === 'Enter' && !voteLock && setSelectedPost(currentPost)}
+          className="diary-border flex min-h-0 flex-1 cursor-pointer flex-col rounded-lg bg-white p-3 text-left"
         >
           <button
             type="button"
@@ -130,11 +136,9 @@ export function SwipeCardStack() {
             {truncateContent(currentPost.content)}
             <MediaIcons post={currentPost} />
           </p>
-        </button>
+        </div>
 
-        <p className="mt-2 text-center text-[10px] text-slate-400">
-          ▲▼ 카드 · ◀▶ 게시판
-        </p>
+        <p className="mt-2 text-center text-[10px] text-slate-400">▲▼ 카드 · ◀▶ 게시판</p>
       </section>
 
       {selectedPost && (

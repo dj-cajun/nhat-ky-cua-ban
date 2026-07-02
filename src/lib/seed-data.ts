@@ -1,0 +1,152 @@
+import type { BoardType, FeedPost, UserProfile, Visitor } from '@/types';
+
+export const CLASSMATES: UserProfile[] = [
+  {
+    id: 'cm-1',
+    realName: 'Trần Văn Bình',
+    surname: 'Trần',
+    schoolName: 'Marie Curie',
+    className: 'Lớp 11A',
+    statusMessage: '방과후 스쿠터 타고 감',
+    dotoriBalance: 3,
+    visitCountToday: 12,
+    visitCountTotal: 456,
+  },
+  {
+    id: 'cm-2',
+    realName: 'Lê Thị Hương',
+    surname: 'Lê',
+    schoolName: 'Marie Curie',
+    className: 'Lớp 11A',
+    statusMessage: '수학 숙제 다 했나',
+    dotoriBalance: 7,
+    visitCountToday: 8,
+    visitCountTotal: 890,
+  },
+  {
+    id: 'cm-3',
+    realName: 'Phạm Quốc Huy',
+    surname: 'Phạm',
+    schoolName: 'Marie Curie',
+    className: 'Lớp 11A',
+    statusMessage: '체육대회 우승각',
+    dotoriBalance: 4,
+    visitCountToday: 15,
+    visitCountTotal: 678,
+  },
+  {
+    id: 'cm-4',
+    realName: 'Hoàng Minh Tú',
+    surname: 'Hoàng',
+    schoolName: 'Marie Curie',
+    className: 'Lớp 11A',
+    statusMessage: '밀크티 사줘',
+    dotoriBalance: 2,
+    visitCountToday: 6,
+    visitCountTotal: 234,
+  },
+  {
+    id: 'cm-5',
+    realName: 'Đặng Thu Hà',
+    surname: 'Đặng',
+    schoolName: 'Marie Curie',
+    className: 'Lớp 11A',
+    statusMessage: 'K-pop 최고',
+    dotoriBalance: 9,
+    visitCountToday: 20,
+    visitCountTotal: 1500,
+  },
+  {
+    id: 'cm-6',
+    realName: 'Võ Thanh Như',
+    surname: 'Võ',
+    schoolName: 'Marie Curie',
+    className: 'Lớp 11A',
+    statusMessage: '시험 망함',
+    dotoriBalance: 1,
+    visitCountToday: 3,
+    visitCountTotal: 120,
+  },
+];
+
+export const DEFAULT_VISITORS: Visitor[] = [
+  { id: 'cm-1', surname: 'Nguyễn', visitedAt: new Date().toISOString() },
+  { id: 'cm-2', surname: 'Trần', visitedAt: new Date().toISOString() },
+];
+
+export const DEFAULT_POSTS: Record<BoardType, FeedPost[]> = {
+  diary: [
+    {
+      id: 'd1',
+      authorId: 'user-zalo-mock-001',
+      boardType: 'diary',
+      content: '수학시험 망함 ㅠㅠ',
+      hasPhoto: false,
+      hasVideo: false,
+      hasLink: false,
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  school: [
+    {
+      id: 's1',
+      authorId: 'cm-3',
+      boardType: 'school',
+      content:
+        '오늘 2층 매점 뒤에서 담배 피우다 교장 선생님이랑 마주친 새끼 누구냐 진짜 개웃기네',
+      hasPhoto: true,
+      hasVideo: false,
+      hasLink: true,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 's2',
+      authorId: 'cm-2',
+      boardType: 'school',
+      content: '내일 체육대회 준비 다 했나?',
+      hasPhoto: false,
+      hasVideo: true,
+      hasLink: false,
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  vote: [
+    {
+      id: 'v1',
+      authorId: 'cm-1',
+      boardType: 'vote',
+      content: '오늘 투표: 가장 인싸인 사람은?',
+      hasPhoto: false,
+      hasVideo: false,
+      hasLink: false,
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  guestbook: [
+    {
+      id: 'g1',
+      authorId: 'cm-4',
+      boardType: 'guestbook',
+      content: '다이어리 잘 꾸몄네 ㅋㅋ',
+      hasPhoto: false,
+      hasVideo: false,
+      hasLink: false,
+      createdAt: new Date().toISOString(),
+    },
+  ],
+};
+
+export const VOTE_QUESTIONS = [
+  '우리 반에서 가장 인싸인 사람은?',
+  '가장 조용한 사람은?',
+  '연애 상대로 가장 괜찮은 사람은?',
+  '가장 웃긴 사람은?',
+  '시험을 가장 잘 보는 사람은?',
+  '운동을 가장 잘하는 사람은?',
+  '노래를 가장 잘하는 사람은?',
+  '패션 센스가 가장 좋은 사람은?',
+  '가장 친절한 사람은?',
+  '비밀을 가장 잘 지키는 사람은?',
+  '매점에서 가장 자주 보이는 사람은?',
+  '졸업 후 가장 성공할 사람은?',
+];

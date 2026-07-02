@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSetAtom } from 'jotai';
 import type { HintData } from '@/types';
+import { getZaloUser } from '@/lib/zalo-auth';
+import { db } from '@/lib/db';
+import { emitRealtime } from '@/lib/realtime';
+import { currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
 interface OnboardingPageProps {
   onComplete: () => void;
@@ -9,7 +14,12 @@ const SCHOOLS = ['Marie Curie', 'Lê Hồng Phong', 'Nguyễn Thị Minh Khai'];
 const CLASSES = ['Lớp 10A', 'Lớp 10B', 'Lớp 11A', 'Lớp 11B', 'Lớp 12A'];
 
 export function OnboardingPage({ onComplete }: OnboardingPageProps) {
+  const setUser = useSetAtom(currentUserAtom);
+  const setPosts = useSetAtom(postsAtom);
+  const setVisitors = useSetAtom(visitorsAtom);
+
   const [step, setStep] = useState(0);
+  const [zaloName, setZaloName] = useState('');
   const [school, setSchool] = useState('');
   const [className, setClassName] = useState('');
   const [hint, setHint] = useState<HintData>({
@@ -18,14 +28,45 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
     mbtiPrefix: 'E',
     commute: 'motorbike',
   });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    void getZaloUser().then((user) => {
+      setZaloName(user.name);
+      setLoading(false);
+    });
+  }, []);
 
   const canProceed =
     step === 0 ? Boolean(school && className) : step === 1 ? true : false;
 
+  const finish = () => {
+    void getZaloUser().then((zalo) => {
+      const profile = db.initProfile(zalo.id, zaloName || zalo.name, school, className, hint);
+      setUser(profile);
+      setPosts(db.getPosts());
+      setVisitors(db.getVisitors());
+      localStorage.setItem('onboarding_complete', 'true');
+      emitRealtime({ type: 'member_joined', message: '같은반 친구가 들어왔습니다.' });
+      onComplete();
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#faf9f6]">
+        <p className="text-sm">Zalo 프로필 연동 중...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-[#faf9f6] p-4">
       <h1 className="mb-1 text-xl font-bold">Nhật ký của bạn</h1>
-      <p className="mb-6 text-sm text-slate-600">너의 다이어리 — Zalo 간편 가입</p>
+      <p className="mb-2 text-sm text-slate-600">너의 다이어리 — Zalo 간편 가입</p>
+      <p data-testid="zalo-profile" className="diary-border mb-4 rounded-lg bg-white px-3 py-2 text-sm">
+        👤 {zaloName || '연동 중...'}
+      </p>
 
       {step === 0 && (
         <section className="diary-panel flex-1 p-4">
@@ -60,8 +101,9 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
       )}
 
       {step === 1 && (
-        <section className="diary-panel flex-1 space-y-4 p-4">
+        <section className="diary-panel flex-1 space-y-4 overflow-y-auto p-4">
           <h2 className="text-sm font-bold">힌트 데이터 (투표 실드용)</h2>
+          <p className="text-xs text-slate-500">암호화되어 저장됩니다</p>
           <div>
             <label className="mb-1 block text-xs">성별</label>
             <select
@@ -135,8 +177,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
             if (step < 1) {
               setStep(1);
             } else {
-              localStorage.setItem('onboarding_complete', 'true');
-              onComplete();
+              finish();
             }
           }}
           className="diary-border flex-1 rounded-lg bg-slate-800 py-3 text-sm text-white disabled:opacity-40"

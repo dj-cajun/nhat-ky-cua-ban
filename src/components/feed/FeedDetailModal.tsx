@@ -1,8 +1,10 @@
+import { useState } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import type { FeedPost } from '@/types';
-import { useSetAtom } from 'jotai';
-import { mockStrangerUser } from '@/lib/mock-data';
+import { assertCleanText } from '@/lib/profanity-shield';
+import { db } from '@/lib/db';
 import { showInterstitialAd } from '@/lib/zalo-ads';
-import { strangerUserAtom, viewModeAtom } from '@/stores/atoms';
+import { strangerUserAtom, viewModeAtom, strangerHostIdAtom, currentUserAtom } from '@/stores/atoms';
 
 interface FeedDetailModalProps {
   post: FeedPost;
@@ -12,12 +14,34 @@ interface FeedDetailModalProps {
 export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
   const setViewMode = useSetAtom(viewModeAtom);
   const setStrangerUser = useSetAtom(strangerUserAtom);
+  const setHostId = useSetAtom(strangerHostIdAtom);
+  const currentUser = useAtomValue(currentUserAtom);
+
+  const [comments, setComments] = useState(() => db.getComments(post.id));
+  const [draft, setDraft] = useState('');
+  const [error, setError] = useState('');
 
   const handleWarp = async () => {
+    const classmate = db.getClassmateById(post.authorId);
+    if (!classmate) return;
     await showInterstitialAd();
-    setStrangerUser({ ...mockStrangerUser, id: post.authorId });
+    setStrangerUser(classmate);
+    setHostId(post.authorId);
     setViewMode('stranger');
     onClose();
+  };
+
+  const handleComment = () => {
+    const check = assertCleanText(draft);
+    if (!check.ok) {
+      setError(check.message);
+      return;
+    }
+    if (!draft.trim()) return;
+    db.addComment(post.id, currentUser.id, draft.trim());
+    setComments(db.getComments(post.id));
+    setDraft('');
+    setError('');
   };
 
   return (
@@ -31,11 +55,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <button
-          type="button"
-          onClick={() => void handleWarp()}
-          className="mb-3 text-sm font-bold underline"
-        >
+        <button type="button" onClick={() => void handleWarp()} className="mb-3 text-sm font-bold underline">
           🤫 익명 / Ẩn danh
         </button>
 
@@ -51,18 +71,33 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
         <section className="diary-panel p-3">
           <h4 className="mb-2 text-sm font-bold">댓글</h4>
           <div className="mb-3 space-y-2">
-            <div className="text-xs">
-              <button type="button" className="font-bold underline">
-                🤫 익명
-              </button>
-              <span className="ml-2">ㅋㅋㅋ 진짜냐</span>
-            </div>
+            {comments.length === 0 && (
+              <p className="text-xs text-slate-400">아직 댓글이 없습니다</p>
+            )}
+            {comments.map((c) => (
+              <div key={c.id} className="text-xs">
+                <span className="font-bold">🤫 익명</span>
+                <span className="ml-2">{c.content}</span>
+              </div>
+            ))}
           </div>
-          <input
-            type="text"
-            placeholder="익명 댓글..."
-            className="diary-border w-full rounded px-3 py-2 text-sm"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="익명 댓글..."
+              className="diary-border flex-1 rounded px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleComment}
+              className="diary-border rounded bg-slate-800 px-3 text-sm text-white"
+            >
+              등록
+            </button>
+          </div>
+          {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         </section>
       </div>
     </div>
