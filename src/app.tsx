@@ -6,8 +6,10 @@ import { OnboardingPage } from '@/pages/onboarding';
 import { DotoriPage } from '@/pages/dotori';
 import { BoardPage } from '@/pages/board';
 import { AlbumPage } from '@/pages/album';
+import { FoundingPage } from '@/pages/founding';
 import { db } from '@/lib/db';
 import { initDemoSession, isDemoMode } from '@/lib/demo-init';
+import { parseFoundingUrl } from '@/lib/founding-params';
 import { isZaloLoggedIn } from '@/lib/zalo-auth';
 import { handleDevReset, isOnboarded } from '@/lib/session';
 import { vi } from '@/i18n/vi';
@@ -28,6 +30,7 @@ function AppContent() {
   const setPosts = useSetAtom(postsAtom);
   const setVisitors = useSetAtom(visitorsAtom);
   const [stage, setStage] = useState<AppStage>('boot');
+  const [foundingJoinToken, setFoundingJoinToken] = useState<string | null>(null);
 
   const hydrateApp = useCallback(() => {
     const profile = db.getProfile();
@@ -39,6 +42,14 @@ function AppContent() {
   }, [setUser, setPosts, setVisitors]);
 
   useEffect(() => {
+    const foundingIntent = parseFoundingUrl();
+    if (foundingIntent.joinToken) {
+      setFoundingJoinToken(foundingIntent.joinToken);
+      setPage('founding');
+    } else if (foundingIntent.demo) {
+      setPage('founding');
+    }
+
     if (handleDevReset()) {
       setStage('login');
       return;
@@ -64,13 +75,29 @@ function AppContent() {
     if (next === 'app') {
       hydrateApp();
     }
-  }, [hydrateApp]);
+  }, [hydrateApp, setPage]);
 
   if (stage === 'boot') {
     return (
       <div className="flex h-screen items-center justify-center bg-[#faf9f6] text-sm text-slate-500">
         {vi.app.loading}
       </div>
+    );
+  }
+
+  if (page === 'founding') {
+    return (
+      <FoundingPage
+        initialJoinToken={foundingJoinToken}
+        onBack={() => {
+          setFoundingJoinToken(null);
+          setPage('home');
+        }}
+        onEnterHome={() => {
+          setFoundingJoinToken(null);
+          setPage('home');
+        }}
+      />
     );
   }
 

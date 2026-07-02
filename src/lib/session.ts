@@ -12,6 +12,7 @@ const APP_DATA_KEYS = [
   'diary_dotori_missions',
   'diary_comments',
   'diary_nominations',
+  'diary_class_foundings',
 ] as const;
 
 export function isOnboarded(): boolean {

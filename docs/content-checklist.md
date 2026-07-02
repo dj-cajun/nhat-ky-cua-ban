@@ -48,3 +48,5 @@
 | `/` | 데모 모드 시 바로 Marie Curie 11A 홈 |
 | `/?vote=demo` | 5시 투표 Lock |
 | `/?notify=demo` | 21시 지목 알림 |
+| `/?founding=demo` | 3인 개척단 데모 (학급 잠금 → Zalo 링크 → 퀴즈) |
+| `/?founding=join&token=...` | 개척단 초대 링크 (Zalo 단톡 공유용) |

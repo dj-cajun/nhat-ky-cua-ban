@@ -3,7 +3,7 @@ import type { BoardType, FeedPost, UserProfile, ViewMode, Visitor } from '@/type
 import { mockCurrentUser, mockStrangerUser } from '@/lib/mock-data';
 import { db } from '@/lib/db';
 
-export type AppPage = 'home' | 'dotori' | 'board' | 'album';
+export type AppPage = 'home' | 'dotori' | 'board' | 'album' | 'founding';
 
 export const appPageAtom = atom<AppPage>('home');
 export const viewModeAtom = atom<ViewMode>('my');
