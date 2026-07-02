@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSetAtom } from 'jotai';
 import { db } from '@/lib/db';
 import { showRewardedVideoAd } from '@/lib/zalo-ads';
+import { OFFERWALL_URLS, AFFILIATE_ITEMS } from '@/config/app-content';
 import { currentUserAtom } from '@/stores/atoms';
 
 interface DotoriPageProps {
@@ -35,13 +36,6 @@ const MISSIONS = [
   },
 ];
 
-const AFFILIATE_LINKS = [
-  { name: 'Shopee', url: 'https://shopee.vn', icon: '🛍️' },
-  { name: 'Lazada', url: 'https://lazada.vn', icon: '📦' },
-  { name: 'TikTok Shop', url: 'https://shop.tiktok.com', icon: '🎵' },
-  { name: 'Agoda', url: 'https://agoda.com', icon: '🏨' },
-];
-
 export function DotoriPage({ onBack }: DotoriPageProps) {
   const setUser = useSetAtom(currentUserAtom);
   const [missions, setMissions] = useState(db.getDotoriMissions());
@@ -61,12 +55,12 @@ export function DotoriPage({ onBack }: DotoriPageProps) {
         setMissions(db.getDotoriMissions());
       }
     } else if (id === 'shopee') {
-      window.open('https://shopee.vn', '_blank');
+      window.open(OFFERWALL_URLS.shopee, '_blank');
       const balance = db.completeMission('shopee');
       setUser((u) => ({ ...u, dotoriBalance: balance }));
       setMissions(db.getDotoriMissions());
     } else {
-      window.open('https://tiktok.com', '_blank');
+      window.open(OFFERWALL_URLS.tiktok, '_blank');
       const balance = db.completeMission('tiktok');
       setUser((u) => ({ ...u, dotoriBalance: balance }));
       setMissions(db.getDotoriMissions());
@@ -115,15 +109,15 @@ export function DotoriPage({ onBack }: DotoriPageProps) {
       <section className="mb-4 flex-1 overflow-y-auto">
         <h2 className="mb-2 text-xs font-bold text-slate-600">제휴 커머스</h2>
         <div className="grid grid-cols-2 gap-2">
-          {AFFILIATE_LINKS.map((link) => (
+          {AFFILIATE_ITEMS.map((link) => (
             <a
-              key={link.name}
+              key={link.id}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
               className="diary-panel flex flex-col items-center gap-1 p-3 text-center"
             >
-              <span className="text-2xl">{link.icon}</span>
+              <span className="text-2xl">{link.emoji}</span>
               <span className="text-xs font-bold">{link.name}</span>
             </a>
           ))}

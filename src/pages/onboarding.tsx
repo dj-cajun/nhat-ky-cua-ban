@@ -1,25 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSetAtom } from 'jotai';
 import type { HintData } from '@/types';
-import { getZaloUser } from '@/lib/zalo-auth';
+import { SCHOOLS, CLASSES } from '@/config/app-content';
+import { getLoggedInZaloUser } from '@/lib/zalo-auth';
 import { db } from '@/lib/db';
 import { emitRealtime } from '@/lib/realtime';
+import { REALTIME_MESSAGES } from '@/config/app-content';
 import { currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
 interface OnboardingPageProps {
   onComplete: () => void;
 }
 
-const SCHOOLS = ['Marie Curie', 'Lê Hồng Phong', 'Nguyễn Thị Minh Khai'];
-const CLASSES = ['Lớp 10A', 'Lớp 10B', 'Lớp 11A', 'Lớp 11B', 'Lớp 12A'];
-
 export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   const setUser = useSetAtom(currentUserAtom);
   const setPosts = useSetAtom(postsAtom);
   const setVisitors = useSetAtom(visitorsAtom);
+  const zaloUser = getLoggedInZaloUser();
 
   const [step, setStep] = useState(0);
-  const [zaloName, setZaloName] = useState('');
   const [school, setSchool] = useState('');
   const [className, setClassName] = useState('');
   const [hint, setHint] = useState<HintData>({
@@ -28,44 +27,33 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
     mbtiPrefix: 'E',
     commute: 'motorbike',
   });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    void getZaloUser().then((user) => {
-      setZaloName(user.name);
-      setLoading(false);
-    });
-  }, []);
 
   const canProceed =
     step === 0 ? Boolean(school && className) : step === 1 ? true : false;
 
   const finish = () => {
-    void getZaloUser().then((zalo) => {
-      const profile = db.initProfile(zalo.id, zaloName || zalo.name, school, className, hint);
-      setUser(profile);
-      setPosts(db.getPosts());
-      setVisitors(db.getVisitors());
-      localStorage.setItem('onboarding_complete', 'true');
-      emitRealtime({ type: 'member_joined', message: '같은반 친구가 들어왔습니다.' });
-      onComplete();
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#faf9f6]">
-        <p className="text-sm">Zalo 프로필 연동 중...</p>
-      </div>
+    const profile = db.initProfile(
+      zaloUser.id,
+      zaloUser.name,
+      school,
+      className,
+      hint,
     );
-  }
+    setUser(profile);
+    setPosts(db.getPosts());
+    setVisitors(db.getVisitors());
+    localStorage.setItem('onboarding_complete', 'true');
+    emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
+    onComplete();
+  };
 
   return (
     <div className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-[#faf9f6] p-4">
       <h1 className="mb-1 text-xl font-bold">Nhật ký của bạn</h1>
-      <p className="mb-2 text-sm text-slate-600">너의 다이어리 — Zalo 간편 가입</p>
-      <p data-testid="zalo-profile" className="diary-border mb-4 rounded-lg bg-white px-3 py-2 text-sm">
-        👤 {zaloName || '연동 중...'}
+      <p className="mb-4 text-sm text-slate-600">학교·학급만 선택하면 바로 시작</p>
+
+      <p className="diary-border mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+        ✓ Zalo 로그인 완료 · {zaloUser.name}
       </p>
 
       {step === 0 && (

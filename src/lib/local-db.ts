@@ -9,6 +9,7 @@ import type {
 } from '@/types';
 import { encryptHintData } from '@/lib/hint-crypto';
 import { CLASSMATES, DEFAULT_POSTS, DEFAULT_VISITORS } from '@/lib/seed-data';
+import { DEFAULT_STATUS_MESSAGE, DEFAULT_DOTORI_BALANCE } from '@/config/app-content';
 
 const KEYS = {
   profile: 'diary_profile',
@@ -84,8 +85,8 @@ export function initLocalDb(
     schoolName,
     className,
     classId: `${schoolName}-${className}`,
-    statusMessage: '오늘 나랑 눈 마주치고 웃은 애...',
-    dotoriBalance: 5,
+    statusMessage: DEFAULT_STATUS_MESSAGE,
+    dotoriBalance: DEFAULT_DOTORI_BALANCE,
     visitCountToday: 24,
     visitCountTotal: 1204,
     hintEncrypted: encryptHintData(hint),

@@ -1,17 +1,34 @@
 import { test, expect } from '@playwright/test';
 
+function todayVN(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+function completeVotesScript(): string {
+  const today = todayVN();
+  return JSON.stringify(
+    Array.from({ length: 12 }, (_, i) => ({
+      questionIndex: i + 1,
+      selectedUserId: 'cm-1',
+      hintShield: 'height',
+      date: today,
+    })),
+  );
+}
+
 test.describe('온보딩', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.evaluate(() => {
+    await page.evaluate((votesJson) => {
       localStorage.clear();
-    });
+      localStorage.setItem('diary_votes', votesJson);
+    }, completeVotesScript());
     await page.reload();
   });
 
-  test('Zalo 프로필 연동 후 온보딩 완료', async ({ page }) => {
+  test('온보딩 완료 (Zalo 로그인 생략)', async ({ page }) => {
     await expect(page.getByText('Nhật ký của bạn')).toBeVisible();
-    await expect(page.getByTestId('zalo-profile')).toContainText('Minh Anh', { timeout: 5000 });
+    await expect(page.getByText(/Zalo 로그인 완료/)).toBeVisible();
 
     await page.locator('select').first().selectOption({ label: 'Marie Curie' });
     await page.locator('select').nth(1).selectOption({ label: 'Lớp 11A' });
@@ -20,14 +37,14 @@ test.describe('온보딩', () => {
     await page.getByRole('button', { name: '시작하기' }).click();
 
     await expect(page.getByText('TODAY')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/학교 전체게시판/)).toBeVisible();
+    await expect(page.getByText('미니 사진첩')).toBeVisible();
   });
 });
 
 test.describe('메인 홈', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.evaluate(() => {
+    await page.evaluate((votesJson) => {
       localStorage.setItem('onboarding_complete', 'true');
       localStorage.setItem(
         'diary_profile',
@@ -66,7 +83,8 @@ test.describe('메인 홈', () => {
           guestbook: [],
         }),
       );
-    });
+      localStorage.setItem('diary_votes', votesJson);
+    }, completeVotesScript());
     await page.reload();
   });
 
@@ -83,6 +101,7 @@ test.describe('메인 홈', () => {
   });
 
   test('투표 Lock 데모 (?vote=demo)', async ({ page }) => {
+    await page.evaluate(() => localStorage.removeItem('diary_votes'));
     await page.goto('/?vote=demo');
     await expect(page.getByText('5시 실명 투표')).toBeVisible({ timeout: 10000 });
   });

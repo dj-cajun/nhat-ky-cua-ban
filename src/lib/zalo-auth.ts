@@ -1,45 +1,18 @@
-export interface ZaloUser {
-  id: string;
-  name: string;
-  avatar?: string;
+import { LOGGED_IN_ZALO_USER, type LoggedInUserConfig } from '@/config/app-content';
+
+export type ZaloUser = LoggedInUserConfig;
+
+/**
+ * Zalo 로그인은 앱 진입 시 이미 완료된 것으로 처리합니다.
+ * 실제 Zalo 연동 시에는 이 함수만 getUserInfo() 호출로 교체하면 됩니다.
+ */
+export function getLoggedInZaloUser(): ZaloUser {
+  return LOGGED_IN_ZALO_USER;
 }
 
-const MOCK_USER: ZaloUser = {
-  id: 'zalo-mock-001',
-  name: 'Nguyễn Minh Anh',
-  avatar: undefined,
-};
-
-const PLACEHOLDER_NAMES = new Set(['User Name', 'User', '']);
-
-function isValidZaloName(name: string | undefined): boolean {
-  return Boolean(name && !PLACEHOLDER_NAMES.has(name));
-}
-
-/** Zalo getUserInfo — Zalo 환경 외에서는 mock fallback */
+/** @deprecated getLoggedInZaloUser() 사용 */
 export async function getZaloUser(): Promise<ZaloUser> {
-  const fetchUser = async (): Promise<ZaloUser> => {
-    try {
-      const { getUserInfo } = await import('zmp-sdk/apis');
-      const { userInfo } = await getUserInfo({ avatarType: 'normal' });
-      if (userInfo?.id && isValidZaloName(userInfo.name)) {
-        return {
-          id: userInfo.id,
-          name: userInfo.name,
-          avatar: userInfo.avatar,
-        };
-      }
-      return MOCK_USER;
-    } catch {
-      return MOCK_USER;
-    }
-  };
-
-  const timeout = new Promise<ZaloUser>((resolve) => {
-    setTimeout(() => resolve(MOCK_USER), 1500);
-  });
-
-  return Promise.race([fetchUser(), timeout]);
+  return getLoggedInZaloUser();
 }
 
 export function extractSurname(fullName: string): string {
