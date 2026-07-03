@@ -111,7 +111,12 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
 
       {canWrite && onWrite && (
         <div className="cy-board-preview-write-bar">
-          <button type="button" onClick={onWrite} className="cy-write-btn">
+          <button
+            type="button"
+            onClick={onWrite}
+            disabled={voteLock}
+            className="cy-write-btn disabled:opacity-40"
+          >
             {vi.home.write}
           </button>
         </div>

@@ -52,6 +52,33 @@ export function clearAppData(): void {
   localStorage.removeItem(ONBOARDING_KEY);
   localStorage.removeItem(INTRO_SEEN_KEY);
   localStorage.removeItem(ZALO_SESSION_KEY);
+  localStorage.removeItem('vote_demo');
+  localStorage.removeItem('notify_demo');
+}
+
+/** 데모 URL 플래그를 localStorage에 저장 (리다이렉트·리로드 후에도 유지) */
+export function captureDemoFlags(): void {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('vote') === 'demo') {
+    localStorage.setItem('vote_demo', 'true');
+  }
+  if (params.get('notify') === 'demo') {
+    localStorage.setItem('notify_demo', 'true');
+  }
+}
+
+export function isVoteDemoActive(): boolean {
+  return (
+    new URLSearchParams(window.location.search).get('vote') === 'demo' ||
+    localStorage.getItem('vote_demo') === 'true'
+  );
+}
+
+export function isNotifyDemoActive(): boolean {
+  return (
+    new URLSearchParams(window.location.search).get('notify') === 'demo' ||
+    localStorage.getItem('notify_demo') === 'true'
+  );
 }
 
 /** 개발용: URL에 ?reset=1 이면 세션 초기화 */
@@ -63,6 +90,7 @@ export function handleDevReset(): boolean {
 
   clearAppData();
   params.delete('reset');
+  captureDemoFlags();
   const query = params.toString();
   const next = `${window.location.pathname}${query ? `?${query}` : ''}`;
   window.history.replaceState({}, '', next);

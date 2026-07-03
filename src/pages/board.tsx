@@ -65,8 +65,9 @@ export function BoardPage({ onBack }: BoardPageProps) {
             <div className="pencil-bar px-2 py-1.5 text-right">
               <button
                 type="button"
-                onClick={() => setShowComposer(true)}
-                className="cy-write-btn"
+                onClick={() => !voteLock && setShowComposer(true)}
+                disabled={voteLock}
+                className="cy-write-btn disabled:opacity-40"
               >
                 {vi.home.write}
               </button>

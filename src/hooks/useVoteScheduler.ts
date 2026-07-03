@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { db } from '@/lib/db';
 import { isVoteHourVN, todayDateStr } from '@/lib/vote-service';
+import { isNotifyDemoActive, isVoteDemoActive } from '@/lib/session';
 import { vi } from '@/i18n/vi';
 import {
   activeBoardAtom,
@@ -26,10 +27,7 @@ export function useVoteScheduler(): void {
 
   useEffect(() => {
     const check = () => {
-      const forceDemo =
-        new URLSearchParams(window.location.search).get('vote') === 'demo' ||
-        localStorage.getItem('vote_demo') === 'true';
-
+      const forceDemo = isVoteDemoActive();
       const shouldLock = (isVoteHourVN() || forceDemo) && !db.isVoteComplete();
 
       if (shouldLock) {
@@ -41,8 +39,9 @@ export function useVoteScheduler(): void {
         setVoteLock(true);
         setShowVote(true);
         setActiveBoard('vote');
-      } else if (!forceDemo) {
+      } else {
         setVoteLock(false);
+        setShowVote(false);
       }
     };
 
@@ -60,7 +59,7 @@ export function useVoteNotifications(): void {
       const notified = localStorage.getItem(`vote_notified_${today}`);
       if (notified) return;
 
-      const forceDemo = new URLSearchParams(window.location.search).get('notify') === 'demo';
+      const forceDemo = isNotifyDemoActive();
 
       const vnHour = parseInt(
         new Intl.DateTimeFormat('en-US', {
