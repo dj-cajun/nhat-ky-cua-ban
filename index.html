@@ -9,12 +9,25 @@
     <title>Nhật ký của bạn</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 구글 폰트에서 베트남어 손글씨 삼대장 패키지 로드 -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Gaegu:wght@400;700&family=Phudu:wght@500;700;800&family=Playpen+Sans:wght@400;600;800&family=Single+Day&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playwrite+VN:wght@100..400&family=Playpen+Sans:wght@400;600;800&family=Phudu:wght@400..900&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
+    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+      <defs>
+        <filter id="pencil-wobble" x="-4%" y="-4%" width="108%" height="108%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="pencil-wobble-light" x="-2%" y="-2%" width="104%" height="104%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="1" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.9" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -20,10 +20,10 @@ export function PhotoAlbumWidget() {
         className="cy-card-inset cy-album-frame mb-1 min-h-0 text-left"
         aria-label={vi.album.open}
       >
-        <div className="flex h-3 shrink-0 items-center gap-1 border-b border-zinc-400 bg-zinc-300 px-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
-          <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
-          <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
+        <div className="cy-album-chrome">
+          <span className="cy-album-chrome-dot" />
+          <span className="cy-album-chrome-dot" />
+          <span className="cy-album-chrome-dot" />
         </div>
         <div className="cy-album-screen">
           <img src={album.imageUrl} alt="" draggable={false} />

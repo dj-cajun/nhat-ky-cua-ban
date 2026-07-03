@@ -35,7 +35,7 @@ export function GiftInbox({ onClose }: GiftInboxProps) {
         ) : (
           <ul className="space-y-2">
             {gifts.map((gift) => (
-              <li key={gift.id} className="rounded border border-zinc-200 p-3 text-xs">
+              <li key={gift.id} className="pencil-list-item">
                 <p className="font-bold">{vi.gift.from(gift.senderLabel)}</p>
                 <p className="text-zinc-600">
                   {gift.giftType === 'dotori'

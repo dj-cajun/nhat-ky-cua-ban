@@ -196,7 +196,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
 
           {screen === 'waiting' && record && (
             <section className="cy-card space-y-3 p-3">
-              <div className="rounded-xl bg-doodle-paper px-3 py-2 text-center shadow-crayon-sm">
+              <div className="pencil-found-box">
                 <p className="text-xs font-bold text-red-600">{vi.founding.waitingTitle}</p>
               </div>
               <p className="text-xs leading-relaxed text-zinc-600">{vi.founding.waitingDesc}</p>
@@ -211,7 +211,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
 
           {screen === 'pending' && record && (
             <section className="cy-card space-y-3 p-3">
-              <div className="rounded-xl bg-doodle-paper px-3 py-2 text-center shadow-crayon-sm">
+              <div className="pencil-found-box">
                 <p className="text-xs font-bold text-red-600">{vi.founding.lockedTitle}</p>
               </div>
               <p className="text-xs leading-relaxed">{vi.founding.step2Desc}</p>
@@ -223,7 +223,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
               </div>
               <ul className="space-y-1 text-[11px]">
                 {record.members.map((member) => (
-                  <li key={member.userId} className="rounded border border-zinc-300 px-2 py-1">
+                  <li key={member.userId} className="pencil-list-item px-2 py-1">
                     {member.name}
                     {member.userId === record.founderUserId ? ` ${vi.founding.founderMark}` : ''}
                   </li>
@@ -299,7 +299,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
           )}
 
           {message && (
-            <p className="rounded border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-700">{message}</p>
+            <p className="pencil-message">{message}</p>
           )}
 
           <section className="cy-card-inset p-3">

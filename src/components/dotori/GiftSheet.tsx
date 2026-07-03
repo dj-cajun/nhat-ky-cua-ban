@@ -50,14 +50,14 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
           <button
             type="button"
             onClick={() => setTab('dotori')}
-            className={`flex-1 rounded-xl py-1 text-xs font-bold ${tab === 'dotori' ? 'bg-doodle-blush' : 'bg-doodle-paper'}`}
+            className={`flex-1 py-1 text-xs font-bold pencil-chip ${tab === 'dotori' ? 'pencil-chip--selected bg-pastel-lavender' : ''}`}
           >
             {vi.gift.dotori}
           </button>
           <button
             type="button"
             onClick={() => setTab('deco')}
-            className={`flex-1 rounded-xl py-1 text-xs font-bold ${tab === 'deco' ? 'bg-doodle-blush' : 'bg-doodle-paper'}`}
+            className={`flex-1 py-1 text-xs font-bold pencil-chip ${tab === 'deco' ? 'pencil-chip--selected bg-pastel-lavender' : ''}`}
           >
             {vi.gift.deco} ({DOTORI_PRICES.gift_deco} 🌰)
           </button>
@@ -70,9 +70,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
                 key={value}
                 type="button"
                 onClick={() => setAmount(value)}
-                className={`flex-1 rounded border py-2 text-xs font-bold ${
-                  amount === value ? 'bg-doodle-blush shadow-crayon-sm' : 'bg-doodle-paper'
-                }`}
+                className={`flex-1 py-2 text-xs font-bold pencil-chip ${amount === value ? 'pencil-chip--selected' : ''}`}
               >
                 {value} 🌰
               </button>
@@ -85,9 +83,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
                 key={emoji}
                 type="button"
                 onClick={() => setDeco(emoji)}
-                className={`rounded border px-3 py-2 text-lg ${
-                  deco === emoji ? 'bg-doodle-blush shadow-crayon-sm' : 'bg-doodle-paper'
-                }`}
+                className={`px-3 py-2 text-lg pencil-chip ${deco === emoji ? 'pencil-chip--selected' : ''}`}
               >
                 {emoji}
               </button>
@@ -99,13 +95,13 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
           value={message}
           onChange={(e) => setMessage(e.target.value.slice(0, 10))}
           placeholder={vi.gift.messagePlaceholder}
-          className="diary-border mb-3 w-full rounded px-3 py-2 text-sm"
+          className="diary-border mb-3 w-full px-3 py-2 text-sm"
         />
 
         <button
           type="button"
           onClick={submit}
-          className="doodle-btn-primary w-full py-3 text-sm"
+          className="pencil-btn-primary"
         >
           {vi.gift.send}
         </button>

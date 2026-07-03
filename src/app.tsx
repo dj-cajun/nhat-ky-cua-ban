@@ -20,6 +20,7 @@ import { handleDevReset, isIntroSeen, isOnboarded, markIntroSeen } from '@/lib/s
 import { primeProfanityBlacklist } from '@/lib/profanity-remote';
 import { vi } from '@/i18n/vi';
 import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
+import { useProfileFont } from '@/hooks/useProfileFont';
 
 type AppStage = 'boot' | 'intro' | 'login' | 'onboarding' | 'founding' | 'app';
 
@@ -50,6 +51,8 @@ function AppContent() {
     schoolName: string;
     className: string;
   } | null>(null);
+
+  useProfileFont();
 
   const hydrateApp = useCallback(() => {
     const profile = db.getProfile();

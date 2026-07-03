@@ -45,7 +45,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
         </article>
 
         {isLast && (
-          <label className="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-relaxed">
+          <label className="pencil-label-box mt-4">
             <input
               type="checkbox"
               checked={termsAccepted}
@@ -72,7 +72,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
               role="tab"
               aria-selected={index === step}
               className={`h-2 rounded-full transition-all ${
-                index === step ? 'w-6 bg-doodle-ink' : 'w-2 bg-doodle-blush'
+                index === step ? 'w-6 bg-slate-800' : 'w-2 bg-slate-300'
               }`}
             />
           ))}
@@ -84,7 +84,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
           type="button"
           onClick={goNext}
           disabled={isLast && !termsAccepted}
-          className="w-full doodle-btn-primary py-3.5 text-sm disabled:opacity-40"
+          className="pencil-btn-primary py-3.5 disabled:opacity-40"
         >
           {isLast ? vi.intro.start : vi.intro.next}
         </button>

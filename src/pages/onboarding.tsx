@@ -122,7 +122,7 @@ export function OnboardingPage({ onComplete, initialSchool, initialClass }: Onbo
             }
             void finish();
           }}
-          className="doodle-btn-primary min-h-[48px] w-full py-3 text-sm disabled:opacity-40"
+          className="pencil-btn-primary min-h-[48px] disabled:opacity-40"
         >
           {step === 0 ? vi.onboarding.next : vi.onboarding.enterHome}
         </button>

@@ -2,7 +2,7 @@
  * @vitest-environment happy-dom
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buyHintUnlock, buySurnameLetter, getBalance, sendDotoriGift } from '@/lib/dotori-economy';
+import { buyFont, buyHintUnlock, buySurnameLetter, getBalance, ownsFont, sendDotoriGift } from '@/lib/dotori-economy';
 import * as localDb from '@/lib/local-db';
 
 describe('dotori-economy', () => {
@@ -38,5 +38,17 @@ describe('dotori-economy', () => {
     const result = sendDotoriGift('cm-2', 3, 'hi');
     expect(result.ok).toBe(true);
     if (result.ok) expect(getBalance()).toBe(7);
+  });
+
+  it('buys font once then equips for free', () => {
+    const first = buyFont('playwrite');
+    expect(first.ok).toBe(true);
+    if (first.ok) expect(getBalance()).toBe(6);
+
+    localDb.updateProfile({ fontId: 'playpen' });
+    const again = buyFont('playwrite');
+    expect(again.ok).toBe(true);
+    if (again.ok) expect(getBalance()).toBe(6);
+    expect(ownsFont('playwrite')).toBe(true);
   });
 });

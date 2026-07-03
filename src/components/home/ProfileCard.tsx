@@ -81,7 +81,7 @@ export function ProfileCard() {
   };
 
   return (
-    <section className="cy-card flex shrink-0 gap-3 p-2.5">
+    <section className="cy-card cy-box-blush flex shrink-0 gap-3 p-2.5">
       {isStranger ? (
         <DetectiveSilhouette />
       ) : (

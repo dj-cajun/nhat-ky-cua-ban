@@ -12,6 +12,12 @@ import { AnonymousMark } from '@/components/feed/AnonymousMark';
 import { MediaIcons } from '@/components/feed/MediaIcons';
 
 const HOME_BOARDS: BoardType[] = ['diary', 'school', 'guestbook'];
+const BOARD_TITLE_PASTEL: Record<BoardType, string> = {
+  diary: 'cy-board-section-title--diary',
+  school: 'cy-board-section-title--school',
+  guestbook: 'cy-board-section-title--guestbook',
+  vote: 'cy-board-section-title--vote',
+};
 const PREVIEW_POST_COUNT = 3;
 
 function truncateLine(text: string, maxLen = 48): string {
@@ -45,7 +51,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
 
   return (
     <section
-      className={`cy-board-preview cy-board-preview-home ${
+      className={`cy-board-preview cy-box-lavender cy-board-preview-home ${
         canWrite && onWrite ? 'cy-board-preview-home--writable' : ''
       } ${voteLock ? 'opacity-90' : ''}`}
     >
@@ -55,12 +61,12 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
           const slots = buildPreviewSlots(posts);
 
           return (
-            <div key={board} className={index > 0 ? 'border-t border-zinc-300' : ''}>
+            <div key={board} className={index > 0 ? 'sk-divider-top' : ''}>
               <button
                 type="button"
                 onClick={() => openBoard(board)}
                 disabled={voteLock}
-                className="cy-board-section-title cy-board-row-tappable w-full"
+                className={`cy-board-section-title cy-board-row-tappable w-full ${BOARD_TITLE_PASTEL[board]}`}
               >
                 <span className="min-w-0 flex-1 truncate">{BOARD_LABELS[board]}</span>
                 <span className="cy-board-post-row-cue" aria-hidden>

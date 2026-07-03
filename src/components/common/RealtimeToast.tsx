@@ -12,7 +12,7 @@ export function RealtimeToast() {
         <div
           key={toast.id}
           className={`cy-card pointer-events-auto w-full max-w-md px-4 py-3 text-center text-sm font-medium ${
-            toast.type === 'vote' ? 'bg-doodle-blush' : 'bg-doodle-paper'
+            toast.type === 'vote' ? 'bg-y2k-pink-light' : 'bg-white'
           }`}
         >
           {toast.text}

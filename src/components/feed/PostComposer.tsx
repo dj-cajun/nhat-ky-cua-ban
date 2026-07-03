@@ -85,14 +85,14 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
               <button
                 type="button"
                 onClick={() => setBoard('diary')}
-                className={`diary-border rounded px-2 py-1 ${board === 'diary' ? 'bg-amber-100 font-bold' : ''}`}
+                className={`pencil-chip px-2 py-1 ${board === 'diary' ? 'pencil-chip--selected font-bold' : ''}`}
               >
                 {vi.feed.secretTab}
               </button>
               <button
                 type="button"
                 onClick={() => setBoard('school')}
-                className={`diary-border rounded px-2 py-1 ${board === 'school' ? 'bg-amber-100 font-bold' : ''}`}
+                className={`pencil-chip px-2 py-1 ${board === 'school' ? 'pencil-chip--selected font-bold' : ''}`}
               >
                 {vi.feed.schoolTab}
               </button>
@@ -106,7 +106,7 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
           rows={4}
           maxLength={200}
           placeholder={viewMode === 'my' ? vi.feed.placeholderMy : vi.feed.placeholderGuest}
-          className="diary-border mb-2 w-full resize-none rounded-lg p-3 text-sm"
+          className="diary-border mb-2 w-full resize-none p-3 text-sm"
         />
 
         <div className="mb-3 flex gap-3 text-xs">
@@ -125,7 +125,7 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          className="doodle-btn-primary w-full py-3 text-sm"
+          className="pencil-btn-primary"
         >
           {vi.feed.publish}
         </button>

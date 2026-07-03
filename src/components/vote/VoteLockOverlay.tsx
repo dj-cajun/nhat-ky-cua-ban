@@ -84,8 +84,8 @@ export function VoteLockOverlay() {
                   key={opt.id}
                   type="button"
                   onClick={() => setSelected(opt.id)}
-                  className={`diary-border w-full rounded-lg px-3 py-3 text-left text-sm ${
-                    selected === opt.id ? 'bg-amber-100 font-bold' : 'bg-white'
+                  className={`diary-border w-full px-3 py-3 text-left text-sm ${
+                    selected === opt.id ? 'pencil-chip--selected font-bold' : ''
                   }`}
                 >
                   {opt.name}
@@ -100,8 +100,8 @@ export function VoteLockOverlay() {
                   key={opt.value}
                   type="button"
                   onClick={() => setShield(opt.value)}
-                  className={`diary-border w-full rounded-lg px-3 py-2 text-left text-sm ${
-                    shield === opt.value ? 'bg-amber-100 font-bold' : 'bg-white'
+                  className={`diary-border w-full px-3 py-2 text-left text-sm ${
+                    shield === opt.value ? 'pencil-chip--selected font-bold' : ''
                   }`}
                 >
                   {opt.label}
@@ -116,7 +116,7 @@ export function VoteLockOverlay() {
             type="button"
             disabled={phase === 'vote' ? !selected : !shield}
             onClick={submitAnswer}
-            className="doodle-btn-primary min-h-[48px] w-full py-3 text-sm disabled:opacity-40"
+            className="pencil-btn-primary min-h-[48px] disabled:opacity-40"
           >
             {step < total - 1 || phase === 'vote' ? vi.vote.next : vi.vote.done}
           </button>

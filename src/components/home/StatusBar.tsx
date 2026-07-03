@@ -29,7 +29,7 @@ export function StatusBar() {
 
   return (
     <>
-      <div className="cy-card relative z-20 flex shrink-0 flex-col font-mono text-[11px]">
+      <div className="cy-card cy-box-sky relative z-20 flex shrink-0 flex-col font-doodle text-[11px]">
         <div className="flex items-center justify-between px-3 py-1.5">
           <div className="flex items-center gap-2 font-bold tracking-tight">
             <div ref={todayMenuRef} className="relative">

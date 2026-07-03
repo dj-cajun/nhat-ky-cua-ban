@@ -51,7 +51,7 @@ export function CalendarWidget() {
 
   return (
     <>
-      <div className="cy-card flex h-full flex-col p-1.5">
+      <div className="cy-card cy-box-mint flex h-full flex-col p-1.5">
         <div className="mb-0.5 shrink-0 font-mono text-[10px] font-bold leading-tight">
           <div>{headerLabel}</div>
           <div className="text-[8px] font-normal text-zinc-500">CN → T7</div>
@@ -68,7 +68,7 @@ export function CalendarWidget() {
                 key={dateStr}
                 type="button"
                 onClick={() => openModal(date)}
-                className="flex min-h-0 flex-1 items-center gap-0.5 border-b border-zinc-200/80 py-px text-left last:border-b-0"
+                className="sk-divider-bottom flex min-h-0 flex-1 items-center gap-0.5 py-px text-left"
               >
                 <span className="w-4 shrink-0 text-center font-mono text-[7px] font-bold text-zinc-400">
                   {dayLabel}

@@ -2,6 +2,7 @@ export type DotoriSpendReason =
   | 'surname_letter'
   | 'hint_unlock'
   | 'theme_buy'
+  | 'font_buy'
   | 'profile_deco'
   | 'gift_dotori'
   | 'gift_deco'
@@ -27,10 +28,13 @@ export interface DotoriGift {
 
 export type ProfileThemeId = 'default' | 'retro-pink' | 'neon' | 'chalkboard';
 
+export type ProfileFontId = 'playpen' | 'playwrite' | 'phudu';
+
 export const DOTORI_PRICES: Record<DotoriSpendReason, number> = {
   surname_letter: 2,
   hint_unlock: 3,
   theme_buy: 5,
+  font_buy: 4,
   profile_deco: 3,
   gift_dotori: 0,
   gift_deco: 3,
@@ -52,3 +56,15 @@ export const PROFILE_THEMES: { id: ProfileThemeId; labelKey: string }[] = [
   { id: 'neon', labelKey: 'neon' },
   { id: 'chalkboard', labelKey: 'chalkboard' },
 ];
+
+export const PROFILE_FONTS: { id: ProfileFontId; labelKey: string; preview: string }[] = [
+  { id: 'playpen', labelKey: 'playpen', preview: 'Aa' },
+  { id: 'playwrite', labelKey: 'playwrite', preview: 'Aa' },
+  { id: 'phudu', labelKey: 'phudu', preview: 'Aa' },
+];
+
+export const FONT_FAMILY_STACK: Record<ProfileFontId, string> = {
+  playpen: '"Playpen Sans", system-ui, sans-serif',
+  playwrite: '"Playwrite VN", cursive',
+  phudu: '"Phudu", "Playpen Sans", sans-serif',
+};

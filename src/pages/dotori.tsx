@@ -6,18 +6,26 @@ import { logoutZalo } from '@/lib/zalo-auth';
 import { clearAppData } from '@/lib/session';
 import {
   buyFakeHintDefense,
+  buyFont,
   buyProfileDeco,
   buySurnameBlurDefense,
   buyTheme,
+  ownsFont,
 } from '@/lib/dotori-economy';
 import { HintForm } from '@/components/onboarding/HintForm';
 import { DEFAULT_HINT_FORM } from '@/config/hint-options';
 import { OFFERWALL_URLS, AFFILIATE_ITEMS } from '@/config/app-content';
-import { DOTORI_PRICES, PROFILE_DECO_OPTIONS, PROFILE_THEMES } from '@/types/dotori';
+import {
+  DOTORI_PRICES,
+  FONT_FAMILY_STACK,
+  PROFILE_DECO_OPTIONS,
+  PROFILE_FONTS,
+  PROFILE_THEMES,
+} from '@/types/dotori';
 import { vi } from '@/i18n/vi';
 import { currentUserAtom } from '@/stores/atoms';
 import type { HintData } from '@/types';
-import type { ProfileThemeId } from '@/types/dotori';
+import type { ProfileFontId, ProfileThemeId } from '@/types/dotori';
 
 interface DotoriPageProps {
   onBack: () => void;
@@ -29,6 +37,19 @@ const MISSIONS = [
   { id: 'shopee' as const, icon: '🛒', ...vi.dotori.missions.shopee, reward: 2, repeatable: false },
   { id: 'tiktok' as const, icon: '🎵', ...vi.dotori.missions.tiktok, reward: 3, repeatable: false },
 ];
+
+const THEME_PASTEL: Record<ProfileThemeId, string> = {
+  default: 'cy-box-rose',
+  'retro-pink': 'cy-box-blush',
+  neon: 'cy-box-lavender',
+  chalkboard: 'cy-box-mint',
+};
+
+const FONT_PASTEL: Record<ProfileFontId, string> = {
+  playpen: 'cy-box-sky',
+  playwrite: 'cy-box-blush',
+  phudu: 'cy-box-lavender',
+};
 
 export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
   const setUser = useSetAtom(currentUserAtom);
@@ -44,6 +65,16 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
       reason === 'insufficient' ? vi.dotori.spendFail.insufficient : vi.dotori.spendFail.already_owned,
     );
     window.setTimeout(() => setShopToast(''), 2000);
+  };
+
+  const handleFont = (fontId: ProfileFontId) => {
+    const result = buyFont(fontId);
+    if (!result.ok) {
+      showShopFail(result.reason);
+      return;
+    }
+    const updated = db.getProfile();
+    if (updated) setUser(updated);
   };
 
   const handleTheme = (themeId: ProfileThemeId) => {
@@ -113,7 +144,7 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
   };
 
   return (
-    <div className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-[#faf9f6] p-4">
+    <div className="page-shell p-4 font-doodle">
       <header className="mb-4 flex items-center justify-between">
         <button type="button" onClick={onBack} className="text-sm font-bold">
           {vi.dotori.back}
@@ -157,11 +188,42 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
               key={theme.id}
               type="button"
               onClick={() => handleTheme(theme.id)}
-              className="diary-panel px-3 py-2 text-xs font-bold"
+              className={`diary-panel px-3 py-2 text-xs font-bold ${THEME_PASTEL[theme.id]}`}
             >
               {vi.dotori.themes[theme.labelKey as 'default' | 'retroPink' | 'neon' | 'chalkboard']}
             </button>
           ))}
+        </div>
+        <p className="mb-2 text-[10px] text-zinc-500">{vi.dotori.fontsTitle}</p>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {PROFILE_FONTS.map((font) => {
+            const equipped = (profile?.fontId ?? 'playpen') === font.id;
+            const owned = ownsFont(font.id);
+            const priceLabel =
+              font.id === 'playpen'
+                ? vi.dotori.fontFree
+                : owned
+                  ? vi.dotori.fontOwned
+                  : `${DOTORI_PRICES.font_buy} 🌰`;
+
+            return (
+              <button
+                key={font.id}
+                type="button"
+                onClick={() => handleFont(font.id)}
+                className={`diary-panel flex min-w-[5.5rem] flex-col items-center px-3 py-2 text-center ${FONT_PASTEL[font.id]} ${
+                  equipped ? 'pencil-chip--selected' : ''
+                }`}
+                style={{ fontFamily: FONT_FAMILY_STACK[font.id] }}
+              >
+                <span className="text-lg leading-none">{font.preview}</span>
+                <span className="mt-1 text-[10px] font-bold">
+                  {vi.dotori.fonts[font.labelKey as 'playpen' | 'playwrite' | 'phudu']}
+                </span>
+                <span className="mt-0.5 text-[9px] text-zinc-500">{priceLabel}</span>
+              </button>
+            );
+          })}
         </div>
         <p className="mb-2 text-[10px] text-zinc-500">{vi.dotori.decos}</p>
         <div className="flex flex-wrap gap-2">
@@ -186,7 +248,7 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
           <button
             type="button"
             onClick={() => void saveHint()}
-            className="mt-3 w-full rounded-xl doodle-btn-primary py-2 text-xs"
+            className="pencil-btn-primary mt-3 py-2 text-xs"
           >
             {vi.settings.saveHint}
           </button>

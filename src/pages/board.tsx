@@ -44,7 +44,7 @@ export function BoardPage({ onBack }: BoardPageProps) {
               <p className="px-4 py-8 text-center text-sm text-zinc-400">{vi.home.noPosts}</p>
             ) : (
               posts.map((post, index) => (
-                <div key={post.id} className={index > 0 ? 'border-t border-zinc-300' : ''}>
+                <div key={post.id} className={index > 0 ? 'sk-divider-top' : ''}>
                   <button
                     type="button"
                     onClick={() => !voteLock && setSelectedPost(post)}
@@ -62,7 +62,7 @@ export function BoardPage({ onBack }: BoardPageProps) {
           </div>
 
           {canWrite && (
-            <div className="shrink-0 border-t border-dashed border-doodle-ink/15 px-2 py-1.5 text-right">
+            <div className="pencil-bar px-2 py-1.5 text-right">
               <button
                 type="button"
                 onClick={() => setShowComposer(true)}

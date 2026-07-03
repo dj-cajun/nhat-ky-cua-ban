@@ -55,7 +55,7 @@ export function InvestigationPanel() {
   };
 
   return (
-    <section className="cy-card shrink-0 p-2.5">
+    <section className="cy-card cy-box-lemon shrink-0 p-2.5">
       <h3 className="mb-2 text-xs font-bold">{vi.investigate.title}</h3>
       <div className="flex flex-wrap gap-2">
         <button

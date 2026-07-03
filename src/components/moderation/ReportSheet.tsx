@@ -38,7 +38,7 @@ export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps)
           value={reason}
           onChange={(e) => setReason(e.target.value.slice(0, 100))}
           placeholder={vi.moderation.reportReason}
-          className="diary-border mb-3 w-full rounded px-3 py-2 text-sm"
+          className="diary-border mb-3 w-full px-3 py-2 text-sm"
           rows={3}
         />
         {message && <p className="mb-2 text-xs text-emerald-700">{message}</p>}
@@ -46,14 +46,14 @@ export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps)
           <button
             type="button"
             onClick={handleReport}
-            className="doodle-btn-primary flex-1 rounded-lg py-2 text-xs"
+            className="pencil-btn-secondary"
           >
             {vi.moderation.submit}
           </button>
           <button
             type="button"
             onClick={handleBlock}
-            className="diary-border flex-1 rounded-lg bg-red-50 py-2 text-xs font-bold text-red-700"
+            className="pencil-btn-danger"
           >
             {vi.moderation.block}
           </button>

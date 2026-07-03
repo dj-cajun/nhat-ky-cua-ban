@@ -33,8 +33,8 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#faf9f6]">
-      <header className="diary-border flex items-center justify-between p-3">
+    <div className="page-shell fixed inset-0 z-50 flex flex-col">
+      <header className="sk-divider-bottom flex items-center justify-between bg-[var(--paper)] p-3">
         <button type="button" onClick={onClose} className="text-sm font-bold">
           {vi.feed.close}
         </button>
@@ -50,7 +50,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
         <p className="mb-4 whitespace-pre-line text-base leading-relaxed">{post.content}</p>
 
         {(post.hasPhoto || post.hasVideo) && (
-          <div className="diary-border mb-4 flex aspect-video items-center justify-center rounded-lg bg-slate-100">
+          <div className="diary-border mb-4 flex aspect-video items-center justify-center bg-pastel-lavender/40">
             {post.hasPhoto && <span className="text-4xl">{vi.feed.media}</span>}
             {post.hasVideo && <span className="text-4xl">{vi.feed.video}</span>}
           </div>
@@ -75,12 +75,12 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder={vi.feed.commentPlaceholder}
-              className="diary-border flex-1 rounded px-3 py-2 text-sm"
+              className="diary-border flex-1 px-3 py-2 text-sm"
             />
             <button
               type="button"
               onClick={handleComment}
-              className="doodle-btn-primary rounded-xl px-3 text-sm"
+              className="pencil-btn-secondary px-3 text-sm"
             >
               {vi.feed.submit}
             </button>

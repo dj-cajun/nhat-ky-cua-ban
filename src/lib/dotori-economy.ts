@@ -1,5 +1,5 @@
 import type { HintShield } from '@/types';
-import type { DotoriGift, ProfileThemeId } from '@/types/dotori';
+import type { DotoriGift, ProfileFontId, ProfileThemeId } from '@/types/dotori';
 import { DOTORI_GIFT_AMOUNTS, DOTORI_PRICES } from '@/types/dotori';
 import { db } from '@/lib/db';
 import {
@@ -68,6 +68,43 @@ export function buyHintUnlock(
   db.markDotoriPurchase(key);
   const shields = getTargetHintShields(targetId, surname);
   return { ...result, shield, text: shields[shield] };
+}
+
+function fontPurchaseKey(fontId: ProfileFontId): string {
+  return `font_buy:${fontId}`;
+}
+
+export function ownsFont(fontId: ProfileFontId): boolean {
+  if (fontId === 'playpen') return true;
+  return db.hasDotoriPurchase(fontPurchaseKey(fontId));
+}
+
+export function getEquippedFontId(): ProfileFontId {
+  return db.getProfile()?.fontId ?? 'playpen';
+}
+
+export function buyFont(fontId: ProfileFontId): SpendResult {
+  const profile = db.getProfile();
+  if (!profile) return { ok: false, reason: 'no_profile' };
+
+  const equipped = profile.fontId ?? 'playpen';
+  if (equipped === fontId) {
+    return { ok: false, reason: 'already_owned' };
+  }
+
+  if (fontId === 'playpen') {
+    db.updateProfile({ fontId: undefined });
+    return { ok: true, balance: profile.dotoriBalance };
+  }
+
+  if (!ownsFont(fontId)) {
+    const result = spend(DOTORI_PRICES.font_buy);
+    if (!result.ok) return result;
+    db.markDotoriPurchase(fontPurchaseKey(fontId));
+  }
+
+  db.updateProfile({ fontId });
+  return { ok: true, balance: db.getProfile()?.dotoriBalance ?? 0 };
 }
 
 export function buyTheme(themeId: ProfileThemeId): SpendResult {

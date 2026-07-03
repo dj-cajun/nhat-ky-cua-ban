@@ -42,21 +42,21 @@ export function HomePage() {
           <button
             type="button"
             onClick={() => setViewMode('my')}
-            className="cy-hard-btn flex-1 px-3 py-1.5 text-xs"
+            className="cy-hard-btn flex-1 bg-pastel-blush px-3 py-1.5 text-xs font-bold"
           >
             {vi.home.backToMine}
           </button>
           <button
             type="button"
             onClick={() => setShowGift(true)}
-            className="cy-hard-btn bg-doodle-paper px-3 py-1.5 text-xs"
+            className="cy-hard-btn bg-white px-3 py-1.5 text-xs font-bold"
           >
             🎁
           </button>
           <button
             type="button"
             onClick={() => setShowReport(true)}
-            className="cy-hard-btn bg-doodle-paper px-3 py-1.5 text-xs"
+            className="cy-hard-btn bg-white px-3 py-1.5 text-xs font-bold"
           >
             ⚠️
           </button>

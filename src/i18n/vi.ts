@@ -260,6 +260,14 @@ export const vi = {
       neon: 'Neon cyber',
       chalkboard: 'Bảng đen',
     },
+    fontsTitle: 'Kiểu chữ viết tay',
+    fontFree: 'Miễn phí',
+    fontOwned: 'Đã mua',
+    fonts: {
+      playpen: 'Playpen Sans',
+      playwrite: 'Playwrite VN',
+      phudu: 'Phudu',
+    },
     decos: 'Trang trí hồ sơ',
     spendFail: {
       insufficient: 'Không đủ Dotori 🌰',

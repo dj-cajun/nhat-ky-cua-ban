@@ -2,140 +2,302 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
-    -webkit-tap-highlight-color: transparent;
-    text-shadow: 0.1px 0.1px 0 rgba(46, 42, 37, 0.1);
+@layer utilities {
+  .font-doodle {
+    font-family: 'Playpen Sans', system-ui, sans-serif;
   }
 
-  html,
-  body,
-  #root {
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  body {
-    margin: 0;
-    font-family: 'Playpen Sans', 'Gaegu', 'Single Day', cursive, sans-serif;
-    background-color: #fcf8eb;
-    color: #2e2a25;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    overflow-x: hidden;
+  .font-spy {
+    font-family: 'Phudu', 'Playpen Sans', sans-serif;
   }
 }
 
-@layer components {
-  /* ─── Doodle / 크레파스 다꾸 스킨 ─── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
 
-  .cy-shell {
-    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden p-2;
-    background: linear-gradient(135deg, #ffd3e2 0%, #ffe4e9 50%, #fcf8eb 100%);
+:root {
+  --pencil-bold: #8b7a9e;
+  --pencil-medium: #b5a3c9;
+  --pencil-light: #d4c8e4;
+  --pencil-faint: #ebe4f4;
+  --paper: #fffdf8;
+  --table: #fbf6ee;
+  --ink: #4a3f55;
+  --radius-sketch-lg: 24px 10px 22px 14px / 14px 22px 12px 24px;
+  --radius-sketch-md: 18px 8px 16px 10px / 10px 18px 8px 16px;
+  --radius-sketch-sm: 12px 5px 10px 6px / 6px 12px 5px 10px;
+  --radius-sketch-pill: 20px 8px 18px 10px / 12px 20px 8px 16px;
+  --sk-line-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='2' viewBox='0 0 120 2'%3E%3Cpath d='M0 1 Q5 0.3 10 1 T20 1 T30 1 T40 1 T50 1 T60 1 T70 1 T80 1 T90 1 T100 1 T110 1 T120 1' fill='none' stroke='%23D4C8E4' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  --sk-line-bold: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='3' viewBox='0 0 120 3'%3E%3Cpath d='M0 1.5 Q6 0.4 12 1.5 T24 1.5 T36 1.5 T48 1.5 T60 1.5 T72 1.5 T84 1.5 T96 1.5 T108 1.5 T120 1.5' fill='none' stroke='%23B5A3C9' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  --sk-line-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='2' viewBox='0 0 48 2'%3E%3Cpath d='M0 1 H5 M9 1 H14 M18 1 H22 M26 1 H30 M34 1 H38 M42 1 H48' fill='none' stroke='%23D4C8E4' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pastel-sky: #dff4ff;
+  --pastel-sky-ink: #9ec5e8;
+  --pastel-blush: #ffe8f0;
+  --pastel-blush-ink: #e8a4c4;
+  --pastel-mint: #e5f8e8;
+  --pastel-mint-ink: #a8d5b0;
+  --pastel-peach: #fff3e0;
+  --pastel-peach-ink: #e8c9a0;
+  --pastel-lavender: #f0eaff;
+  --pastel-lavender-ink: #c9b8e8;
+  --pastel-lemon: #fffce8;
+  --pastel-lemon-ink: #e8dfa0;
+  --pastel-rose: #ffe4ef;
+  --pastel-rose-ink: #e8b4c8;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--table);
+  font-family: 'Playpen Sans', system-ui, sans-serif;
+  color: var(--ink);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@layer components {
+  /* ─── 파스텔 색연필 스트로크 ─── */
+  .sk-outline {
+    position: relative;
     border: none;
-    border-radius: 40px;
-    box-shadow: 10px 10px 0 0 #ffd3e2;
+    background: var(--paper);
+  }
+
+  .sk-outline::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    border: 2.5px solid var(--pencil-bold);
+    filter: url(#pencil-wobble);
+  }
+
+  .sk-outline--md {
+    position: relative;
+    border: none;
+    background: var(--paper);
+  }
+
+  .sk-outline--md::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    border: 2px solid var(--pencil-medium);
+    filter: url(#pencil-wobble-light);
+  }
+
+  .sk-outline--sm {
+    position: relative;
+    border: none;
+    background: var(--paper);
+  }
+
+  .sk-outline--sm::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    border: 1.5px solid var(--pencil-light);
+    filter: url(#pencil-wobble-light);
+  }
+
+  .sk-divider-top {
+    position: relative;
+    border-top: none !important;
+  }
+
+  .sk-divider-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: var(--sk-line-light) center / 100% 100% no-repeat;
+    filter: url(#pencil-wobble-light);
+    pointer-events: none;
+  }
+
+  .sk-divider-top--bold::before {
+    height: 3px;
+    background: var(--sk-line-bold) center / 100% 100% no-repeat;
+    filter: url(#pencil-wobble);
+  }
+
+  .sk-divider-bottom {
+    position: relative;
+    border-bottom: none !important;
+  }
+
+  .sk-divider-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: var(--sk-line-light) center / 100% 100% no-repeat;
+    filter: url(#pencil-wobble-light);
+    pointer-events: none;
+  }
+
+  .sk-divider-bottom:last-child::after {
+    display: none;
+  }
+
+  /* ─── Shell & canvas ─── */
+  .cy-shell {
+    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden p-2 font-sans;
+    background: var(--table);
   }
 
   .cy-canvas {
-    @apply flex min-h-0 flex-1 flex-col gap-2 p-2;
+    @apply sk-outline flex min-h-0 flex-1 flex-col gap-2 p-2;
+    border-radius: var(--radius-sketch-lg);
     background-color: #fffdf5;
-    border: none;
-    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-    box-shadow: 8px 8px 0 0 #c5e5fc;
-    background-image: radial-gradient(rgba(46, 42, 37, 0.1) 0.8px, transparent 0.8px);
-    background-size: 14px 14px;
-    position: relative;
-    overflow: hidden;
+    background-image: radial-gradient(circle, rgb(139 122 158 / 0.1) 0.8px, transparent 0.8px);
+    background-size: 12px 11px;
+  }
+
+  .cy-canvas::after {
+    border-width: 3px;
   }
 
   .cy-card {
-    background-color: #fffdfc;
-    border: none;
-    border-radius: 20px 8px 18px 8px / 8px 18px 8px 20px;
-    box-shadow: 5px 5px 0 0 #ffd3e2;
-    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+    @apply sk-outline bg-white;
+    border-radius: var(--radius-sketch-md);
+    background: var(--paper);
+  }
+
+  /* 홈·위젯 박스별 파스텔 */
+  .cy-box-sky {
+    background: var(--pastel-sky);
+  }
+
+  .cy-box-sky::after {
+    border-color: var(--pastel-sky-ink);
+  }
+
+  .cy-box-blush {
+    background: var(--pastel-blush);
+  }
+
+  .cy-box-blush::after {
+    border-color: var(--pastel-blush-ink);
+  }
+
+  .cy-box-mint {
+    background: var(--pastel-mint);
+  }
+
+  .cy-box-mint::after {
+    border-color: var(--pastel-mint-ink);
+  }
+
+  .cy-box-peach {
+    background: var(--pastel-peach);
+  }
+
+  .cy-box-peach::after {
+    border-color: var(--pastel-peach-ink);
+  }
+
+  .cy-box-lavender {
+    background: var(--pastel-lavender);
+  }
+
+  .cy-box-lavender::after {
+    border-color: var(--pastel-lavender-ink);
+  }
+
+  .cy-box-lemon {
+    background: var(--pastel-lemon);
+  }
+
+  .cy-box-lemon::after {
+    border-color: var(--pastel-lemon-ink);
+  }
+
+  .cy-box-rose {
+    background: var(--pastel-rose);
+  }
+
+  .cy-box-rose::after {
+    border-color: var(--pastel-rose-ink);
+  }
+
+  .cy-board-section-title--diary {
+    background: rgb(255 232 240 / 0.55);
+  }
+
+  .cy-board-section-title--school {
+    background: rgb(229 248 232 / 0.55);
+  }
+
+  .cy-board-section-title--guestbook {
+    background: rgb(255 243 224 / 0.55);
+  }
+
+  .cy-board-section-title--vote {
+    background: rgb(240 234 255 / 0.55);
   }
 
   .cy-card-inset {
-    background-color: #fffef2;
-    border: 2px dashed rgba(46, 42, 37, 0.15);
-    border-radius: 12px;
+    @apply sk-outline--sm;
+    border-radius: var(--radius-sketch-sm);
+    background: rgb(255 255 255 / 0.7);
+  }
+
+  .cy-card-inset::after {
+    border-style: dashed;
+    border-color: var(--pencil-light);
   }
 
   .cy-hard-btn {
-    background-color: #ffd3e2;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 4px 4px 0 0 #c5e5fc;
-    font-weight: 800;
-    transition: all 0.05s ease-in-out;
-  }
-
-  .cy-hard-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 0 #c5e5fc;
-  }
-
-  .doodle-btn-primary {
-    background-color: #ffd3e2;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 4px 4px 0 0 #c5e5fc;
-    color: #2e2a25;
-    font-weight: 800;
-    transition: all 0.05s ease-in-out;
-  }
-
-  .doodle-btn-primary:active:not(:disabled) {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 0 #c5e5fc;
-  }
-
-  .doodle-btn-primary:disabled {
-    opacity: 0.45;
+    @apply sk-outline--md font-bold transition-transform active:scale-[0.98];
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
   }
 
   .cy-pink {
-    background-color: #ffd3e2;
+    background-color: #e8a4c4;
   }
 
   .cy-pink-text {
-    color: #ff4d6d;
+    color: #c97a9e;
   }
 
   .cy-badge-pink {
+    @apply sk-outline--sm px-2 py-0.5 text-xs font-bold;
+    border-radius: var(--radius-sketch-pill);
     background-color: #ffd3e2;
-    border: none;
-    color: #2e2a25;
-    border-radius: 9999px;
-    font-weight: 800;
-    box-shadow: 2px 2px 0 0 #ffe4c4;
-    @apply px-2 py-0.5 text-xs;
+    color: var(--ink);
   }
 
   .cy-badge-blue {
-    background-color: #c5e5fc;
-    border: none;
-    color: #2e2a25;
-    border-radius: 9999px;
-    font-weight: 800;
-    box-shadow: 2px 2px 0 0 #ffd3e2;
-    @apply flex items-center gap-1 px-2.5 py-0.5 text-xs;
+    @apply sk-outline--sm flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold;
+    border-radius: var(--radius-sketch-pill);
+    background: #c5e5fc;
+    color: var(--ink);
   }
 
   .cy-board-preview {
-    @apply flex shrink-0 flex-col overflow-hidden;
-    background-color: #ffffff;
-    border: none;
-    border-radius: 16px;
-    box-shadow: 4px 4px 0 0 #d8f3dc;
-    transition: transform 0.1s ease-in-out;
-  }
-
-  .cy-board-preview:active {
-    transform: scale(0.98);
+    @apply sk-outline flex shrink-0 flex-col overflow-hidden bg-white;
+    border-radius: var(--radius-sketch-md);
+    background: var(--paper);
   }
 
   .cy-board-preview-home {
@@ -151,14 +313,13 @@
   }
 
   .cy-board-preview-write-bar {
-    @apply mt-auto shrink-0 px-2 py-1.5 text-right;
-    border-top: 2px dashed rgba(46, 42, 37, 0.12);
-    background-color: #fffdf5;
+    @apply sk-divider-top--bold mt-auto shrink-0 px-2 py-1.5 text-right;
+    background: rgb(240 234 255 / 0.45);
   }
 
   .cy-board-section-title {
     @apply flex h-7 shrink-0 items-center gap-1 px-3 text-left text-xs font-bold;
-    color: #2e2a25;
+    color: var(--ink);
   }
 
   .cy-board-post-row {
@@ -174,80 +335,68 @@
   }
 
   .cy-board-post-row-cue {
-    @apply shrink-0 text-[9px] leading-none opacity-30;
+    @apply shrink-0 text-[9px] leading-none opacity-40;
+    color: var(--pencil-medium);
   }
 
   .cy-board {
-    @apply flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl;
-    border: none;
-    box-shadow: 4px 4px 0 0 #d8f3dc;
-    background-color: #fffdf5;
+    @apply sk-outline flex min-h-0 flex-1 flex-col overflow-hidden;
+    border-radius: var(--radius-sketch-md);
+    background: var(--paper);
   }
 
   .cy-board-header {
-    @apply flex shrink-0 items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wide;
-    background-color: #ffd3e2;
-    color: #2e2a25;
-    border-bottom: 2px dashed rgba(46, 42, 37, 0.1);
+    @apply sk-divider-bottom flex shrink-0 items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wide;
+    background: #e8dff8;
+    color: var(--ink);
   }
 
   .cy-board-body {
     @apply min-h-0 flex-1 overflow-hidden p-2;
-    background-color: #fffef8;
+    background: #faf7ff;
   }
 
   .cy-board-post {
-    @apply flex h-full cursor-pointer flex-col rounded-xl p-3 text-left;
-    border: none;
-    background-color: #ffffff;
-    box-shadow: 3px 3px 0 0 #c5e5fc;
-    color: #2e2a25;
+    @apply sk-outline--md flex h-full cursor-pointer flex-col p-3 text-left;
+    border-radius: var(--radius-sketch-sm);
+    background: #fffdf8;
+    color: var(--ink);
+  }
+
+  .cy-board-post::after {
+    border-color: #e8a4c4;
   }
 
   .cy-board-footer {
-    @apply flex shrink-0 items-center justify-between px-2 py-1.5 text-[10px];
-    border-top: 2px dashed rgba(46, 42, 37, 0.12);
-    background-color: #fffdf5;
+    @apply sk-divider-top--bold flex shrink-0 items-center justify-between bg-white px-2 py-1.5 text-[10px];
   }
 
   .cy-board-nav-btn {
-    @apply flex h-9 min-w-9 items-center justify-center rounded-xl text-sm font-bold leading-none disabled:opacity-40;
-    border: none;
-    background-color: #ffd3e2;
-    box-shadow: 2px 2px 0 0 #c5e5fc;
+    @apply sk-outline--sm flex h-9 min-w-9 items-center justify-center text-sm font-bold leading-none disabled:opacity-40;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
   }
 
   .cy-board-nav-btn:active:not(:disabled) {
-    background-color: #c5e5fc;
-    transform: translate(1px, 1px);
+    background-color: #ffd3e2;
   }
 
   .cy-write-btn {
-    @apply rounded-xl px-4 py-1.5 text-xs font-bold transition-transform;
-    border: none;
+    @apply sk-outline--md px-4 py-1.5 text-xs font-bold transition-transform active:scale-[0.98];
+    border-radius: var(--radius-sketch-sm);
     background-color: #ffd3e2;
-    color: #2e2a25;
-    box-shadow: 3px 3px 0 0 #c5e5fc;
-    font-weight: 800;
-  }
-
-  .cy-write-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 0 #c5e5fc;
+    color: var(--ink);
   }
 
   .cy-avatar {
-    @apply flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden;
-    border: none;
-    border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-    background-color: #ffccd5;
-    box-shadow: 3px 3px 0 0 #c5e5fc;
+    @apply sk-outline--md flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden bg-white;
+    border-radius: 50% 46% 52% 48% / 48% 52% 46% 54%;
   }
 
   .cy-avatar img,
   .cy-avatar svg {
     @apply h-full w-full object-cover;
-    filter: grayscale(20%) contrast(1.05);
+    filter: grayscale(35%) contrast(1.05);
   }
 
   .cy-avatar-editable {
@@ -255,18 +404,17 @@
   }
 
   .cy-name-mask {
-    font-family: 'Phudu', 'Caveat', sans-serif;
-    color: #ff4d6d;
-    letter-spacing: -0.05em;
-    @apply rounded-lg px-1.5 py-0.5 text-[10px] font-bold;
-    background-color: rgb(255 211 226 / 0.4);
+    @apply sk-outline--sm px-1.5 py-0.5 text-[10px] tracking-wide;
+    font-family: 'Phudu', 'Playpen Sans', sans-serif;
+    border-radius: var(--radius-sketch-sm);
+    background: #ebe4f4;
+    color: #7a6b8e;
   }
 
   .cy-pill {
-    @apply shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold;
-    border: none;
-    background-color: #fffdf5;
-    box-shadow: 2px 2px 0 0 #ffd3e2;
+    @apply sk-outline--sm shrink-0 px-2.5 py-0.5 text-[11px] font-semibold;
+    border-radius: var(--radius-sketch-pill);
+    background: var(--paper);
   }
 
   .cy-pill:hover {
@@ -274,56 +422,57 @@
   }
 
   .cy-album-widget {
-    @apply flex h-full min-h-0 flex-col overflow-hidden p-1.5;
-    border: none;
-    border-radius: 16px;
-    background-color: #fffdfc;
-    box-shadow: 4px 4px 0 0 #ffe4c4;
+    @apply sk-outline flex h-full min-h-0 flex-col overflow-hidden p-1.5;
+    border-radius: var(--radius-sketch-md);
+    background: var(--pastel-peach);
+  }
+
+  .cy-album-widget::after {
+    border-color: var(--pastel-peach-ink);
   }
 
   .cy-today-count {
     @apply border-0 bg-transparent;
-    color: #2e2a25;
+    color: var(--ink);
   }
 
   .cy-today-count--open {
     background-color: #ffd3e2;
-    border-radius: 6px;
+    border-radius: var(--radius-sketch-sm);
   }
 
   .cy-today-count:active {
-    color: #ff4d6d;
+    color: #c97a9e;
   }
 
   .cy-today-dropdown {
-    @apply absolute left-0 top-[calc(100%+6px)] z-50 min-w-[12.5rem] max-w-[15rem] overflow-hidden py-1;
-    background-color: #fffdf5;
-    border: none;
-    border-radius: 16px;
-    box-shadow: 5px 5px 0 0 #ffd3e2;
+    @apply sk-outline--md absolute left-0 top-[calc(100%+6px)] z-40 min-w-[12.5rem] max-w-[15rem] overflow-hidden py-1;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
   }
 
   .cy-today-dropdown::before {
     content: '';
     position: absolute;
-    top: -6px;
+    top: -5px;
     left: 14px;
     width: 10px;
     height: 10px;
-    background: #fffdf5;
-    box-shadow: -2px -2px 0 0 #ffd3e2;
+    background: var(--paper);
+    border-left: 1.5px solid var(--pencil-light);
+    border-top: 1.5px solid var(--pencil-light);
     transform: rotate(45deg);
+    filter: url(#pencil-wobble-light);
   }
 
   .cy-today-dropdown-title {
-    @apply px-3 py-1.5 text-[10px] font-bold;
-    color: rgba(46, 42, 37, 0.55);
-    border-bottom: 1px dashed rgba(46, 42, 37, 0.12);
+    @apply sk-divider-bottom px-3 py-1.5 text-[10px] font-bold;
+    color: var(--pencil-medium);
   }
 
   .cy-today-dropdown-empty {
     @apply px-3 py-2 text-center text-[11px];
-    color: rgba(46, 42, 37, 0.5);
+    color: var(--pencil-medium);
   }
 
   .cy-today-dropdown-list {
@@ -331,27 +480,34 @@
   }
 
   .cy-today-dropdown-item {
-    @apply px-3 py-2 text-[11px] last:border-b-0;
-    border-bottom: 1px dashed rgba(46, 42, 37, 0.08);
+    @apply sk-divider-bottom px-3 py-2 text-[11px];
   }
 
   .cy-today-dropdown-item:active {
-    background-color: rgb(255 211 226 / 0.35);
+    background-color: rgb(216 243 220 / 0.5);
   }
 
   .cy-album-frame {
     @apply flex min-h-0 flex-1 flex-col overflow-hidden;
   }
 
+  .cy-album-chrome {
+    @apply sk-divider-bottom flex h-3 shrink-0 items-center gap-1 px-1;
+    background: #e8dff8;
+  }
+
+  .cy-album-chrome-dot {
+    @apply h-1.5 w-1.5 rounded-full;
+    background: var(--pencil-light);
+  }
+
   .cy-album-screen {
-    @apply relative min-h-0 w-full flex-1 overflow-hidden;
-    background-color: #f5ebe0;
-    border-radius: 8px;
+    @apply relative min-h-0 w-full flex-1 overflow-hidden bg-black;
   }
 
   .cy-album-screen img {
     @apply absolute inset-0 h-full w-full object-cover object-center;
-    filter: grayscale(15%) contrast(1.05);
+    filter: grayscale(35%) contrast(1.08);
   }
 
   .cy-photo-stack {
@@ -366,28 +522,24 @@
     column-gap: 0.5rem;
   }
 
-  .cy-pinterest-pin,
-  .cy-pinterest-card {
-    @apply mb-2 inline-block w-full break-inside-avoid overflow-hidden p-2;
-    background-color: #ffffff;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 4px 4px 0 0 #ffe4c4;
+  .cy-pinterest-pin {
+    @apply sk-outline mb-2 inline-block w-full break-inside-avoid overflow-hidden bg-white;
+    border-radius: var(--radius-sketch-md);
+    background: var(--paper);
   }
 
   .cy-pinterest-pin-image {
-    @apply relative w-full overflow-hidden rounded-lg;
-    background-color: #fff5f0;
+    @apply relative w-full overflow-hidden bg-black;
   }
 
   .cy-pinterest-pin-image img {
     @apply block h-auto w-full;
-    filter: grayscale(15%) contrast(1.05);
+    filter: grayscale(35%) contrast(1.08);
   }
 
   .cy-photo-lightbox {
     @apply fixed inset-0 z-50 flex flex-col;
-    background-color: rgb(46 42 37 / 0.88);
+    background-color: rgb(74 63 85 / 0.92);
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -404,8 +556,7 @@
   }
 
   .cy-photo-edit-preview {
-    @apply relative max-h-[50vh] w-full overflow-hidden rounded-xl;
-    background-color: #f5ebe0;
+    @apply relative max-h-[50vh] w-full overflow-hidden bg-black;
   }
 
   .cy-photo-edit-preview img {
@@ -416,7 +567,7 @@
 
   .cy-pinterest-pin-caption {
     @apply truncate px-2 py-1.5 text-center text-[10px] font-bold;
-    color: #2e2a25;
+    color: var(--ink);
   }
 
   .cy-pinterest-pin-add .cy-pinterest-pin-image {
@@ -425,71 +576,136 @@
 
   .cy-pinterest-pin-add .cy-pinterest-pin-image span {
     @apply font-bold;
-    color: rgba(46, 42, 37, 0.65);
+    color: var(--pencil-medium);
   }
 
   .cy-pinterest-pin:active:not(:disabled) {
-    transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 0 #ffe4c4;
+    transform: scale(0.98);
   }
 
   .cy-photo-card {
-    @apply relative h-full w-full overflow-hidden;
-    border: none;
-    border-radius: 20px;
-    background-color: #fffdfc;
-    box-shadow: 6px 6px 0 0 #ffd3e2;
-  }
-
-  .cy-photo-card--back {
-    box-shadow: 3px 3px 0 0 #c5e5fc;
+    @apply sk-outline relative h-full w-full overflow-hidden bg-white;
+    border-radius: 22px 14px 20px 16px / 16px 22px 14px 20px;
   }
 
   .cy-photo-card img {
     @apply h-full w-full object-cover object-center;
-    filter: grayscale(15%) contrast(1.05);
+    filter: grayscale(35%) contrast(1.08);
   }
 
   .cy-photo-caption {
-    @apply absolute inset-x-0 bottom-0 px-4 pb-4 pt-10 text-center text-sm font-bold text-white;
-    background: linear-gradient(to top, rgb(46 42 37 / 0.65), transparent);
+    @apply absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-4 pb-4 pt-10 text-center text-sm font-bold text-white;
+  }
+
+  .cy-photo-empty::after {
+    border-style: dashed;
+    border-color: var(--pencil-light);
   }
 
   .cy-photo-empty {
-    border: 2px dashed rgba(46, 42, 37, 0.15);
-    background-color: rgb(255 211 226 / 0.25);
+    background-color: rgb(255 211 226 / 0.2);
   }
 
   .cy-photo-swipe-hint {
-    @apply absolute top-6 rounded-xl px-3 py-1 text-lg font-bold;
-    border: none;
-    box-shadow: 2px 2px 0 0 #ffd3e2;
+    @apply sk-outline--sm absolute top-6 px-3 py-1 text-lg font-bold;
+    border-radius: var(--radius-sketch-sm);
   }
 
   .cy-photo-swipe-hint--next {
     @apply right-4;
-    background-color: #ffd3e2;
+    background: #ffd3e2;
   }
 
   .cy-photo-swipe-hint--prev {
-    @apply left-4;
-    background-color: #fffdf5;
+    @apply left-4 bg-white;
   }
 
+  .cy-today {
+    background-color: rgb(216 243 220 / 0.55);
+    border-radius: 4px 8px 6px 5px / 5px 6px 8px 4px;
+  }
+
+  /* ─── 공용 패널·입력 ─── */
   .diary-border {
-    border: 1.5px dashed rgba(46, 42, 37, 0.2);
+    @apply sk-outline--sm;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
   }
 
   .diary-panel {
-    background-color: #fffdf5;
-    border: none;
-    border-radius: 24px;
-    box-shadow: 6px 6px 0 0 #ffd3e2;
+    @apply sk-outline bg-white;
+    border-radius: var(--radius-sketch-md);
+    background: var(--paper);
+  }
+
+  .pencil-chip {
+    @apply sk-outline--sm;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
+    border-color: var(--pencil-faint);
+  }
+
+  .pencil-chip--selected {
+    background: #fff8e8;
+  }
+
+  .pencil-chip--selected::after {
+    border-color: var(--pencil-medium);
+  }
+
+  .pencil-list-item {
+    @apply sk-outline--sm p-3 text-xs;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
+  }
+
+  .pencil-bar {
+    @apply sk-divider-top--bold shrink-0 bg-white px-3 py-2;
+  }
+
+  .pencil-btn-primary {
+    @apply sk-outline--md w-full py-3 text-sm font-bold transition-transform active:scale-[0.98];
+    border-radius: var(--radius-sketch-sm);
+    background: #ffd3e2;
+    color: var(--ink);
+  }
+
+  .pencil-btn-secondary {
+    @apply sk-outline--sm flex-1 py-2 text-xs font-bold;
+    border-radius: var(--radius-sketch-sm);
+    background: #e8dff8;
+    color: var(--ink);
+  }
+
+  .pencil-btn-danger {
+    @apply sk-outline--sm flex-1 py-2 text-xs font-bold;
+    border-radius: var(--radius-sketch-sm);
+    background: #ffe8ec;
+    color: #9e5a6a;
+  }
+
+  .pencil-label-box {
+    @apply sk-outline--sm flex items-start gap-2 p-3 text-xs leading-relaxed;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
+  }
+
+  .pencil-message {
+    @apply sk-outline--sm px-3 py-2 text-xs;
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .pencil-found-box {
+    @apply sk-outline--md px-3 py-2 text-center;
+    border-radius: var(--radius-sketch-sm);
+    background: #f5f0ff;
   }
 
   .page-shell {
-    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden;
-    background-color: #fcf8eb;
+    @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden font-sans;
+    background: var(--table);
   }
 
   .page-footer {
@@ -497,82 +713,81 @@
     padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
   }
 
-  /* ─── 도토리 테마 오버라이드 ─── */
-
-  .cy-shell[data-theme='default'] .cy-canvas,
-  [data-theme='default'] .cy-canvas {
-    background-color: #fffdf5;
-    box-shadow: 8px 8px 0 0 #c5e5fc;
-  }
-
+  /* ─── 테마 ─── */
   .cy-shell[data-theme='retro-pink'] {
-    background: linear-gradient(135deg, #ffccd5 0%, #ffd3e2 50%, #fff3f6 100%);
+    background: #fff0f5;
   }
 
-  .cy-shell[data-theme='retro-pink'] .cy-canvas,
-  [data-theme='retro-pink'] .cy-canvas {
-    background-color: #fff3f6;
-    background-image: radial-gradient(#ffccd5 1px, transparent 1px);
-    background-size: 15px 15px;
-    box-shadow: 8px 8px 0 0 #ffccd5;
+  .cy-shell[data-theme='retro-pink'] .cy-canvas {
+    background-color: #fff8fa;
+    background-image: radial-gradient(circle, rgb(255 179 217 / 0.2) 0.8px, transparent 0.8px);
   }
 
-  .cy-shell[data-theme='retro-pink'] .cy-card,
-  [data-theme='retro-pink'] .cy-card {
-    background-color: #fffafb;
-    box-shadow: 5px 5px 0 0 #ffccd5;
+  .cy-shell[data-theme='retro-pink'] .cy-canvas::after {
+    border-color: #d4a0b8;
   }
 
   .cy-shell[data-theme='neon'] {
-    background: linear-gradient(135deg, #1e1b18 0%, #2a1f3d 100%);
+    background: #1a1a3e;
   }
 
-  .cy-shell[data-theme='neon'] .cy-canvas,
-  [data-theme='neon'] .cy-canvas {
-    background-color: #1e1b18;
-    background-image: radial-gradient(#ff007f 0.5px, transparent 0.5px);
-    background-size: 12px 12px;
-    box-shadow: 8px 8px 0 0 #ff007f;
-    color: #fffdf5;
+  .cy-shell[data-theme='neon'] .cy-canvas {
+    background-color: #12122a;
+    background-image: radial-gradient(circle, rgb(124 58 237 / 0.35) 0.8px, transparent 0.8px);
+    color: #e9d5ff;
   }
 
-  .cy-shell[data-theme='neon'] .cy-card,
-  [data-theme='neon'] .cy-card {
-    background-color: #2a2421;
-    color: #ffffff;
-    box-shadow: 5px 5px 0 0 #00ffff;
+  .cy-shell[data-theme='neon'] .cy-canvas::after {
+    border-color: #a78bfa;
   }
 
-  .cy-shell[data-theme='neon'] .cy-hard-btn,
-  [data-theme='neon'] .cy-hard-btn {
-    background-color: #00ffff;
-    color: #1e1b18;
-    box-shadow: 4px 4px 0 0 #ff007f;
+  .cy-shell[data-theme='neon'] .cy-card {
+    background: #1e1e3f;
+    color: #e9d5ff;
+  }
+
+  .cy-shell[data-theme='neon'] .cy-card::after {
+    border-color: #c4b5fd;
   }
 
   .cy-shell[data-theme='chalkboard'] {
-    background: linear-gradient(135deg, #1a3a2a 0%, #0f2818 100%);
+    background: #1a3409;
   }
 
-  .cy-shell[data-theme='chalkboard'] .cy-canvas,
-  [data-theme='chalkboard'] .cy-canvas {
-    background-color: #1a3a2a;
+  .cy-shell[data-theme='chalkboard'] .cy-canvas {
+    background-color: #1e3a14;
     background-image: none;
-    box-shadow: 8px 8px 0 0 #e29578;
-    color: #fffdf5;
+    color: #ecfccb;
   }
 
-  .cy-shell[data-theme='chalkboard'] .cy-card,
-  [data-theme='chalkboard'] .cy-card {
-    background-color: #1e4631;
-    color: #fffdf5;
-    box-shadow: 5px 5px 0 0 #fffdf5;
+  .cy-shell[data-theme='chalkboard'] .cy-canvas::after {
+    border-color: #bef264;
   }
 
-  .cy-shell[data-theme='chalkboard'] .cy-hard-btn,
-  [data-theme='chalkboard'] .cy-hard-btn {
-    background-color: #fffdf5;
-    color: #1a3a2a;
-    box-shadow: 4px 4px 0 0 #e29578;
+  .cy-shell[data-theme='chalkboard'] .cy-card {
+    background: #274916;
+    color: #ecfccb;
   }
+
+  .cy-shell[data-theme='chalkboard'] .cy-card::after {
+    border-color: #d9f99d;
+  }
+}
+
+html[data-font='playpen'] body,
+html[data-font='playpen'] .cy-shell,
+html[data-font='playpen'] .page-shell {
+  font-family: 'Playpen Sans', system-ui, sans-serif;
+}
+
+html[data-font='playwrite'] body,
+html[data-font='playwrite'] .cy-shell,
+html[data-font='playwrite'] .page-shell {
+  font-family: 'Playwrite VN', cursive;
+}
+
+html[data-font='phudu'] body,
+html[data-font='phudu'] .cy-shell,
+html[data-font='phudu'] .page-shell {
+  font-family: 'Phudu', 'Playpen Sans', sans-serif;
 }
