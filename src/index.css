@@ -16,40 +16,55 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(160deg, #ffd6ec 0%, #e8d4ff 45%, #ffc8e8 100%);
-  font-family: 'Gothic A1', 'Noto Sans KR', system-ui, sans-serif;
-  color: #111;
+  background: linear-gradient(135deg, #ffd3e2 0%, #ffc6ff 100%);
+  font-family: 'Gaegu', 'Playpen Sans', 'Single Day', cursive, sans-serif;
+  color: #2e2a25;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer components {
-  /* ─── Y2K / Cyworld design tokens ─── */
+  /* ─── Doodle / 스크랩북 design tokens ─── */
   .cy-shell {
     @apply mx-auto flex h-dvh max-h-dvh max-w-md flex-col overflow-hidden p-2;
-    background: linear-gradient(160deg, #ffd6ec 0%, #e8d4ff 50%, #ffc8e8 100%);
+    background: linear-gradient(135deg, #ffd3e2 0%, #ffc6ff 100%);
   }
 
   .cy-canvas {
-    @apply flex min-h-0 flex-1 flex-col gap-2 rounded-xl border-[2.5px] border-black p-2;
-    background-color: #fefefe;
-    background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
-    background-size: 11px 11px;
-    box-shadow: 5px 5px 0 0 #000;
+    @apply flex min-h-0 flex-1 flex-col gap-2 p-2;
+    background-color: #fffdf5;
+    border: 3.5px solid #2e2a25;
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    box-shadow: 6px 6px 0 0 #2e2a25;
+    background-image: radial-gradient(#2e2a25 0.75px, transparent 0.75px);
+    background-size: 15px 15px;
   }
 
   .cy-card {
-    @apply rounded-lg border-[2.5px] border-black bg-white;
-    box-shadow: 3px 3px 0 0 #000;
+    background-color: #fffdfa;
+    border: 2.5px solid #2e2a25;
+    border-radius: 20px 8px 18px 8px / 8px 18px 8px 20px;
+    box-shadow: 3.5px 3.5px 0 0 #2e2a25;
+    transition: all 0.1s ease-in-out;
   }
 
   .cy-card-inset {
-    @apply rounded-md border-2 border-black bg-white;
+    @apply rounded-md border-2 bg-white;
+    border-color: #2e2a25;
   }
 
   .cy-hard-btn {
-    @apply border-[2.5px] border-black font-bold transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
-    box-shadow: 3px 3px 0 0 #000;
+    border: 2.5px solid #2e2a25;
+    border-radius: 12px;
+    background-color: #ffccd5;
+    box-shadow: 2px 2px 0 0 #2e2a25;
+    font-weight: 800;
+    @apply transition-transform;
+  }
+
+  .cy-hard-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 0 #2e2a25;
   }
 
   .cy-pink {
@@ -61,14 +76,41 @@ body {
   }
 
   .cy-badge-pink {
-    @apply rounded border-2 border-black px-2 py-0.5 text-xs font-bold text-black;
+    @apply rounded px-2 py-0.5 text-xs font-extrabold text-[#2e2a25];
+    border: 2px solid #2e2a25;
     background-color: #ffb6d9;
   }
 
   .cy-badge-blue {
-    @apply flex items-center gap-1 rounded-full border-2 border-black px-2.5 py-0.5 text-xs font-bold text-white;
+    @apply flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold text-white;
+    border: 2px solid #2e2a25;
     background: linear-gradient(180deg, #6eb5ff 0%, #3b8bff 100%);
-    box-shadow: 2px 2px 0 0 #000;
+    box-shadow: 2px 2px 0 0 #2e2a25;
+  }
+
+  .cy-doodle-avatar {
+    @apply flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden;
+    border: 2px solid #2e2a25;
+    border-radius: 12px;
+    background-color: #ffe4ec;
+  }
+
+  .cy-doodle-sticker-slot {
+    @apply absolute z-20 cursor-pointer select-none text-2xl;
+  }
+
+  .cy-doodle-sticker-slot--bounce {
+    animation: doodle-bounce 1.2s ease-in-out infinite;
+  }
+
+  @keyframes doodle-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
   }
 
   .cy-board-preview {

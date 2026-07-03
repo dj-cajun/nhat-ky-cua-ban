@@ -130,7 +130,7 @@ test.describe('Đăng nhập → Onboarding', () => {
     await page.getByRole('button', { name: 'Vào nhật ký của tôi' }).click();
 
     await expect(page.getByText('TODAY')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Album ảnh mini')).toBeVisible();
+    await expect(page.getByText(/PHOTO BOOTH/)).toBeVisible();
   });
 });
 
@@ -162,7 +162,7 @@ test.describe('Trang chủ', () => {
 
   test('Hiển thị layout 5 tầng', async ({ page }) => {
     await expect(page.getByText('TODAY')).toBeVisible();
-    await expect(page.getByText('Album ảnh mini')).toBeVisible();
+    await expect(page.getByText(/PHOTO BOOTH/)).toBeVisible();
     await expect(page.getByText(/Bảng tin toàn trường/)).toBeVisible();
   });
 
