@@ -18,6 +18,8 @@ export interface UserProfile {
   dotoriBalance: number;
   visitCountToday: number;
   visitCountTotal: number;
+  themeId?: import('@/types/dotori').ProfileThemeId;
+  badgeEmoji?: string;
 }
 
 export interface CalendarEntry {

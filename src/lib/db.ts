@@ -65,6 +65,13 @@ export const db = {
     return c;
   },
   addDotori: localDb.addDotori,
+  spendDotori: localDb.spendDotori,
+  hasDotoriPurchase: localDb.hasDotoriPurchase,
+  markDotoriPurchase: localDb.markDotoriPurchase,
+  getGiftInbox: localDb.getGiftInbox,
+  openGift: localDb.openGift,
+  countDotoriGiftsSentToday: localDb.countDotoriGiftsSentToday,
+  recordGiftSent: localDb.recordGiftSent,
   getClassmates: localDb.getClassmates,
   getClassmateById: localDb.getClassmateById,
   getDotoriMissions: localDb.getDotoriMissions,

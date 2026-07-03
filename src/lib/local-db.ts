@@ -53,6 +53,9 @@ const KEYS = {
   photo: 'diary_photo',
   votes: 'diary_votes',
   dotoriMissions: 'diary_dotori_missions',
+  dotoriPurchases: 'diary_dotori_purchases',
+  dotoriGifts: 'diary_dotori_gifts',
+  dotoriGiftDaily: 'diary_dotori_gift_daily',
   comments: 'diary_comments',
   nominations: 'diary_nominations',
 } as const;
@@ -145,7 +148,25 @@ export function initLocalDb(
   write(KEYS.nominations, [] satisfies Nomination[]);
   write(KEYS.dotoriMissions, { shopee: false, tiktok: false, video: 0 });
 
+  pushWelcomeGift();
+
   return profile;
+}
+
+function pushWelcomeGift(): void {
+  const gifts = read<import('@/types/dotori').DotoriGift[]>(KEYS.dotoriGifts, []);
+  if (gifts.length > 0) return;
+  write(KEYS.dotoriGifts, [
+    {
+      id: 'welcome-gift',
+      senderLabel: '🤫 Ai đó',
+      giftType: 'dotori',
+      amount: 3,
+      message: 'Chào bạn!',
+      opened: false,
+      createdAt: new Date().toISOString(),
+    },
+  ]);
 }
 
 export function getProfile(): StoredProfile | null {
@@ -288,6 +309,68 @@ export function addDotori(amount: number): number {
   const balance = profile.dotoriBalance + amount;
   updateProfile({ dotoriBalance: balance });
   return balance;
+}
+
+export function spendDotori(amount: number): number | null {
+  const profile = getProfile();
+  if (!profile || profile.dotoriBalance < amount) return null;
+  const balance = profile.dotoriBalance - amount;
+  updateProfile({ dotoriBalance: balance });
+  return balance;
+}
+
+export function hasDotoriPurchase(key: string): boolean {
+  const purchases = read<Record<string, true>>(KEYS.dotoriPurchases, {});
+  return Boolean(purchases[key]);
+}
+
+export function markDotoriPurchase(key: string): void {
+  const purchases = read<Record<string, true>>(KEYS.dotoriPurchases, {});
+  purchases[key] = true;
+  write(KEYS.dotoriPurchases, purchases);
+}
+
+export function getGiftInbox(): import('@/types/dotori').DotoriGift[] {
+  return read(KEYS.dotoriGifts, []);
+}
+
+export function pushGiftInbox(gift: import('@/types/dotori').DotoriGift): void {
+  const gifts = getGiftInbox();
+  write(KEYS.dotoriGifts, [gift, ...gifts]);
+}
+
+export function openGift(giftId: string): import('@/types/dotori').DotoriGift | null {
+  const gifts = getGiftInbox();
+  const index = gifts.findIndex((gift) => gift.id === giftId);
+  if (index < 0) return null;
+  const gift = { ...gifts[index], opened: true };
+  gifts[index] = gift;
+  write(KEYS.dotoriGifts, gifts);
+  return gift;
+}
+
+export function countDotoriGiftsSentToday(): number {
+  const today = todayStr();
+  const record = read<{ date: string; count: number; dotori: number }>(KEYS.dotoriGiftDaily, {
+    date: '',
+    count: 0,
+    dotori: 0,
+  });
+  return record.date === today ? record.count : 0;
+}
+
+export function recordGiftSent(dotoriAmount: number): void {
+  const today = todayStr();
+  const record = read<{ date: string; count: number; dotori: number }>(KEYS.dotoriGiftDaily, {
+    date: '',
+    count: 0,
+    dotori: 0,
+  });
+  const next =
+    record.date === today
+      ? { date: today, count: record.count + 1, dotori: record.dotori + dotoriAmount }
+      : { date: today, count: 1, dotori: dotoriAmount };
+  write(KEYS.dotoriGiftDaily, next);
 }
 
 export function getClassmates(): UserProfile[] {

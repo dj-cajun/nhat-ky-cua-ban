@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { pickAlbumPhoto } from '@/lib/photo-picker';
 import { ensureProfileName, getProfileDisplayName } from '@/lib/profile-name';
 import { isPlaceholderZaloName } from '@/lib/zalo-auth';
+import { hasSurnameLetterUnlock } from '@/lib/dotori-economy';
 import { vi } from '@/i18n/vi';
 import { currentUserAtom, displayUserAtom, viewModeAtom } from '@/stores/atoms';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -18,12 +19,12 @@ function DetectiveSilhouette() {
   );
 }
 
-function MaskedName({ surname }: { surname: string }) {
+function MaskedName({ surname, firstLetter }: { surname: string; firstLetter?: string | null }) {
   return (
     <span className="cy-badge-pink inline-flex items-center gap-1.5 text-sm">
       <span>{vi.home.surnameLabel} {surname}</span>
       <span className="cy-name-mask" aria-hidden>
-        {vi.home.nameHidden}
+        {firstLetter ? `${firstLetter}…` : vi.home.nameHidden}
       </span>
     </span>
   );
@@ -36,6 +37,10 @@ export function ProfileCard() {
   const viewMode = useAtomValue(viewModeAtom);
   const isStranger = viewMode === 'stranger';
   const myName = getProfileDisplayName(currentUser);
+  const surnameLetter =
+    isStranger && hasSurnameLetterUnlock(user.id)
+      ? user.surname.trim().charAt(0).toUpperCase()
+      : null;
 
   useEffect(() => {
     if (isStranger) return;
@@ -74,9 +79,16 @@ export function ProfileCard() {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-1.5">
           {isStranger ? (
-            <MaskedName surname={user.surname} />
+            <MaskedName surname={user.surname} firstLetter={surnameLetter} />
           ) : (
-            <span className="cy-badge-pink text-sm font-bold text-black">{myName}</span>
+            <span className="cy-badge-pink text-sm font-bold text-black">
+              {currentUser.badgeEmoji && (
+                <span className="mr-1" aria-hidden>
+                  {currentUser.badgeEmoji}
+                </span>
+              )}
+              {myName}
+            </span>
           )}
           <span className="font-mono text-[10px] text-zinc-600">
             {user.schoolName} {user.className}

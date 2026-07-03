@@ -4,9 +4,12 @@ import { db } from '@/lib/db';
 import { showRewardedVideoAd } from '@/lib/zalo-ads';
 import { logoutZalo } from '@/lib/zalo-auth';
 import { clearAppData } from '@/lib/session';
+import { buyProfileDeco, buyTheme } from '@/lib/dotori-economy';
 import { OFFERWALL_URLS, AFFILIATE_ITEMS } from '@/config/app-content';
+import { PROFILE_DECO_OPTIONS, PROFILE_THEMES } from '@/types/dotori';
 import { vi } from '@/i18n/vi';
 import { currentUserAtom } from '@/stores/atoms';
+import type { ProfileThemeId } from '@/types/dotori';
 
 interface DotoriPageProps {
   onBack: () => void;
@@ -23,7 +26,35 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
   const setUser = useSetAtom(currentUserAtom);
   const [missions, setMissions] = useState(db.getDotoriMissions());
   const [loading, setLoading] = useState<string | null>(null);
+  const [shopToast, setShopToast] = useState('');
   const profile = db.getProfile();
+
+  const showShopFail = (reason: string) => {
+    setShopToast(
+      reason === 'insufficient' ? vi.dotori.spendFail.insufficient : vi.dotori.spendFail.already_owned,
+    );
+    window.setTimeout(() => setShopToast(''), 2000);
+  };
+
+  const handleTheme = (themeId: ProfileThemeId) => {
+    const result = buyTheme(themeId);
+    if (!result.ok) {
+      showShopFail(result.reason);
+      return;
+    }
+    const updated = db.getProfile();
+    if (updated) setUser(updated);
+  };
+
+  const handleDeco = (emoji: string) => {
+    const result = buyProfileDeco(emoji);
+    if (!result.ok) {
+      showShopFail(result.reason);
+      return;
+    }
+    const updated = db.getProfile();
+    if (updated) setUser(updated);
+  };
 
   const handleMission = async (id: 'video' | 'shopee' | 'tiktok') => {
     if (id !== 'video' && missions[id]) return;
@@ -87,6 +118,36 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
             );
           })}
         </div>
+      </section>
+
+      <section className="mb-4">
+        <h2 className="mb-2 text-xs font-bold text-slate-600">{vi.dotori.shopTitle}</h2>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {PROFILE_THEMES.map((theme) => (
+            <button
+              key={theme.id}
+              type="button"
+              onClick={() => handleTheme(theme.id)}
+              className="diary-panel px-3 py-2 text-xs font-bold"
+            >
+              {vi.dotori.themes[theme.labelKey as 'default' | 'retroPink' | 'neon' | 'chalkboard']}
+            </button>
+          ))}
+        </div>
+        <p className="mb-2 text-[10px] text-zinc-500">{vi.dotori.decos}</p>
+        <div className="flex flex-wrap gap-2">
+          {PROFILE_DECO_OPTIONS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => handleDeco(emoji)}
+              className="diary-panel px-3 py-2 text-lg"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+        {shopToast && <p className="mt-2 text-xs text-red-600">{shopToast}</p>}
       </section>
 
       <section className="mb-4 flex-1 overflow-y-auto">

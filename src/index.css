@@ -373,4 +373,41 @@ body {
     @apply shrink-0 bg-transparent pt-3;
     padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
   }
+
+  .cy-shell[data-theme='retro-pink'] {
+    background: linear-gradient(160deg, #ffb3d9 0%, #ff8fab 50%, #ffc2d1 100%);
+  }
+
+  .cy-shell[data-theme='retro-pink'] .cy-canvas {
+    background-color: #fff5f8;
+    background-image: radial-gradient(circle, #ffb3d9 1px, transparent 1px);
+  }
+
+  .cy-shell[data-theme='neon'] {
+    background: linear-gradient(160deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+  }
+
+  .cy-shell[data-theme='neon'] .cy-canvas {
+    background-color: #12122a;
+    background-image: radial-gradient(circle, #7c3aed 1px, transparent 1px);
+    color: #e9d5ff;
+  }
+
+  .cy-shell[data-theme='neon'] .cy-card {
+    @apply bg-[#1e1e3f] text-purple-100;
+  }
+
+  .cy-shell[data-theme='chalkboard'] {
+    background: linear-gradient(160deg, #2d5016 0%, #1a3409 50%, #0f2405 100%);
+  }
+
+  .cy-shell[data-theme='chalkboard'] .cy-canvas {
+    background-color: #1e3a14;
+    background-image: none;
+    color: #ecfccb;
+  }
+
+  .cy-shell[data-theme='chalkboard'] .cy-card {
+    @apply bg-[#274916] text-lime-50;
+  }
 }
