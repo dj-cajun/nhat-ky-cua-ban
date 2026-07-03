@@ -20,6 +20,8 @@ export interface UserProfile {
   visitCountTotal: number;
   themeId?: import('@/types/dotori').ProfileThemeId;
   badgeEmoji?: string;
+  /** ISO — 성씨 24h 블러 (D-05) */
+  surnameBlurUntil?: string;
 }
 
 export interface CalendarEntry {

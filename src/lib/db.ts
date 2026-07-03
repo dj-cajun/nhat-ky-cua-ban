@@ -9,7 +9,11 @@ import {
   pushPostToRemote,
   pushCommentToRemote,
   pushVoteToRemote,
+  pushHintToRemote,
+  pushCalendarToRemote,
+  pushGiftToRemote,
   syncFromRemote,
+  syncClassmatesFromRemote,
 } from '@/lib/supabase-sync';
 
 export type { StoredProfile, VoteRecord, Comment, Nomination } from '@/lib/local-db';
@@ -30,6 +34,14 @@ export const db = {
     return profile;
   },
   updateProfile: (patch: Partial<UserProfile>) => localDb.updateProfile(patch),
+  updateHint: async (hint: HintData) => {
+    const profile = localDb.getProfile();
+    if (!profile) return null;
+    const hintSeal = await sealHintData(hint, extractSurname(profile.realName));
+    const updated = localDb.updateProfile({ hintEncrypted: hintSeal });
+    void pushHintToRemote(hintSeal);
+    return updated;
+  },
   getPosts: () => localDb.getPosts(),
   addPost: (post: Omit<FeedPost, 'id' | 'createdAt'>) => {
     const created = localDb.addPost(post);
@@ -40,7 +52,10 @@ export const db = {
   getTodayVisitors: () => localDb.getTodayVisitors(),
   addVisitor: (v: Visitor) => localDb.addVisitor(v),
   getCalendar: () => localDb.getCalendarEntries(),
-  saveCalendar: (date: string, content: string) => localDb.saveCalendarEntry(date, content),
+  saveCalendar: (date: string, content: string) => {
+    localDb.saveCalendarEntry(date, content);
+    void pushCalendarToRemote(date, content);
+  },
   getPhoto: () => localDb.getPhotoAlbum(),
   getPhotoGallery: () => localDb.getPhotoGallery(),
   savePhotoGallery: (photos: PhotoCard[]) => localDb.savePhotoGallery(photos),
@@ -78,6 +93,17 @@ export const db = {
   completeMission: localDb.completeDotoriMission,
   addNomination: localDb.addNomination,
   getNominations: localDb.getNominationsForUser,
+  isBlocked: (userId: string) => localDb.getBlockedUserIds().includes(userId),
+  blockUser: localDb.addBlockedUser,
+  hasSurnameBlurActive: localDb.hasSurnameBlurActive,
+  hasFakeHintActive: localDb.hasFakeHintActive,
+  eraseNomination: localDb.eraseNomination,
+  canEraseNominationToday: localDb.canEraseNominationToday,
+  recordNominationErase: localDb.recordNominationErase,
+  activateFakeHint: localDb.activateFakeHint,
+  activateSurnameBlur: localDb.activateSurnameBlur,
+  pushGiftToRemote,
   isRemote: () => isSupabaseConfigured() && isRemoteEnabled(),
   syncFromRemote,
+  syncClassmatesFromRemote,
 };

@@ -51,6 +51,7 @@ export const vi = {
   onboarding: {
     title: 'Chọn lớp của bạn',
     subtitle: 'Chọn trường và lớp — nhật ký lớp bạn sẽ mở ngay',
+    hintSubtitle: 'Dữ liệu này giúp bạn bè đoán danh tính khi bỏ phiếu 17h — không lưu bản gốc trên máy.',
     classDesc: 'Chỉ bạn bè cùng trường · cùng lớp mới vào được. Có thể đổi sau trong cài đặt.',
     zaloDone: '✓ Đã đăng nhập Zalo ·',
     schoolClass: 'Trường · Lớp',
@@ -291,6 +292,36 @@ export const vi = {
   },
   profanity: {
     blocked: 'Nội dung có từ ngữ không phù hợp.',
+  },
+  terms: {
+    acceptLabel: 'Tôi đồng ý với',
+    privacy: 'Chính sách riêng tư',
+    service: 'Điều khoản sử dụng',
+    privacyUrl: 'https://nhat-ky-cua-ban.vercel.app/privacy',
+    serviceUrl: 'https://nhat-ky-cua-ban.vercel.app/terms',
+  },
+  settings: {
+    title: 'Cài đặt',
+    hintSection: 'Dữ liệu gợi ý bỏ phiếu',
+    saveHint: 'Lưu gợi ý',
+    saved: 'Đã lưu!',
+  },
+  moderation: {
+    report: 'Báo cáo',
+    block: 'Chặn',
+    reportTitle: 'Báo cáo nội dung',
+    reportReason: 'Lý do (tùy chọn)',
+    submit: 'Gửi báo cáo',
+    submitted: 'Đã gửi báo cáo. Cảm ơn bạn.',
+    blocked: 'Đã chặn người dùng này.',
+    blockedNotice: 'Bạn đã chặn người dùng này.',
+  },
+  defense: {
+    title: '🛡️ Khiên phòng thủ',
+    fakeHint: (price: number) => `Gợi ý giả (${price} 🌰)`,
+    surnameBlur: (price: number) => `Ẩn Họ 24h (${price} 🌰)`,
+    nominationErase: (price: number) => `Xóa 1 người bầu (${price} 🌰)`,
+    active: 'Đang bật',
   },
   hintFormat: {
     height: (range: string) => `Cao ${range.replace('-', '~')}cm`,

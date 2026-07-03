@@ -12,16 +12,19 @@ import { useVoteScheduler, useVoteNotifications } from '@/hooks/useVoteScheduler
 import { useDbSync } from '@/hooks/useDbSync';
 import { InvestigationPanel } from '@/components/dotori/InvestigationPanel';
 import { GiftSheet } from '@/components/dotori/GiftSheet';
-import { viewModeAtom, showVoteOverlayAtom, currentUserAtom } from '@/stores/atoms';
+import { ReportSheet } from '@/components/moderation/ReportSheet';
+import { viewModeAtom, showVoteOverlayAtom, currentUserAtom, displayUserAtom } from '@/stores/atoms';
 import { vi } from '@/i18n/vi';
 
 export function HomePage() {
   const viewMode = useAtomValue(viewModeAtom);
   const currentUser = useAtomValue(currentUserAtom);
+  const displayUser = useAtomValue(displayUserAtom);
   const showVote = useAtomValue(showVoteOverlayAtom);
   const setViewMode = useSetAtom(viewModeAtom);
   const [showComposer, setShowComposer] = useState(false);
   const [showGift, setShowGift] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   useVoteScheduler();
   useVoteNotifications();
@@ -50,6 +53,13 @@ export function HomePage() {
           >
             🎁
           </button>
+          <button
+            type="button"
+            onClick={() => setShowReport(true)}
+            className="cy-hard-btn rounded-lg border-[2.5px] border-black bg-white px-3 py-1.5 text-xs font-bold"
+          >
+            ⚠️
+          </button>
         </div>
       )}
 
@@ -69,6 +79,13 @@ export function HomePage() {
 
       {showComposer && <PostComposer onClose={() => setShowComposer(false)} />}
       {showGift && <GiftSheet onClose={() => setShowGift(false)} />}
+      {showReport && (
+        <ReportSheet
+          targetUserId={displayUser.id}
+          onClose={() => setShowReport(false)}
+          onDone={() => setViewMode('my')}
+        />
+      )}
       {showVote && <VoteLockOverlay />}
     </div>
   );

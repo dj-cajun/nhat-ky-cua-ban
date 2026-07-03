@@ -101,10 +101,10 @@ export function buyProfileDeco(emoji: string): SpendResult {
 export function sendDotoriGift(
   targetId: string,
   amount: (typeof DOTORI_GIFT_AMOUNTS)[number],
-  _message: string,
-  _anonymous = true,
+  message: string,
+  anonymous = true,
 ): SpendResult {
-  void targetId;
+  if (db.isBlocked(targetId)) return { ok: false, reason: 'limit' };
   const sentToday = db.countDotoriGiftsSentToday();
   if (sentToday >= 5) return { ok: false, reason: 'limit' };
 
@@ -112,17 +112,17 @@ export function sendDotoriGift(
   if (!result.ok) return result;
 
   db.recordGiftSent(amount);
+  void db.pushGiftToRemote(targetId, 'dotori', amount, null, message, anonymous);
   return result;
 }
 
 export function sendDecoGift(
   targetId: string,
-  _emoji: string,
-  _message: string,
-  _anonymous = true,
+  emoji: string,
+  message: string,
+  anonymous = true,
 ): SpendResult {
-  void targetId;
-  void _emoji;
+  if (db.isBlocked(targetId)) return { ok: false, reason: 'limit' };
   const sentToday = db.countDotoriGiftsSentToday();
   if (sentToday >= 5) return { ok: false, reason: 'limit' };
 
@@ -130,6 +130,69 @@ export function sendDecoGift(
   if (!result.ok) return result;
 
   db.recordGiftSent(0);
+  void db.pushGiftToRemote(targetId, 'deco', 0, emoji, message, anonymous);
+  return result;
+}
+
+export function sendThemeGift(
+  targetId: string,
+  themeId: ProfileThemeId,
+  message: string,
+  anonymous = true,
+): SpendResult {
+  const result = spend(DOTORI_PRICES.gift_theme);
+  if (!result.ok) return result;
+  db.recordGiftSent(0);
+  void db.pushGiftToRemote(targetId, 'theme', 0, themeId, message, anonymous);
+  return result;
+}
+
+export function sendMysteryGift(
+  targetId: string,
+  message: string,
+  anonymous = true,
+): SpendResult & { prize?: string } {
+  const result = spend(DOTORI_PRICES.mystery_box);
+  if (!result.ok) return result;
+  db.recordGiftSent(0);
+  const prizes = ['👑', '💫', '🌸', '1🌰'];
+  const prize = prizes[Math.floor(Math.random() * prizes.length)] ?? '1🌰';
+  void db.pushGiftToRemote(targetId, 'mystery', prize.includes('🌰') ? 1 : 0, prize, message, anonymous);
+  return { ...result, prize };
+}
+
+export function buyFakeHintDefense(): SpendResult {
+  if (db.hasFakeHintActive()) return { ok: false, reason: 'already_owned' };
+  const result = spend(DOTORI_PRICES.fake_hint);
+  if (!result.ok) return result;
+  db.activateFakeHint();
+  return result;
+}
+
+export function buySurnameBlurDefense(): SpendResult {
+  if (db.hasSurnameBlurActive()) return { ok: false, reason: 'already_owned' };
+  const result = spend(DOTORI_PRICES.surname_blur);
+  if (!result.ok) return result;
+  db.activateSurnameBlur();
+  return result;
+}
+
+export function buyNominationErase(voterId: string): SpendResult {
+  const profile = db.getProfile();
+  if (!profile) return { ok: false, reason: 'no_profile' };
+  if (!db.canEraseNominationToday()) return { ok: false, reason: 'limit' };
+
+  const today = todayDateStr();
+  const nominations = db.getNominations(profile.id, today);
+  if (!nominations.some((n) => n.voterId === voterId)) {
+    return { ok: false, reason: 'already_owned' };
+  }
+
+  const result = spend(DOTORI_PRICES.nomination_erase);
+  if (!result.ok) return result;
+
+  db.eraseNomination(profile.id, voterId, today);
+  db.recordNominationErase();
   return result;
 }
 

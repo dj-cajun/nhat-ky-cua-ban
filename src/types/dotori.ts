@@ -4,9 +4,15 @@ export type DotoriSpendReason =
   | 'theme_buy'
   | 'profile_deco'
   | 'gift_dotori'
-  | 'gift_deco';
+  | 'gift_deco'
+  | 'nomination_erase'
+  | 'fake_hint'
+  | 'surname_blur'
+  | 'gift_theme'
+  | 'gift_sticker'
+  | 'mystery_box';
 
-export type DotoriGiftType = 'dotori' | 'deco';
+export type DotoriGiftType = 'dotori' | 'deco' | 'theme' | 'sticker' | 'mystery';
 
 export interface DotoriGift {
   id: string;
@@ -28,6 +34,12 @@ export const DOTORI_PRICES: Record<DotoriSpendReason, number> = {
   profile_deco: 3,
   gift_dotori: 0,
   gift_deco: 3,
+  nomination_erase: 5,
+  fake_hint: 3,
+  surname_blur: 4,
+  gift_theme: 5,
+  gift_sticker: 2,
+  mystery_box: 4,
 };
 
 export const DOTORI_GIFT_AMOUNTS = [3, 5, 10] as const;

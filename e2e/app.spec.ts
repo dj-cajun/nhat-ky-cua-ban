@@ -98,6 +98,7 @@ test.describe('Giới thiệu app', () => {
     await expect(page.getByText('Trò chơi thám tử 17h')).toBeVisible();
     await page.getByRole('button', { name: 'Tiếp' }).click();
     await expect(page.getByText('Sẵn sàng!')).toBeVisible();
+    await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Bắt đầu ngay' }).click();
     await expect(page.getByText('Bắt đầu với Zalo')).toBeVisible();
   });
@@ -123,6 +124,9 @@ test.describe('Đăng nhập → Onboarding', () => {
 
     await page.locator('select').first().selectOption({ label: 'THPT Marie Curie' });
     await page.locator('select').nth(1).selectOption({ label: 'Lớp 11A' });
+    await page.getByRole('button', { name: 'Tiếp' }).click();
+
+    await expect(page.getByText('Dữ liệu gợi ý (khiên bỏ phiếu)')).toBeVisible();
     await page.getByRole('button', { name: 'Vào nhật ký của tôi' }).click();
 
     await expect(page.getByText('TODAY')).toBeVisible({ timeout: 10000 });

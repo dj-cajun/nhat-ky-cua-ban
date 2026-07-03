@@ -58,6 +58,10 @@ const KEYS = {
   dotoriGiftDaily: 'diary_dotori_gift_daily',
   comments: 'diary_comments',
   nominations: 'diary_nominations',
+  classmates: 'diary_classmates',
+  blockedUsers: 'diary_blocked_users',
+  reports: 'diary_reports',
+  defenseDaily: 'diary_defense_daily',
 } as const;
 
 export interface StoredProfile extends UserProfile {
@@ -79,6 +83,34 @@ export interface Nomination {
   hintShield: string;
   hintText: string;
   date: string;
+}
+
+export interface ReportRecord {
+  id: string;
+  targetUserId: string;
+  reason: string;
+  createdAt: string;
+}
+
+interface DefenseDaily {
+  date: string;
+  fakeHint: boolean;
+  surnameBlur: boolean;
+  nominationErase: number;
+}
+
+export interface RemoteClassmate {
+  id: string;
+  realName: string;
+  surname: string;
+  schoolName: string;
+  className: string;
+  statusMessage: string;
+  hintEncrypted?: string;
+  dotoriBalance: number;
+  visitCountToday: number;
+  visitCountTotal: number;
+  surnameBlurUntil?: string;
 }
 
 export interface Comment {
@@ -374,11 +406,127 @@ export function recordGiftSent(dotoriAmount: number): void {
 }
 
 export function getClassmates(): UserProfile[] {
+  const remote = read<RemoteClassmate[]>(KEYS.classmates, []);
+  if (remote.length > 0) {
+    return remote.map((c) => ({
+      id: c.id,
+      realName: c.realName,
+      surname: c.surname,
+      schoolName: c.schoolName,
+      className: c.className,
+      statusMessage: c.statusMessage,
+      dotoriBalance: c.dotoriBalance,
+      visitCountToday: c.visitCountToday,
+      visitCountTotal: c.visitCountTotal,
+      surnameBlurUntil: c.surnameBlurUntil,
+    }));
+  }
   return CLASSMATES;
 }
 
 export function getClassmateById(id: string): UserProfile | undefined {
-  return CLASSMATES.find((c) => c.id === id);
+  return getClassmates().find((c) => c.id === id);
+}
+
+export function setRemoteClassmates(classmates: RemoteClassmate[]): void {
+  write(KEYS.classmates, classmates);
+}
+
+export function getBlockedUserIds(): string[] {
+  return read<string[]>(KEYS.blockedUsers, []);
+}
+
+export function addBlockedUser(userId: string): void {
+  const ids = getBlockedUserIds();
+  if (!ids.includes(userId)) {
+    write(KEYS.blockedUsers, [...ids, userId]);
+  }
+}
+
+export function removeBlockedUser(userId: string): void {
+  write(
+    KEYS.blockedUsers,
+    getBlockedUserIds().filter((id) => id !== userId),
+  );
+}
+
+export function addReport(report: ReportRecord): void {
+  const reports = read<ReportRecord[]>(KEYS.reports, []);
+  reports.push(report);
+  write(KEYS.reports, reports.slice(-50));
+}
+
+export function getReports(): ReportRecord[] {
+  return read<ReportRecord[]>(KEYS.reports, []);
+}
+
+function getDefenseDaily(): DefenseDaily {
+  const today = todayStr();
+  const record = read<DefenseDaily>(KEYS.defenseDaily, {
+    date: '',
+    fakeHint: false,
+    surnameBlur: false,
+    nominationErase: 0,
+  });
+  if (record.date !== today) {
+    return { date: today, fakeHint: false, surnameBlur: false, nominationErase: 0 };
+  }
+  return record;
+}
+
+function saveDefenseDaily(patch: Partial<DefenseDaily>): DefenseDaily {
+  const current = getDefenseDaily();
+  const next = { ...current, ...patch, date: todayStr() };
+  write(KEYS.defenseDaily, next);
+  return next;
+}
+
+export function hasFakeHintActive(): boolean {
+  return getDefenseDaily().fakeHint;
+}
+
+export function activateFakeHint(): void {
+  saveDefenseDaily({ fakeHint: true });
+}
+
+export function hasSurnameBlurActive(): boolean {
+  return getDefenseDaily().surnameBlur;
+}
+
+export function activateSurnameBlur(): void {
+  saveDefenseDaily({ surnameBlur: true });
+  const until = new Date(Date.now() + 86_400_000).toISOString();
+  updateProfile({ surnameBlurUntil: until });
+}
+
+export function isSurnameBlurred(profile: UserProfile): boolean {
+  if (!profile.surnameBlurUntil) return false;
+  return new Date(profile.surnameBlurUntil).getTime() > Date.now();
+}
+
+export function canEraseNominationToday(): boolean {
+  return getDefenseDaily().nominationErase < 1;
+}
+
+export function recordNominationErase(): void {
+  const daily = getDefenseDaily();
+  saveDefenseDaily({ nominationErase: daily.nominationErase + 1 });
+}
+
+export function eraseNomination(targetUserId: string, voterId: string, date: string): boolean {
+  const list = read<Nomination[]>(KEYS.nominations, []);
+  const index = list.findIndex(
+    (n) => n.targetUserId === targetUserId && n.voterId === voterId && n.date === date,
+  );
+  if (index < 0) return false;
+  list.splice(index, 1);
+  write(KEYS.nominations, list);
+  return true;
+}
+
+export function getClassmateHintEncrypted(id: string): string | undefined {
+  const remote = read<RemoteClassmate[]>(KEYS.classmates, []);
+  return remote.find((c) => c.id === id)?.hintEncrypted;
 }
 
 export function setPosts(posts: Record<BoardType, FeedPost[]>): void {

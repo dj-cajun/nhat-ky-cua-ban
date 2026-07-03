@@ -8,11 +8,13 @@ interface IntroPageProps {
 
 export function IntroPage({ onComplete }: IntroPageProps) {
   const [step, setStep] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const slides = vi.intro.slides;
   const isLast = step >= slides.length - 1;
 
   const goNext = () => {
     if (isLast) {
+      if (!termsAccepted) return;
       onComplete();
       return;
     }
@@ -42,6 +44,27 @@ export function IntroPage({ onComplete }: IntroPageProps) {
           )}
         </article>
 
+        {isLast && (
+          <label className="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-relaxed">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {vi.terms.acceptLabel}{' '}
+              <a href={vi.terms.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                {vi.terms.privacy}
+              </a>
+              {' · '}
+              <a href={vi.terms.serviceUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                {vi.terms.service}
+              </a>
+            </span>
+          </label>
+        )}
+
         <div className="mt-5 flex justify-center gap-2" role="tablist" aria-label={vi.intro.stepLabel}>
           {slides.map((_, index) => (
             <span
@@ -60,7 +83,8 @@ export function IntroPage({ onComplete }: IntroPageProps) {
         <button
           type="button"
           onClick={goNext}
-          className="w-full rounded-lg border-[2.5px] border-black bg-white py-3.5 text-sm font-bold shadow-[3px_3px_0_0_#000] active:translate-y-0.5 active:shadow-none"
+          disabled={isLast && !termsAccepted}
+          className="w-full rounded-lg border-[2.5px] border-black bg-white py-3.5 text-sm font-bold shadow-[3px_3px_0_0_#000] active:translate-y-0.5 active:shadow-none disabled:opacity-40"
         >
           {isLast ? vi.intro.start : vi.intro.next}
         </button>

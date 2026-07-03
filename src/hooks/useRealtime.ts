@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { subscribeRealtime, simulateRealtimeDemo, initSupabaseRealtime } from '@/lib/realtime';
 import { db } from '@/lib/db';
+import { isRemoteEnabled } from '@/lib/supabase-remote';
 
 export interface ToastMessage {
   id: number;
@@ -19,7 +20,10 @@ export function useRealtimeToasts(): ToastMessage[] {
     const cleanupRealtime = profile
       ? initSupabaseRealtime(profile.remoteClassId)
       : null;
-    simulateRealtimeDemo();
+
+    if (!isRemoteEnabled()) {
+      simulateRealtimeDemo();
+    }
 
     const unsub = subscribeRealtime((event) => {
       const id = ++toastId;

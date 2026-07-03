@@ -5,6 +5,7 @@ import { pickAlbumPhoto } from '@/lib/photo-picker';
 import { ensureProfileName, getProfileDisplayName } from '@/lib/profile-name';
 import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 import { hasSurnameLetterUnlock } from '@/lib/dotori-economy';
+import { isSurnameBlurred } from '@/lib/local-db';
 import { vi } from '@/i18n/vi';
 import { currentUserAtom, displayUserAtom, viewModeAtom } from '@/stores/atoms';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -19,7 +20,25 @@ function DetectiveSilhouette() {
   );
 }
 
-function MaskedName({ surname, firstLetter }: { surname: string; firstLetter?: string | null }) {
+function MaskedName({
+  surname,
+  firstLetter,
+  fullyHidden,
+}: {
+  surname: string;
+  firstLetter?: string | null;
+  fullyHidden?: boolean;
+}) {
+  if (fullyHidden) {
+    return (
+      <span className="cy-badge-pink inline-flex items-center gap-1.5 text-sm">
+        <span>{vi.home.surnameLabel}</span>
+        <span className="cy-name-mask" aria-hidden>
+          {vi.home.nameHidden}
+        </span>
+      </span>
+    );
+  }
   return (
     <span className="cy-badge-pink inline-flex items-center gap-1.5 text-sm">
       <span>{vi.home.surnameLabel} {surname}</span>
@@ -79,7 +98,11 @@ export function ProfileCard() {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-1.5">
           {isStranger ? (
-            <MaskedName surname={user.surname} firstLetter={surnameLetter} />
+            <MaskedName
+              surname={user.surname}
+              firstLetter={surnameLetter}
+              fullyHidden={isSurnameBlurred(user)}
+            />
           ) : (
             <span className="cy-badge-pink text-sm font-bold text-black">
               {currentUser.badgeEmoji && (

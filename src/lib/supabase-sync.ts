@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
-import { ensureRemoteAvailable } from '@/lib/supabase-remote';
+import { ensureRemoteAvailable, isUuid } from '@/lib/supabase-remote';
 import { migrateLegacyHintSeal, parseHintSeal, getShieldLabel } from '@/lib/hint-crypto';
 import type { BoardType, FeedPost, HintShield } from '@/types';
 import * as localDb from '@/lib/local-db';
@@ -61,6 +61,8 @@ export async function syncFromRemote(): Promise<boolean> {
       mergeRemotePosts(posts);
     }
 
+    await syncClassmatesFromRemote(remoteProfile.class_id, profile.schoolName, profile.className);
+
     return true;
   } catch {
     return false;
@@ -96,7 +98,18 @@ export async function pushProfileToRemote(
       { onConflict: 'zalo_id' },
     );
 
-    localDb.updateProfile({ remoteClassId: classId });
+    const { data: remoteProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('zalo_id', zaloId)
+      .maybeSingle();
+
+    if (remoteProfile?.id) {
+      localDb.updateProfile({ id: remoteProfile.id, remoteClassId: classId });
+      await provisionRemoteHome(remoteProfile.id);
+    } else {
+      localDb.updateProfile({ remoteClassId: classId });
+    }
   } catch {
     // 로컬 모드 유지
   }
@@ -187,6 +200,157 @@ export async function pushVoteToRemote(
     }
   } catch {
     // silent
+  }
+}
+
+export async function pushHintToRemote(hintSeal: string): Promise<void> {
+  if (!(await ensureRemoteAvailable())) return;
+  const supabase = getSupabase();
+  const profile = localDb.getProfile();
+  if (!supabase || !profile?.zaloId) return;
+
+  try {
+    await supabase
+      .from('profiles')
+      .update({ hint_data: hintSeal, updated_at: new Date().toISOString() })
+      .eq('zalo_id', profile.zaloId);
+  } catch {
+    // silent
+  }
+}
+
+export async function pushCalendarToRemote(date: string, content: string): Promise<void> {
+  if (!(await ensureRemoteAvailable())) return;
+  const supabase = getSupabase();
+  const profile = localDb.getProfile();
+  if (!supabase || !profile || !isUuid(profile.id)) return;
+
+  try {
+    if (!content.trim()) {
+      await supabase
+        .from('calendar_entries')
+        .delete()
+        .eq('user_id', profile.id)
+        .eq('entry_date', date);
+      return;
+    }
+
+    await supabase.from('calendar_entries').upsert(
+      {
+        user_id: profile.id,
+        entry_date: date,
+        content: content.trim().slice(0, 5),
+      },
+      { onConflict: 'user_id,entry_date' },
+    );
+  } catch {
+    // silent
+  }
+}
+
+async function provisionRemoteHome(userId: string): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase || !isUuid(userId)) return;
+
+  try {
+    const calendar = localDb.getCalendarEntries();
+    if (calendar.length > 0) {
+      await supabase.from('calendar_entries').upsert(
+        calendar.map((entry) => ({
+          user_id: userId,
+          entry_date: entry.date,
+          content: entry.content.slice(0, 5),
+        })),
+        { onConflict: 'user_id,entry_date' },
+      );
+    }
+
+    const photo = localDb.getPhotoAlbum();
+    const { count } = await supabase
+      .from('photo_albums')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (!count) {
+      await supabase.from('photo_albums').insert({
+        user_id: userId,
+        storage_path: photo.imageUrl,
+        caption: photo.caption.slice(0, 10),
+      });
+    }
+  } catch {
+    // silent
+  }
+}
+
+export async function syncClassmatesFromRemote(
+  classId: string,
+  schoolName: string,
+  className: string,
+): Promise<void> {
+  if (!(await ensureRemoteAvailable())) return;
+  const supabase = getSupabase();
+  if (!supabase || !isUuid(classId)) return;
+
+  try {
+    const { data: rows } = await supabase
+      .from('profiles')
+      .select(
+        'id, real_name, surname, status_message, hint_data, dotori_balance, visit_count_today, visit_count_total, surname_blur_until',
+      )
+      .eq('class_id', classId)
+      .limit(40);
+
+    if (!rows?.length) return;
+
+    const profile = localDb.getProfile();
+    localDb.setRemoteClassmates(
+      rows
+        .filter((row) => row.id !== profile?.id)
+        .map((row) => ({
+          id: row.id,
+          realName: row.real_name,
+          surname: row.surname,
+          schoolName,
+          className,
+          statusMessage: row.status_message ?? '',
+          hintEncrypted: row.hint_data,
+          dotoriBalance: row.dotori_balance ?? 0,
+          visitCountToday: row.visit_count_today ?? 0,
+          visitCountTotal: row.visit_count_total ?? 0,
+          surnameBlurUntil: row.surname_blur_until ?? undefined,
+        })),
+    );
+  } catch {
+    // silent
+  }
+}
+
+export async function pushGiftToRemote(
+  receiverId: string,
+  giftType: 'dotori' | 'deco' | 'theme' | 'sticker' | 'mystery',
+  amount: number,
+  itemId: string | null,
+  message: string,
+  isAnonymous: boolean,
+): Promise<void> {
+  if (!(await ensureRemoteAvailable())) return;
+  const supabase = getSupabase();
+  const profile = localDb.getProfile();
+  if (!supabase || !profile || !isUuid(profile.id) || !isUuid(receiverId)) return;
+
+  try {
+    await supabase.from('dotori_gifts').insert({
+      sender_id: profile.id,
+      receiver_id: receiverId,
+      gift_type: giftType,
+      amount: amount || null,
+      item_id: itemId,
+      is_anonymous: isAnonymous,
+      message: message.slice(0, 10),
+    });
+  } catch {
+    // table may not exist yet
   }
 }
 

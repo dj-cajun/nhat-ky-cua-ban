@@ -18,6 +18,11 @@ const APP_DATA_KEYS = [
   'diary_nominations',
   'diary_class_foundings',
   'diary_founding_gates',
+  'diary_classmates',
+  'diary_blocked_users',
+  'diary_reports',
+  'diary_defense_daily',
+  'diary_profanity_cache',
 ] as const;
 
 export function isIntroSeen(): boolean {

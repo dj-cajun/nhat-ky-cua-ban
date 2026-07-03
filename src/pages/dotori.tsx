@@ -4,11 +4,19 @@ import { db } from '@/lib/db';
 import { showRewardedVideoAd } from '@/lib/zalo-ads';
 import { logoutZalo } from '@/lib/zalo-auth';
 import { clearAppData } from '@/lib/session';
-import { buyProfileDeco, buyTheme } from '@/lib/dotori-economy';
+import {
+  buyFakeHintDefense,
+  buyProfileDeco,
+  buySurnameBlurDefense,
+  buyTheme,
+} from '@/lib/dotori-economy';
+import { HintForm } from '@/components/onboarding/HintForm';
+import { DEFAULT_HINT_FORM } from '@/config/hint-options';
 import { OFFERWALL_URLS, AFFILIATE_ITEMS } from '@/config/app-content';
-import { PROFILE_DECO_OPTIONS, PROFILE_THEMES } from '@/types/dotori';
+import { DOTORI_PRICES, PROFILE_DECO_OPTIONS, PROFILE_THEMES } from '@/types/dotori';
 import { vi } from '@/i18n/vi';
 import { currentUserAtom } from '@/stores/atoms';
+import type { HintData } from '@/types';
 import type { ProfileThemeId } from '@/types/dotori';
 
 interface DotoriPageProps {
@@ -27,6 +35,8 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
   const [missions, setMissions] = useState(db.getDotoriMissions());
   const [loading, setLoading] = useState<string | null>(null);
   const [shopToast, setShopToast] = useState('');
+  const [hint, setHint] = useState<HintData>({ ...DEFAULT_HINT_FORM });
+  const [hintSaved, setHintSaved] = useState('');
   const profile = db.getProfile();
 
   const showShopFail = (reason: string) => {
@@ -81,6 +91,25 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
     }
 
     setLoading(null);
+  };
+
+  const handleDefense = (kind: 'fake' | 'blur') => {
+    const result = kind === 'fake' ? buyFakeHintDefense() : buySurnameBlurDefense();
+    if (!result.ok) {
+      showShopFail(result.reason);
+      return;
+    }
+    const updated = db.getProfile();
+    if (updated) setUser(updated);
+  };
+
+  const saveHint = async () => {
+    const updated = await db.updateHint(hint);
+    if (updated) {
+      setUser(updated);
+      setHintSaved(vi.settings.saved);
+      window.setTimeout(() => setHintSaved(''), 2000);
+    }
   };
 
   return (
@@ -148,6 +177,43 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
           ))}
         </div>
         {shopToast && <p className="mt-2 text-xs text-red-600">{shopToast}</p>}
+      </section>
+
+      <section className="mb-4">
+        <h2 className="mb-2 text-xs font-bold text-slate-600">{vi.settings.hintSection}</h2>
+        <div className="diary-panel p-3">
+          <HintForm value={hint} onChange={setHint} />
+          <button
+            type="button"
+            onClick={() => void saveHint()}
+            className="mt-3 w-full rounded-lg border border-black py-2 text-xs font-bold"
+          >
+            {vi.settings.saveHint}
+          </button>
+          {hintSaved && <p className="mt-2 text-xs text-emerald-700">{hintSaved}</p>}
+        </div>
+      </section>
+
+      <section className="mb-4">
+        <h2 className="mb-2 text-xs font-bold text-slate-600">{vi.defense.title}</h2>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => handleDefense('fake')}
+            className="diary-panel w-full p-3 text-left text-xs font-bold"
+          >
+            {vi.defense.fakeHint(DOTORI_PRICES.fake_hint)}
+            {db.hasFakeHintActive() && ` · ${vi.defense.active}`}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDefense('blur')}
+            className="diary-panel w-full p-3 text-left text-xs font-bold"
+          >
+            {vi.defense.surnameBlur(DOTORI_PRICES.surname_blur)}
+            {db.hasSurnameBlurActive() && ` · ${vi.defense.active}`}
+          </button>
+        </div>
       </section>
 
       <section className="mb-4 flex-1 overflow-y-auto">
