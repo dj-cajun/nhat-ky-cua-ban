@@ -6,6 +6,7 @@ export const vi = {
     loading: 'Đang tải…',
     tagline: 'Nhật ký xã hội ẩn danh 100%',
     anonymousFooter: '🤫 Ẩn danh · Điều tra lớp học',
+    demoNotice: 'Hiện đang là bản demo.',
   },
   intro: {
     next: 'Tiếp',

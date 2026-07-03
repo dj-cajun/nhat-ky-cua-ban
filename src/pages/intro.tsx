@@ -98,6 +98,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
           </button>
         )}
         <p className="text-center text-[10px] text-slate-400">{vi.app.anonymousFooter}</p>
+        <p className="text-center text-xs font-semibold text-amber-800">{vi.app.demoNotice}</p>
       </footer>
     </div>
   );
