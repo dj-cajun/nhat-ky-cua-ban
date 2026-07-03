@@ -23,7 +23,6 @@ const APP_DATA_KEYS = [
   'diary_reports',
   'diary_defense_daily',
   'diary_profanity_cache',
-  'diary_sticker_slots',
 ] as const;
 
 export function isIntroSeen(): boolean {

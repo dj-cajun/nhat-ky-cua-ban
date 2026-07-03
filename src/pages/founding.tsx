@@ -196,7 +196,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
 
           {screen === 'waiting' && record && (
             <section className="cy-card space-y-3 p-3">
-              <div className="rounded border-2 border-black bg-zinc-100 px-3 py-2 text-center">
+              <div className="rounded-xl bg-doodle-paper px-3 py-2 text-center shadow-crayon-sm">
                 <p className="text-xs font-bold text-red-600">{vi.founding.waitingTitle}</p>
               </div>
               <p className="text-xs leading-relaxed text-zinc-600">{vi.founding.waitingDesc}</p>
@@ -211,7 +211,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
 
           {screen === 'pending' && record && (
             <section className="cy-card space-y-3 p-3">
-              <div className="rounded border-2 border-black bg-zinc-100 px-3 py-2 text-center">
+              <div className="rounded-xl bg-doodle-paper px-3 py-2 text-center shadow-crayon-sm">
                 <p className="text-xs font-bold text-red-600">{vi.founding.lockedTitle}</p>
               </div>
               <p className="text-xs leading-relaxed">{vi.founding.step2Desc}</p>

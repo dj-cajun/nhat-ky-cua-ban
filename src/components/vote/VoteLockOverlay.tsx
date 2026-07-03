@@ -116,7 +116,7 @@ export function VoteLockOverlay() {
             type="button"
             disabled={phase === 'vote' ? !selected : !shield}
             onClick={submitAnswer}
-            className="diary-border min-h-[48px] w-full rounded-lg bg-slate-800 py-3 text-sm font-bold text-white disabled:opacity-40"
+            className="doodle-btn-primary min-h-[48px] w-full py-3 text-sm disabled:opacity-40"
           >
             {step < total - 1 || phase === 'vote' ? vi.vote.next : vi.vote.done}
           </button>

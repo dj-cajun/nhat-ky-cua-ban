@@ -125,7 +125,7 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          className="diary-border w-full rounded-lg bg-slate-800 py-3 text-sm font-bold text-white"
+          className="doodle-btn-primary w-full py-3 text-sm"
         >
           {vi.feed.publish}
         </button>

@@ -46,7 +46,7 @@ export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps)
           <button
             type="button"
             onClick={handleReport}
-            className="diary-border flex-1 rounded-lg bg-slate-800 py-2 text-xs font-bold text-white"
+            className="doodle-btn-primary flex-1 rounded-lg py-2 text-xs"
           >
             {vi.moderation.submit}
           </button>

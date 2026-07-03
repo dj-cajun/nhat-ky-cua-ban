@@ -13,10 +13,7 @@ import { useDbSync } from '@/hooks/useDbSync';
 import { InvestigationPanel } from '@/components/dotori/InvestigationPanel';
 import { GiftSheet } from '@/components/dotori/GiftSheet';
 import { ReportSheet } from '@/components/moderation/ReportSheet';
-import { StickerDecorSheet } from '@/components/doodle/StickerDecorSheet';
-import { PomodoroOverlay } from '@/components/doodle/PomodoroOverlay';
 import { viewModeAtom, showVoteOverlayAtom, currentUserAtom, displayUserAtom } from '@/stores/atoms';
-import type { StickerSlotKey } from '@/stores/stickerStore';
 import { vi } from '@/i18n/vi';
 
 export function HomePage() {
@@ -28,8 +25,6 @@ export function HomePage() {
   const [showComposer, setShowComposer] = useState(false);
   const [showGift, setShowGift] = useState(false);
   const [showReport, setShowReport] = useState(false);
-  const [decorSlot, setDecorSlot] = useState<StickerSlotKey | null>(null);
-  const [showPomodoro, setShowPomodoro] = useState(false);
 
   useVoteScheduler();
   useVoteNotifications();
@@ -47,21 +42,21 @@ export function HomePage() {
           <button
             type="button"
             onClick={() => setViewMode('my')}
-            className="cy-hard-btn flex-1 rounded-lg px-3 py-1.5 text-xs"
+            className="cy-hard-btn flex-1 px-3 py-1.5 text-xs"
           >
             {vi.home.backToMine}
           </button>
           <button
             type="button"
             onClick={() => setShowGift(true)}
-            className="cy-hard-btn rounded-lg bg-white px-3 py-1.5 text-xs"
+            className="cy-hard-btn bg-doodle-paper px-3 py-1.5 text-xs"
           >
             🎁
           </button>
           <button
             type="button"
             onClick={() => setShowReport(true)}
-            className="cy-hard-btn rounded-lg bg-white px-3 py-1.5 text-xs"
+            className="cy-hard-btn bg-doodle-paper px-3 py-1.5 text-xs"
           >
             ⚠️
           </button>
@@ -70,14 +65,11 @@ export function HomePage() {
 
       <div className="cy-canvas">
         <StatusBar />
-        <ProfileCard onOpenStickerShop={() => setDecorSlot('slotA')} />
+        <ProfileCard />
         {viewMode === 'stranger' && <InvestigationPanel />}
         <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-hidden">
           <CalendarWidget />
-          <PhotoAlbumWidget
-            onOpenDecor={() => setDecorSlot('slotB')}
-            onOpenPomodoro={() => setShowPomodoro(true)}
-          />
+          <PhotoAlbumWidget />
         </div>
         <SwipeCardStack
           canWrite={canWrite}
@@ -94,10 +86,6 @@ export function HomePage() {
           onDone={() => setViewMode('my')}
         />
       )}
-      {decorSlot && (
-        <StickerDecorSheet slot={decorSlot} onClose={() => setDecorSlot(null)} />
-      )}
-      {showPomodoro && <PomodoroOverlay onClose={() => setShowPomodoro(false)} />}
       {showVote && <VoteLockOverlay />}
     </div>
   );

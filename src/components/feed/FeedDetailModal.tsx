@@ -80,7 +80,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
             <button
               type="button"
               onClick={handleComment}
-              className="diary-border rounded bg-slate-800 px-3 text-sm text-white"
+              className="doodle-btn-primary rounded-xl px-3 text-sm"
             >
               {vi.feed.submit}
             </button>

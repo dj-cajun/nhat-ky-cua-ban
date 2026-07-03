@@ -62,7 +62,7 @@ export function BoardPage({ onBack }: BoardPageProps) {
           </div>
 
           {canWrite && (
-            <div className="shrink-0 border-t-2 border-black px-2 py-1.5 text-right">
+            <div className="shrink-0 border-t border-dashed border-doodle-ink/15 px-2 py-1.5 text-right">
               <button
                 type="button"
                 onClick={() => setShowComposer(true)}

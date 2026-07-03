@@ -72,7 +72,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
               role="tab"
               aria-selected={index === step}
               className={`h-2 rounded-full transition-all ${
-                index === step ? 'w-6 bg-slate-800' : 'w-2 bg-slate-300'
+                index === step ? 'w-6 bg-doodle-ink' : 'w-2 bg-doodle-blush'
               }`}
             />
           ))}
@@ -84,7 +84,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
           type="button"
           onClick={goNext}
           disabled={isLast && !termsAccepted}
-          className="w-full rounded-lg border-[2.5px] border-black bg-white py-3.5 text-sm font-bold shadow-[3px_3px_0_0_#000] active:translate-y-0.5 active:shadow-none disabled:opacity-40"
+          className="w-full doodle-btn-primary py-3.5 text-sm disabled:opacity-40"
         >
           {isLast ? vi.intro.start : vi.intro.next}
         </button>

@@ -186,7 +186,7 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
           <button
             type="button"
             onClick={() => void saveHint()}
-            className="mt-3 w-full rounded-lg border border-black py-2 text-xs font-bold"
+            className="mt-3 w-full rounded-xl doodle-btn-primary py-2 text-xs"
           >
             {vi.settings.saveHint}
           </button>

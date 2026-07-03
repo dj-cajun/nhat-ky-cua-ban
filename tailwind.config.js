@@ -3,26 +3,27 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      colors: {
-        diary: {
-          bg: '#fefefe',
-          ink: '#111111',
-        },
-        y2k: {
-          pink: '#ff6eb4',
-          'pink-light': '#ffb6d9',
-          blue: '#3b8bff',
-          board: '#2d2d2d',
-          'board-post': '#3a3a3a',
-        },
-      },
       fontFamily: {
-        sans: ['"Gothic A1"', '"Noto Sans KR"', 'system-ui', 'sans-serif'],
-        mono: ['"VT323"', 'Courier New', 'monospace'],
+        doodle: ['Playpen Sans', 'Gaegu', 'Single Day', 'cursive', 'sans-serif'],
+        marker: ['Phudu', 'Caveat', 'sans-serif'],
+      },
+      colors: {
+        doodle: {
+          beige: '#fcf8eb',
+          paper: '#fffdf5',
+          blush: '#ffd3e2',
+          sky: '#c5e5fc',
+          mint: '#d8f3dc',
+          ink: '#2e2a25',
+        },
       },
       boxShadow: {
-        hard: '4px 4px 0 0 #000000',
-        'hard-sm': '2px 2px 0 0 #000000',
+        'crayon-pink': '6px 6px 0px 0px #ffd3e2',
+        'crayon-blue': '6px 6px 0px 0px #c5e5fc',
+        'crayon-mint': '6px 6px 0px 0px #d8f3dc',
+        'crayon-peach': '6px 6px 0px 0px #ffe4c4',
+        'crayon-sm': '3px 3px 0px 0px #ffd3e2',
+        'crayon-active': '1px 1px 0px 0px #2e2a25',
       },
     },
   },

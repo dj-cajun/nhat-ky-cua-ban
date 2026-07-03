@@ -50,14 +50,14 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
           <button
             type="button"
             onClick={() => setTab('dotori')}
-            className={`flex-1 rounded py-1 text-xs font-bold ${tab === 'dotori' ? 'bg-slate-800 text-white' : 'bg-zinc-100'}`}
+            className={`flex-1 rounded-xl py-1 text-xs font-bold ${tab === 'dotori' ? 'bg-doodle-blush' : 'bg-doodle-paper'}`}
           >
             {vi.gift.dotori}
           </button>
           <button
             type="button"
             onClick={() => setTab('deco')}
-            className={`flex-1 rounded py-1 text-xs font-bold ${tab === 'deco' ? 'bg-slate-800 text-white' : 'bg-zinc-100'}`}
+            className={`flex-1 rounded-xl py-1 text-xs font-bold ${tab === 'deco' ? 'bg-doodle-blush' : 'bg-doodle-paper'}`}
           >
             {vi.gift.deco} ({DOTORI_PRICES.gift_deco} 🌰)
           </button>
@@ -71,7 +71,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
                 type="button"
                 onClick={() => setAmount(value)}
                 className={`flex-1 rounded border py-2 text-xs font-bold ${
-                  amount === value ? 'border-black bg-amber-50' : 'border-zinc-200'
+                  amount === value ? 'bg-doodle-blush shadow-crayon-sm' : 'bg-doodle-paper'
                 }`}
               >
                 {value} 🌰
@@ -86,7 +86,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
                 type="button"
                 onClick={() => setDeco(emoji)}
                 className={`rounded border px-3 py-2 text-lg ${
-                  deco === emoji ? 'border-black bg-amber-50' : 'border-zinc-200'
+                  deco === emoji ? 'bg-doodle-blush shadow-crayon-sm' : 'bg-doodle-paper'
                 }`}
               >
                 {emoji}
@@ -105,7 +105,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
         <button
           type="button"
           onClick={submit}
-          className="w-full rounded-lg bg-slate-800 py-3 text-sm font-bold text-white"
+          className="doodle-btn-primary w-full py-3 text-sm"
         >
           {vi.gift.send}
         </button>
