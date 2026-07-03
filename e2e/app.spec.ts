@@ -74,15 +74,34 @@ function activeFoundingStorage(profileId: string): string {
   });
 }
 
-async function completeFoundingDemo(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: /mô phỏng bạn cùng lớp/i }).click();
-  await page.getByRole('button', { name: /mô phỏng bạn cùng lớp/i }).click();
-  const inputs = page.locator('input[type="text"]');
-  await inputs.nth(0).fill('demo-1');
-  await inputs.nth(1).fill('demo-2');
-  await inputs.nth(2).fill('demo-3');
-  await page.getByRole('button', { name: /Kích hoạt lớp/i }).click();
+async function completeIntro(page: import('@playwright/test').Page) {
+  await expect(page.getByText('Nhật ký của bạn là gì?')).toBeVisible({ timeout: 10000 });
+  for (let i = 0; i < 3; i += 1) {
+    await page.getByRole('button', { name: 'Tiếp' }).click();
+  }
+  await page.getByRole('button', { name: 'Bắt đầu ngay' }).click();
 }
+
+test.describe('Giới thiệu app', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.clear();
+    });
+    await page.goto('/?reset=1');
+  });
+
+  test('Hiển thị 4 bước giới thiệu trước đăng nhập', async ({ page }) => {
+    await expect(page.getByText('Nhật ký của bạn là gì?')).toBeVisible();
+    await page.getByRole('button', { name: 'Tiếp' }).click();
+    await expect(page.getByText('Trang nhà của bạn & của bạn bè')).toBeVisible();
+    await page.getByRole('button', { name: 'Tiếp' }).click();
+    await expect(page.getByText('Trò chơi thám tử 17h')).toBeVisible();
+    await page.getByRole('button', { name: 'Tiếp' }).click();
+    await expect(page.getByText('Sẵn sàng!')).toBeVisible();
+    await page.getByRole('button', { name: 'Bắt đầu ngay' }).click();
+    await expect(page.getByText('Bắt đầu với Zalo')).toBeVisible();
+  });
+});
 
 test.describe('Đăng nhập → Onboarding', () => {
   test.beforeEach(async ({ page }) => {
@@ -90,26 +109,21 @@ test.describe('Đăng nhập → Onboarding', () => {
       if (sessionStorage.getItem('__E2E_ONBOARDING_INIT__')) return;
       sessionStorage.setItem('__E2E_ONBOARDING_INIT__', '1');
       localStorage.clear();
+      localStorage.setItem('app_intro_seen', 'true');
     });
     await page.goto('/');
   });
 
-  test('Zalo login và hoàn tất onboarding + khai phá lớp', async ({ page }) => {
+  test('Zalo login và chọn lớp → vào nhật ký', async ({ page }) => {
     await expect(page.getByText('Bắt đầu với Zalo')).toBeVisible();
     await page.getByRole('button', { name: 'Tiếp tục với Zalo' }).click();
 
-    await expect(page.getByText('Nhật ký của bạn')).toBeVisible();
+    await expect(page.getByText('Chọn lớp của bạn')).toBeVisible();
     await expect(page.getByText(/Đã đăng nhập Zalo/)).toBeVisible();
 
     await page.locator('select').first().selectOption({ label: 'THPT Marie Curie' });
     await page.locator('select').nth(1).selectOption({ label: 'Lớp 11A' });
-    await page.getByRole('button', { name: 'Tiếp' }).click();
-    await expect(page.getByText('Dữ liệu gợi ý')).toBeVisible();
-
-    await page.getByRole('button', { name: 'Bắt đầu' }).click();
-
-    await expect(page.getByText(/Đội khai phá/i)).toBeVisible({ timeout: 10000 });
-    await completeFoundingDemo(page);
+    await page.getByRole('button', { name: 'Vào nhật ký của tôi' }).click();
 
     await expect(page.getByText('TODAY')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Album ảnh mini')).toBeVisible();
@@ -120,6 +134,7 @@ test.describe('Trang chủ', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(
       ({ votesJson, profile, posts, foundingJson }) => {
+        localStorage.setItem('app_intro_seen', 'true');
         localStorage.setItem('zalo_session', JSON.stringify({ id: 'test', name: 'Nguyễn Test' }));
         localStorage.setItem('onboarding_complete', 'true');
         localStorage.setItem('diary_profile', JSON.stringify(profile));

@@ -1,5 +1,6 @@
 import { Provider as JotaiProvider, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';
+import { IntroPage } from '@/pages/intro';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { OnboardingPage } from '@/pages/onboarding';
@@ -9,17 +10,17 @@ import { AlbumPage } from '@/pages/album';
 import { FoundingPage } from '@/pages/founding';
 import { db } from '@/lib/db';
 import { initDemoSession, isDemoMode } from '@/lib/demo-init';
-import { canEnterClassHome } from '@/lib/class-founding';
+import { canEnterClassHome, joinFoundingByToken } from '@/lib/class-founding';
 import { consumeJoinToken, parseFoundingUrl, peekJoinToken } from '@/lib/founding-params';
 import { getOnboardingPrefillFromToken } from '@/lib/founding-router';
 import { ensureProfileName } from '@/lib/profile-name';
 import { ensureHintSealOnProfile } from '@/lib/supabase-sync';
 import { isZaloLoggedIn } from '@/lib/zalo-auth';
-import { handleDevReset, isOnboarded } from '@/lib/session';
+import { handleDevReset, isIntroSeen, isOnboarded, markIntroSeen } from '@/lib/session';
 import { vi } from '@/i18n/vi';
 import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 
-type AppStage = 'boot' | 'login' | 'onboarding' | 'founding' | 'app';
+type AppStage = 'boot' | 'intro' | 'login' | 'onboarding' | 'founding' | 'app';
 
 function resolveStage(): AppStage {
   if (!isZaloLoggedIn()) return 'login';
@@ -79,7 +80,12 @@ function AppContent() {
     }
 
     if (handleDevReset()) {
-      setStage('login');
+      setStage('intro');
+      return;
+    }
+
+    if (!isIntroSeen()) {
+      setStage('intro');
       return;
     }
 
@@ -111,6 +117,17 @@ function AppContent() {
     );
   }
 
+  if (stage === 'intro') {
+    return (
+      <IntroPage
+        onComplete={() => {
+          markIntroSeen();
+          setStage('login');
+        }}
+      />
+    );
+  }
+
   if (stage === 'login') {
     return <LoginPage onLoggedIn={() => setStage('onboarding')} />;
   }
@@ -121,15 +138,13 @@ function AppContent() {
         initialSchool={onboardingPrefill?.schoolName}
         initialClass={onboardingPrefill?.className}
         onComplete={() => {
+          const profile = db.getProfile();
           const token = foundingJoinToken ?? consumeJoinToken();
-          if (token) {
-            setFoundingJoinToken(token);
+          if (profile && token) {
+            joinFoundingByToken(token, profile.id, profile.realName);
+            setFoundingJoinToken(null);
           }
-          const next = resolveStage();
-          setStage(next);
-          if (next === 'app') {
-            void ensureHintSealOnProfile().then(() => hydrateApp());
-          }
+          void ensureHintSealOnProfile().then(() => enterApp());
         }}
       />
     );

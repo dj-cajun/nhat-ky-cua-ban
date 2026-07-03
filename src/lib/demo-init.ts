@@ -7,6 +7,7 @@ import {
   REGION,
   DEFAULT_HINT,
 } from '@/config/app-content';
+import { joinClassAfterOnboarding } from '@/lib/class-founding';
 import { db } from '@/lib/db';
 import { isOnboarded, markOnboarded } from '@/lib/session';
 import { emitRealtime } from '@/lib/realtime';
@@ -27,6 +28,13 @@ export async function initDemoSession(): Promise<boolean> {
     REGION.defaultSchool,
     REGION.defaultClass,
     DEFAULT_HINT,
+  );
+
+  joinClassAfterOnboarding(
+    REGION.defaultSchool,
+    REGION.defaultClass,
+    `user-${LOGGED_IN_ZALO_USER.id}`,
+    LOGGED_IN_ZALO_USER.name,
   );
 
   markOnboarded();

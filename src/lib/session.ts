@@ -1,5 +1,6 @@
 const ZALO_SESSION_KEY = 'zalo_session';
 const ONBOARDING_KEY = 'onboarding_complete';
+const INTRO_SEEN_KEY = 'app_intro_seen';
 
 const APP_DATA_KEYS = [
   'diary_profile',
@@ -15,6 +16,14 @@ const APP_DATA_KEYS = [
   'diary_class_foundings',
   'diary_founding_gates',
 ] as const;
+
+export function isIntroSeen(): boolean {
+  return localStorage.getItem(INTRO_SEEN_KEY) === 'true';
+}
+
+export function markIntroSeen(): void {
+  localStorage.setItem(INTRO_SEEN_KEY, 'true');
+}
 
 export function isOnboarded(): boolean {
   return localStorage.getItem(ONBOARDING_KEY) === 'true';
@@ -33,6 +42,7 @@ export function clearAppData(): void {
     localStorage.removeItem(key);
   }
   localStorage.removeItem(ONBOARDING_KEY);
+  localStorage.removeItem(INTRO_SEEN_KEY);
   localStorage.removeItem(ZALO_SESSION_KEY);
 }
 

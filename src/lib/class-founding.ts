@@ -290,3 +290,49 @@ export function resetFounding(schoolName: string, className: string): void {
   delete records[buildClassKey(schoolName, className)];
   writeAll(records);
 }
+
+/** 온보딩(반 배정) 직후 홈 진입 — 개척단 UI 없이 클래스 활성화 */
+export function joinClassAfterOnboarding(
+  schoolName: string,
+  className: string,
+  userId: string,
+  userName: string,
+): ClassFoundingRecord {
+  const now = new Date().toISOString();
+  const existing = getFounding(schoolName, className);
+
+  if (!existing) {
+    const record: ClassFoundingRecord = {
+      classKey: buildClassKey(schoolName, className),
+      schoolName,
+      className,
+      status: 'active',
+      founderUserId: userId,
+      founderName: userName,
+      inviteToken: createToken(),
+      members: [{ userId, name: userName, joinedAt: now }],
+      quizzes: ['class-open'],
+      createdAt: now,
+      expiresAt: new Date(Date.now() + FOUNDING_TTL_MS).toISOString(),
+      activatedAt: now,
+    };
+    saveRecord(record);
+    markGatePassed(schoolName, className, userId);
+    return record;
+  }
+
+  const members = existing.members.some((member) => member.userId === userId)
+    ? existing.members
+    : [...existing.members, { userId, name: userName, joinedAt: now }];
+
+  const record = saveRecord({
+    ...existing,
+    status: 'active',
+    members,
+    quizzes:
+      existing.quizzes.length >= FOUNDING_QUIZ_COUNT ? existing.quizzes : ['class-open'],
+    activatedAt: existing.activatedAt ?? now,
+  });
+  markGatePassed(schoolName, className, userId);
+  return record;
+}
