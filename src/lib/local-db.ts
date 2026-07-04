@@ -10,38 +10,39 @@ import type {
 import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 import { CLASSMATES, DEFAULT_POSTS, DEFAULT_VISITORS } from '@/lib/seed-data';
 import {
-  DEFAULT_STATUS_MESSAGE,
   DEFAULT_DOTORI_BALANCE,
   DEFAULT_VISIT_TODAY,
   DEFAULT_VISIT_TOTAL,
   SEED_CALENDAR,
-  SEED_PHOTO_CAPTION,
-  SEED_PHOTO_GALLERY,
   SEED_PHOTO_URL,
 } from '@/config/app-content';
 
 type StoredPhotoData = { photos: PhotoCard[] } | PhotoAlbum;
 
 function normalizePhotoGallery(raw: StoredPhotoData | null): PhotoCard[] {
-  if (raw && 'photos' in raw && Array.isArray(raw.photos) && raw.photos.length > 0) {
-    return raw.photos.map((photo) => ({
+  if (raw && 'photos' in raw && Array.isArray(raw.photos)) {
+    if (raw.photos.length === 0) return [];
+    return raw.photos
+      .filter((photo) => photo.imageUrl && photo.imageUrl !== SEED_PHOTO_URL)
+      .map((photo) => ({
       id: photo.id,
-      imageUrl: photo.imageUrl || SEED_PHOTO_URL,
-      caption: photo.caption || SEED_PHOTO_CAPTION,
+      imageUrl: photo.imageUrl,
+      caption: photo.caption || '',
     }));
   }
 
   if (raw && 'imageUrl' in raw) {
+    if (!raw.imageUrl || raw.imageUrl === SEED_PHOTO_URL) return [];
     return [
       {
         id: 'photo-1',
-        imageUrl: raw.imageUrl || SEED_PHOTO_URL,
-        caption: raw.caption || SEED_PHOTO_CAPTION,
+        imageUrl: raw.imageUrl,
+        caption: raw.caption || '',
       },
     ];
   }
 
-  return SEED_PHOTO_GALLERY.map((photo) => ({ ...photo }));
+  return [];
 }
 
 const KEYS = {
@@ -162,7 +163,7 @@ export function initLocalDb(
     schoolName,
     className,
     classId: `${schoolName}-${className}`,
-    statusMessage: DEFAULT_STATUS_MESSAGE,
+    statusMessage: '',
     dotoriBalance: DEFAULT_DOTORI_BALANCE,
     visitCountToday: DEFAULT_VISIT_TODAY,
     visitCountTotal: DEFAULT_VISIT_TOTAL,
@@ -174,7 +175,7 @@ export function initLocalDb(
   write(KEYS.posts, DEFAULT_POSTS);
   write(KEYS.visitors, DEFAULT_VISITORS);
   write(KEYS.calendar, SEED_CALENDAR satisfies CalendarEntry[]);
-  write(KEYS.photo, { photos: SEED_PHOTO_GALLERY.map((photo) => ({ ...photo })) });
+  write(KEYS.photo, { photos: [] });
   write(KEYS.votes, [] satisfies VoteRecord[]);
   write(KEYS.comments, [] satisfies Comment[]);
   write(KEYS.nominations, [] satisfies Nomination[]);
@@ -268,9 +269,12 @@ export function getPhotoGallery(): PhotoCard[] {
 
 export function getPhotoAlbum(): PhotoAlbum {
   const first = getPhotoGallery()[0];
+  if (!first?.imageUrl) {
+    return { imageUrl: '', caption: '' };
+  }
   return {
-    imageUrl: first?.imageUrl || SEED_PHOTO_URL,
-    caption: first?.caption || SEED_PHOTO_CAPTION,
+    imageUrl: first.imageUrl,
+    caption: first.caption || '',
   };
 }
 

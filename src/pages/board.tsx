@@ -39,7 +39,7 @@ export function BoardPage({ onBack }: BoardPageProps) {
         <section
           className={`cy-board-preview flex min-h-0 flex-1 flex-col overflow-hidden ${voteLock ? 'opacity-90' : ''}`}
         >
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
             {posts.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-zinc-400">{vi.home.noPosts}</p>
             ) : (

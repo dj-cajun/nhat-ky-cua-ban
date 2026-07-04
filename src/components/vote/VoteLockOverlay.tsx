@@ -76,7 +76,7 @@ export function VoteLockOverlay() {
 
         <p className="mb-3 shrink-0 text-sm font-medium">{current.text}</p>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
           {phase === 'vote' ? (
             <div className="mb-2 space-y-2">
               {current.options.map((opt) => (

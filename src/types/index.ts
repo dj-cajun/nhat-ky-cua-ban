@@ -75,4 +75,5 @@ export const BOARD_LABELS: Record<BoardType, string> = {
 
 export const MAX_DIARY_CHARS = 15;
 export const MAX_CAPTION_CHARS = 10;
+export const MAX_STATUS_MESSAGE_CHARS = 40;
 export const MAX_ALBUM_PHOTOS = 30;

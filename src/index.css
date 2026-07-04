@@ -10,6 +10,17 @@
   .font-spy {
     font-family: 'Phudu', 'Playpen Sans', sans-serif;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 * {
@@ -294,6 +305,34 @@ body {
     color: var(--ink);
   }
 
+  .cy-status-btn {
+    @apply sk-outline--sm inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold leading-none;
+    border-radius: var(--radius-sketch-pill);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .cy-status-btn--gift {
+    background: #ffe8f0;
+  }
+
+  .cy-status-btn--gift::after {
+    border-color: var(--pastel-blush-ink);
+  }
+
+  .cy-status-btn--dotori {
+    background: #dff4ff;
+  }
+
+  .cy-status-btn--dotori::after {
+    border-color: var(--pastel-sky-ink);
+  }
+
+  .cy-status-btn-count {
+    @apply text-[9px] font-bold;
+    color: var(--pencil-medium);
+  }
+
   .cy-board-preview {
     @apply sk-outline flex shrink-0 flex-col overflow-hidden bg-white;
     border-radius: var(--radius-sketch-md);
@@ -309,7 +348,7 @@ body {
   }
 
   .cy-board-preview-scroll {
-    @apply min-h-0 flex-1 overflow-y-auto pb-16;
+    @apply scrollbar-hide min-h-0 flex-1 overflow-y-auto pb-16;
   }
 
   .cy-board-preview-write-bar {
@@ -411,6 +450,31 @@ body {
     color: #7a6b8e;
   }
 
+  .cy-today-me {
+    @apply flex min-w-0 flex-col gap-0.5;
+  }
+
+  .cy-today-me-label {
+    @apply text-[10px] font-bold leading-none;
+    color: var(--pencil-medium);
+  }
+
+  .cy-today-me-input {
+    @apply sk-outline--sm w-full border-0 bg-white/80 px-2 py-1 text-xs leading-snug outline-none;
+    border-radius: var(--radius-sketch-sm);
+    color: var(--ink);
+  }
+
+  .cy-today-me-input::placeholder {
+    color: var(--pencil-light);
+    font-style: italic;
+  }
+
+  .cy-today-me-text {
+    @apply truncate text-xs leading-snug;
+    color: var(--ink);
+  }
+
   .cy-pill {
     @apply sk-outline--sm shrink-0 px-2.5 py-0.5 text-[11px] font-semibold;
     border-radius: var(--radius-sketch-pill);
@@ -476,7 +540,7 @@ body {
   }
 
   .cy-today-dropdown-list {
-    @apply max-h-32 overflow-y-auto;
+    @apply scrollbar-hide max-h-32 overflow-y-auto;
   }
 
   .cy-today-dropdown-item {
@@ -491,6 +555,60 @@ body {
     @apply flex min-h-0 flex-1 flex-col overflow-hidden;
   }
 
+  .cy-album-picture {
+    @apply min-h-0 gap-1 bg-transparent p-0;
+    border: none;
+  }
+
+  .cy-album-picture:active {
+    transform: scale(0.99);
+  }
+
+  .cy-album-frame-outer {
+    @apply sk-outline--md relative flex min-h-0 w-full flex-1 flex-col overflow-hidden p-1.5;
+    border-radius: 6px 8px 7px 9px / 8px 6px 9px 7px;
+    background: linear-gradient(145deg, #ffe8d6 0%, #f5d9c4 55%, #edd0b8 100%);
+  }
+
+  .cy-album-frame-outer::after {
+    border-color: #d4a88a;
+    border-width: 2px;
+  }
+
+  .cy-album-frame-mat {
+    @apply sk-outline--sm relative min-h-0 w-full flex-1 overflow-hidden p-1;
+    border-radius: 3px 5px 4px 4px / 4px 3px 5px 4px;
+    background: #fffdf8;
+  }
+
+  .cy-album-frame-mat::after {
+    border-color: var(--pencil-faint);
+  }
+
+  .cy-album-frame-photo {
+    @apply absolute inset-1 object-cover object-center;
+    border-radius: 2px 3px 2px 3px / 3px 2px 3px 2px;
+    filter: grayscale(30%) contrast(1.06);
+  }
+
+  .cy-album-frame-empty {
+    @apply flex h-full min-h-[4.5rem] w-full items-center justify-center px-2 text-center text-[10px] font-bold leading-snug;
+    color: var(--pencil-medium);
+  }
+
+  .cy-album-caption-sticker {
+    @apply sk-outline--sm relative z-10 max-w-[92%] truncate px-2.5 py-1 text-center text-[9px] font-bold leading-tight;
+    border-radius: 10px 4px 12px 5px / 5px 11px 4px 10px;
+    background: #fff9c4;
+    color: var(--ink);
+    transform: rotate(-2.5deg);
+    box-shadow: none;
+  }
+
+  .cy-album-caption-sticker::after {
+    border-color: #e8d878;
+  }
+
   .cy-album-chrome {
     @apply sk-divider-bottom flex h-3 shrink-0 items-center gap-1 px-1;
     background: #e8dff8;
@@ -502,7 +620,12 @@ body {
   }
 
   .cy-album-screen {
-    @apply relative min-h-0 w-full flex-1 overflow-hidden bg-black;
+    @apply relative min-h-0 w-full flex-1 overflow-hidden;
+    background: #fffdf8;
+  }
+
+  .cy-album-screen--frame {
+    @apply h-full min-h-0 flex-1;
   }
 
   .cy-album-screen img {

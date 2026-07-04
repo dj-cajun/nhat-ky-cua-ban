@@ -95,6 +95,7 @@ export const vi = {
     anonymous: '🤫 Ẩn danh',
     anonymousMark: '🤫',
     photoAlbum: 'Album ảnh mini',
+    noPhoto: 'Chưa có ảnh',
     photoSetupTitle: 'Cài đặt album ảnh',
     choosePhoto: 'Chọn ảnh',
     photoTapHint: 'Chạm để đổi ảnh',
@@ -111,6 +112,8 @@ export const vi = {
     profilePhotoTap: 'Chạm để đổi ảnh đại diện',
     surnameLabel: 'Họ:',
     nameHidden: '●●●●',
+    todayMeLabel: 'Hôm nay mình',
+    todayMePlaceholder: 'Viết về hôm nay…',
     todayVisitorsTitle: 'Gợi ý khách ghé hôm nay',
     todayVisitorsEmpty: 'Chưa có ai ghé hôm nay',
   },
@@ -298,11 +301,13 @@ export const vi = {
     from: (name: string) => `Từ ${name}`,
   },
   status: {
+    giftBtn: 'Hộp quà',
+    dotoriBtn: 'Trạm Dotori',
     dotoriAria: 'Trạm nạp Dotori',
     giftAria: 'Hộp quà',
   },
   profanity: {
-    blocked: 'Nội dung có từ ngữ không phù hợp.',
+    blocked: 'Từ ngữ không thể lưu được.',
   },
   terms: {
     acceptLabel: 'Tôi đồng ý với',

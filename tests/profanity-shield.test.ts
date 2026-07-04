@@ -42,7 +42,7 @@ describe('assertCleanText', () => {
     const result = assertCleanText('l0n');
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('không phù hợp');
+      expect(result.message).toContain('không thể lưu');
     }
   });
 });

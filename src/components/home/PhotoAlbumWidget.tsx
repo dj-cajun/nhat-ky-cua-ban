@@ -5,11 +5,15 @@ import { appPageAtom } from '@/stores/atoms';
 
 export function PhotoAlbumWidget() {
   const setPage = useSetAtom(appPageAtom);
-  const album = db.getPhoto();
+  const photos = db.getPhotoGallery();
+  const first = photos[0];
+  const hasPhoto = Boolean(first?.imageUrl);
 
   const openAlbum = () => {
     setPage('album');
   };
+
+  const caption = first?.caption || vi.home.captionPlaceholder;
 
   return (
     <div className="cy-album-widget">
@@ -17,24 +21,23 @@ export function PhotoAlbumWidget() {
       <button
         type="button"
         onClick={openAlbum}
-        className="cy-card-inset cy-album-frame mb-1 min-h-0 text-left"
+        className="cy-album-picture flex min-h-0 w-full flex-1 flex-col items-center"
         aria-label={vi.album.open}
       >
-        <div className="cy-album-chrome">
-          <span className="cy-album-chrome-dot" />
-          <span className="cy-album-chrome-dot" />
-          <span className="cy-album-chrome-dot" />
+        <div className="cy-album-frame-outer min-h-0 w-full flex-1">
+          <div className="cy-album-frame-mat">
+            {hasPhoto ? (
+              <img src={first.imageUrl} alt="" draggable={false} className="cy-album-frame-photo" />
+            ) : (
+              <p className="cy-album-frame-empty">{vi.home.noPhoto}</p>
+            )}
+          </div>
         </div>
-        <div className="cy-album-screen">
-          <img src={album.imageUrl} alt="" draggable={false} />
-        </div>
-      </button>
-      <button
-        type="button"
-        onClick={openAlbum}
-        className="cy-card-inset shrink-0 truncate rounded px-1.5 py-0.5 text-center text-[10px]"
-      >
-        {album.caption || vi.home.captionPlaceholder}
+        {hasPhoto && (
+          <span className="cy-album-caption-sticker" aria-hidden>
+            {caption}
+          </span>
+        )}
       </button>
     </div>
   );

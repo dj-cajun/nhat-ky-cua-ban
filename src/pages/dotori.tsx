@@ -145,7 +145,7 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
 
   return (
     <div className="page-shell p-4 font-doodle">
-      <header className="mb-4 flex items-center justify-between">
+      <header className="mb-4 flex shrink-0 items-center justify-between">
         <button type="button" onClick={onBack} className="text-sm font-bold">
           {vi.dotori.back}
         </button>
@@ -153,7 +153,8 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
         <span className="text-sm font-bold">{profile?.dotoriBalance ?? 0}</span>
       </header>
 
-      <section className="mb-4">
+      <main className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-2">
+        <section className="mb-4">
         <h2 className="mb-2 text-xs font-bold text-slate-600">{vi.dotori.missionBoard}</h2>
         <div className="space-y-2">
           {MISSIONS.map((m) => {
@@ -278,7 +279,7 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
         </div>
       </section>
 
-      <section className="mb-4 flex-1 overflow-y-auto">
+      <section className="mb-4">
         <h2 className="mb-2 text-xs font-bold text-slate-600">{vi.dotori.affiliate}</h2>
         <div className="grid grid-cols-2 gap-2">
           {AFFILIATE_ITEMS.map((link) => (
@@ -295,22 +296,25 @@ export function DotoriPage({ onBack, onLogout }: DotoriPageProps) {
           ))}
         </div>
       </section>
+      </main>
 
-      <p className="text-center text-[10px] text-slate-400">{vi.dotori.footer}</p>
+      <footer className="page-footer shrink-0 space-y-2">
+        <p className="text-center text-[10px] text-slate-400">{vi.dotori.footer}</p>
 
-      <button
-        type="button"
-        onClick={() => {
-          if (window.confirm(vi.dotori.logoutConfirm)) {
-            logoutZalo();
-            clearAppData();
-            onLogout?.();
-          }
-        }}
-        className="mt-3 text-center text-[10px] text-slate-400 underline"
-      >
-        {vi.dotori.logout}
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm(vi.dotori.logoutConfirm)) {
+              logoutZalo();
+              clearAppData();
+              onLogout?.();
+            }
+          }}
+          className="w-full text-center text-[10px] text-slate-400 underline"
+        >
+          {vi.dotori.logout}
+        </button>
+      </footer>
     </div>
   );
 }

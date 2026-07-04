@@ -42,7 +42,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
         <span className="w-10" />
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="scrollbar-hide flex-1 overflow-y-auto p-4">
         <div className="mb-3">
           <AnonymousMark post={post} onWarp={onClose} />
         </div>

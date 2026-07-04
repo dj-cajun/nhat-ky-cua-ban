@@ -119,19 +119,9 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
           </span>
         </header>
 
-        <section className="relative min-h-0 flex-1 overflow-y-auto px-2 py-2">
+        <section className="scrollbar-hide relative min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {photos.length === 0 ? (
-            <button
-              type="button"
-              onClick={() => void handleUpload()}
-              disabled={picking || !canEdit}
-              className="cy-pinterest-pin cy-photo-empty mx-auto flex aspect-[3/4] w-full max-w-[10rem] flex-col items-center justify-center gap-2 p-4 text-center"
-            >
-              <span className="text-3xl">📷</span>
-              <span className="text-xs font-bold">
-                {picking ? vi.album.uploading : vi.album.emptyUpload}
-              </span>
-            </button>
+            <p className="py-8 text-center text-xs text-zinc-500">{vi.home.noPhoto}</p>
           ) : (
             <div className="cy-pinterest-grid">
               {photos.map((photo) => (
@@ -149,20 +139,6 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
                   </p>
                 </button>
               ))}
-
-              {canEdit && photos.length < MAX_ALBUM_PHOTOS && (
-                <button
-                  type="button"
-                  onClick={() => void handleUpload()}
-                  disabled={picking}
-                  className="cy-pinterest-pin cy-pinterest-pin-add"
-                >
-                  <div className="cy-pinterest-pin-image flex aspect-[3/4] items-center justify-center">
-                    <span className="text-2xl">{picking ? '…' : '+'}</span>
-                  </div>
-                  <p className="cy-pinterest-pin-caption">{vi.album.upload}</p>
-                </button>
-              )}
             </div>
           )}
 
@@ -171,7 +147,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
           )}
         </section>
 
-        {canEdit && photos.length > 0 && (
+        {canEdit && (
           <div className="pencil-bar">
             <button
               type="button"

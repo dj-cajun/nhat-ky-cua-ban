@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { db } from '@/lib/db';
 import { pickAlbumPhoto } from '@/lib/photo-picker';
+import { assertCleanText } from '@/lib/profanity-shield';
 import { ensureProfileName, getProfileDisplayName } from '@/lib/profile-name';
 import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 import { hasSurnameLetterUnlock } from '@/lib/dotori-economy';
 import { isSurnameBlurred } from '@/lib/local-db';
 import { vi } from '@/i18n/vi';
+import { MAX_STATUS_MESSAGE_CHARS } from '@/types';
 import { currentUserAtom, displayUserAtom, viewModeAtom } from '@/stores/atoms';
 import { ProfileAvatar } from './ProfileAvatar';
 
@@ -49,6 +51,73 @@ function MaskedName({
   );
 }
 
+function TodayMeBlock({
+  message,
+  editable,
+  onSave,
+}: {
+  message: string;
+  editable: boolean;
+  onSave?: (next: string) => { ok: true } | { ok: false; message: string };
+}) {
+  const [draft, setDraft] = useState(message);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setDraft(message);
+    setError('');
+  }, [message]);
+
+  const commit = () => {
+    if (!editable || !onSave) return;
+    const trimmed = draft.trim();
+    if (trimmed === message) {
+      setError('');
+      return;
+    }
+    const result = onSave(trimmed);
+    if (!result.ok) {
+      setError(result.message);
+      setDraft(message);
+      return;
+    }
+    setError('');
+  };
+
+  return (
+    <div className="cy-today-me">
+      <p className="cy-today-me-label">{vi.home.todayMeLabel}</p>
+      {editable ? (
+        <>
+          <input
+            type="text"
+            value={draft}
+            maxLength={MAX_STATUS_MESSAGE_CHARS}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              setError('');
+            }}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
+            placeholder={vi.home.todayMePlaceholder}
+            className="cy-today-me-input"
+            aria-label={vi.home.todayMeLabel}
+          />
+          {error && <p className="text-[10px] text-red-600">{error}</p>}
+        </>
+      ) : (
+        <p className="cy-today-me-text">
+          {message.trim() || vi.home.todayMePlaceholder}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function ProfileCard() {
   const user = useAtomValue(displayUserAtom);
   const currentUser = useAtomValue(currentUserAtom);
@@ -78,6 +147,16 @@ export function ProfileCard() {
     if (updated) {
       setUser(updated);
     }
+  };
+
+  const saveStatusMessage = (next: string): { ok: true } | { ok: false; message: string } => {
+    const check = assertCleanText(next);
+    if (!check.ok) return check;
+    const updated = db.updateProfile({ statusMessage: next });
+    if (updated) {
+      setUser(updated);
+    }
+    return { ok: true };
   };
 
   return (
@@ -117,7 +196,11 @@ export function ProfileCard() {
             {user.schoolName} {user.className}
           </span>
         </div>
-        <p className="truncate text-xs italic text-zinc-700">&quot;{user.statusMessage}&quot;</p>
+        <TodayMeBlock
+          message={user.statusMessage}
+          editable={!isStranger}
+          onSave={saveStatusMessage}
+        />
       </div>
     </section>
   );

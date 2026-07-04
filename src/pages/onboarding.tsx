@@ -63,7 +63,7 @@ export function OnboardingPage({ onComplete, initialSchool, initialClass }: Onbo
         </p>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      <main className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
         {step === 0 ? (
           <section className="diary-panel p-4">
             <h2 className="mb-2 text-sm font-bold">{vi.onboarding.schoolClass}</h2>

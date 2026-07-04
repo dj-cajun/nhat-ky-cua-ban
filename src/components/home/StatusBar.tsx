@@ -56,28 +56,24 @@ export function StatusBar() {
               TOTAL <strong className="text-sm">{user.visitCountTotal}</strong>
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={() => setShowGifts(true)}
-              className="relative rounded px-1.5 py-0.5 text-sm"
+              className="cy-status-btn cy-status-btn--gift"
               aria-label={vi.status.giftAria}
             >
-              🎁
-              {giftCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
-                  {giftCount}
-                </span>
-              )}
+              {vi.status.giftBtn}
+              {giftCount > 0 && <span className="cy-status-btn-count">{giftCount}</span>}
             </button>
             <button
               type="button"
               onClick={() => setPage('dotori')}
-              className="cy-badge-blue"
+              className="cy-status-btn cy-status-btn--dotori"
               aria-label={vi.status.dotoriAria}
             >
-              <span className="text-[10px]">●</span>
-              <strong>{user.dotoriBalance}</strong>
+              {vi.status.dotoriBtn}
+              <span className="cy-status-btn-count">{user.dotoriBalance}</span>
             </button>
           </div>
         </div>

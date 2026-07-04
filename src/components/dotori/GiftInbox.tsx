@@ -23,7 +23,7 @@ export function GiftInbox({ onClose }: GiftInboxProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
-      <div className="diary-panel max-h-[70vh] w-full max-w-md overflow-y-auto p-4">
+      <div className="diary-panel scrollbar-hide max-h-[70vh] w-full max-w-md overflow-y-auto p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-bold">{vi.gift.inboxTitle}</h2>
           <button type="button" onClick={onClose} className="text-xs">

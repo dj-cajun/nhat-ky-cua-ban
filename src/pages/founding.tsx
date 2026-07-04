@@ -178,7 +178,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
           <span className="w-10" />
         </header>
 
-        <main className="min-h-0 flex-1 space-y-3 overflow-y-auto p-2">
+        <main className="scrollbar-hide min-h-0 flex-1 space-y-3 overflow-y-auto p-2">
           <section className="cy-card p-3">
             <p className="mb-1 text-[10px] font-bold tracking-wide text-y2k-pink">
               {schoolName} · {className}
