@@ -62,6 +62,7 @@ export const db = {
   updatePhotoCard: (id: string, patch: Partial<Pick<PhotoCard, 'imageUrl' | 'caption'>>) =>
     localDb.updatePhotoCard(id, patch),
   addPhotoCard: (imageUrl: string, caption?: string) => localDb.addPhotoCard(imageUrl, caption),
+  deletePhotoCard: (id: string) => localDb.deletePhotoCard(id),
   getVotes: () => localDb.getVoteRecords(),
   saveVote: (record: localDb.VoteRecord) => {
     localDb.saveVoteRecord(record);

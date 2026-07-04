@@ -138,6 +138,8 @@ export const vi = {
     maxPhotos: (n: number) => `Tối đa ${n} ảnh`,
     emptyUpload: 'Chạm để tải ảnh đầu tiên',
     viewClose: 'Đóng',
+    delete: 'Xóa ảnh',
+    deleteConfirm: 'Xóa ảnh này khỏi album?',
   },
   realtime: {
     hintLabel: 'Gợi ý:',

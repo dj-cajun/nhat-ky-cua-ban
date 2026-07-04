@@ -97,6 +97,15 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
     closeEdit();
   };
 
+  const handleDelete = (photoId: string) => {
+    if (!canEdit) return;
+    if (!window.confirm(vi.album.deleteConfirm)) return;
+    db.deletePhotoCard(photoId);
+    refreshPhotos();
+    closeViewer();
+    closeEdit();
+  };
+
   return (
     <div className="cy-shell">
       <div className="cy-canvas flex min-h-0 flex-1 flex-col">
@@ -183,13 +192,22 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
               {vi.album.viewClose}
             </button>
             {canEdit ? (
-              <button
-                type="button"
-                onClick={() => openEdit(viewingPhoto)}
-                className="text-xs font-bold text-y2k-pink-light"
-              >
-                {vi.album.edit}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(viewingPhoto.id)}
+                  className="text-xs font-bold text-red-300"
+                >
+                  {vi.album.delete}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEdit(viewingPhoto)}
+                  className="text-xs font-bold text-y2k-pink-light"
+                >
+                  {vi.album.edit}
+                </button>
+              </div>
             ) : (
               <span className="w-8" />
             )}
@@ -246,8 +264,15 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
               {draftCaption.length}/{MAX_CAPTION_CHARS}
             </p>
             {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
-            <button type="button" onClick={saveEdit} className="cy-write-btn w-full py-2 text-sm">
+            <button type="button" onClick={saveEdit} className="cy-write-btn mb-2 w-full py-2 text-sm">
               {vi.home.save}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDelete(editingPhoto.id)}
+              className="pencil-btn-danger w-full py-2 text-sm"
+            >
+              {vi.album.delete}
             </button>
           </div>
         </div>

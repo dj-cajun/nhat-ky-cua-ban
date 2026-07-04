@@ -296,6 +296,10 @@ export function addPhotoCard(imageUrl: string, caption = ''): PhotoCard {
   return card;
 }
 
+export function deletePhotoCard(id: string): void {
+  savePhotoGallery(getPhotoGallery().filter((photo) => photo.id !== id));
+}
+
 export function getVoteRecords(): VoteRecord[] {
   return read(KEYS.votes, []);
 }
