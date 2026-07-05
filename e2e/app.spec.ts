@@ -74,14 +74,6 @@ function activeFoundingStorage(profileId: string): string {
   });
 }
 
-async function completeIntro(page: import('@playwright/test').Page) {
-  await expect(page.getByText('Nhật ký của bạn là gì?')).toBeVisible({ timeout: 10000 });
-  for (let i = 0; i < 3; i += 1) {
-    await page.getByRole('button', { name: 'Tiếp' }).click();
-  }
-  await page.getByRole('button', { name: 'Bắt đầu ngay' }).click();
-}
-
 test.describe('Giới thiệu app', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {

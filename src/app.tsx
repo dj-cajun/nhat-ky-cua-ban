@@ -16,7 +16,14 @@ import { getOnboardingPrefillFromToken } from '@/lib/founding-router';
 import { ensureProfileName } from '@/lib/profile-name';
 import { ensureHintSealOnProfile } from '@/lib/supabase-sync';
 import { isZaloLoggedIn } from '@/lib/zalo-auth';
-import { handleDevReset, isIntroSeen, isOnboarded, markIntroSeen } from '@/lib/session';
+import {
+  captureDemoFlags,
+  handleDevReset,
+  isIntroSeen,
+  isOnboarded,
+  isVoteDemoActive,
+  markIntroSeen,
+} from '@/lib/session';
 import { primeProfanityBlacklist } from '@/lib/profanity-remote';
 import { vi } from '@/i18n/vi';
 import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
@@ -83,6 +90,8 @@ function AppContent() {
       }
     }
 
+    captureDemoFlags();
+
     if (handleDevReset()) {
       setStage('intro');
       return;
@@ -90,9 +99,13 @@ function AppContent() {
 
     primeProfanityBlacklist();
 
-    if (!isIntroSeen()) {
+    if (!isIntroSeen() && !(isDemoMode() && isVoteDemoActive())) {
       setStage('intro');
       return;
+    }
+
+    if (!isIntroSeen() && isDemoMode() && isVoteDemoActive()) {
+      markIntroSeen();
     }
 
     if (!isOnboarded() && isDemoMode()) {
