@@ -1,49 +1,90 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  getActivePost,
   getCircle,
   getProfile,
   getSessionProfile,
+  hasResponded,
   isCircleMember,
   listCircleMembers,
+  listRespondedUserIds,
 } from '@/features/local/repository';
 import type { Circle, Profile } from '@/types/domain';
+import { usePresenceStore } from '@/stores/presence';
 import { colors } from '@/constants/theme';
 import { en } from '@/i18n/en';
 
 export default function CircleHomeScreen() {
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
+  const [meId, setMeId] = useState<string | null>(null);
   const [circle, setCircle] = useState<Circle | null>(null);
   const [members, setMembers] = useState<
     { userId: string; isPioneer: boolean; profile: Profile | null }[]
   >([]);
   const [forbidden, setForbidden] = useState(false);
+  const [activePostId, setActivePostId] = useState<string | null>(null);
+  const [respondedIds, setRespondedIds] = useState<Set<string>>(new Set());
+  const enter = usePresenceStore((s) => s.enter);
+  const leave = usePresenceStore((s) => s.leave);
+  const presence = usePresenceStore((s) => (circleId ? s.list(circleId) : []));
+
+  const reload = useCallback(async () => {
+    const me = await getSessionProfile();
+    if (!me || !circleId) {
+      router.replace('/(auth)/sign-in');
+      return;
+    }
+    if (!(await isCircleMember(circleId, me.id))) {
+      setForbidden(true);
+      return;
+    }
+    setMeId(me.id);
+    setCircle(await getCircle(circleId));
+    const list = await listCircleMembers(circleId);
+    const enriched = await Promise.all(
+      list.map(async (m) => ({
+        userId: m.userId,
+        isPioneer: m.isPioneer,
+        profile: await getProfile(m.userId),
+      })),
+    );
+    setMembers(enriched);
+    const active = await getActivePost(circleId);
+    setActivePostId(active?.id ?? null);
+    enter(circleId, me.id, active?.id ?? null);
+    if (active) {
+      setRespondedIds(new Set(await listRespondedUserIds(active.id)));
+      if (await hasResponded(active.id, me.id)) {
+        usePresenceStore.getState().markResponded(circleId, me.id, active.id);
+      }
+    } else {
+      setRespondedIds(new Set());
+    }
+  }, [circleId, enter]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+      return () => {
+        if (circleId && meId) leave(circleId, meId);
+      };
+    }, [reload, circleId, meId, leave]),
+  );
 
   useEffect(() => {
-    void (async () => {
-      const me = await getSessionProfile();
-      if (!me || !circleId) {
-        router.replace('/(auth)/sign-in');
-        return;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (!circleId || !meId) return;
+      if (state === 'background' || state === 'inactive') {
+        leave(circleId, meId);
+      } else if (state === 'active') {
+        void reload();
       }
-      if (!(await isCircleMember(circleId, me.id))) {
-        setForbidden(true);
-        return;
-      }
-      setCircle(await getCircle(circleId));
-      const list = await listCircleMembers(circleId);
-      const enriched = await Promise.all(
-        list.map(async (m) => ({
-          userId: m.userId,
-          isPioneer: m.isPioneer,
-          profile: await getProfile(m.userId),
-        })),
-      );
-      setMembers(enriched);
-    })();
-  }, [circleId]);
+    });
+    return () => sub.remove();
+  }, [circleId, meId, leave, reload]);
 
   if (forbidden) {
     return (
@@ -59,6 +100,8 @@ export default function CircleHomeScreen() {
 
   if (!circle) return null;
 
+  const presenceMap = new Map(presence.map((p) => [p.userId, p]));
+
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.replace('/(tabs)/universe')}>
@@ -70,34 +113,52 @@ export default function CircleHomeScreen() {
         </View>
         <View>
           <Text style={styles.title}>{circle.name}</Text>
-          <Text style={styles.sub}>{en.circle.memberCount(members.length)}</Text>
+          <Text style={styles.sub}>
+            {en.circle.memberCount(members.length)}
+            {activePostId ? ` · ${en.universe.notice}` : ''}
+          </Text>
         </View>
       </View>
 
       <Text style={styles.section}>{en.circle.members}</Text>
       <View style={styles.grid}>
-        {members.map((m) => (
-          <Pressable
-            key={m.userId}
-            style={styles.member}
-            onPress={() => router.push(`/diary/${m.userId}`)}
-          >
-            <View style={styles.dot}>
-              <Text>{(m.profile?.displayName ?? '?').slice(0, 1)}</Text>
-            </View>
-            <Text style={styles.memberName} numberOfLines={1}>
-              {m.profile?.displayName ?? 'Member'}
-            </Text>
-            {m.isPioneer ? <Text style={styles.pioneer}>{en.circle.pioneer}</Text> : null}
-          </Pressable>
-        ))}
+        {members.map((m) => {
+          const p = presenceMap.get(m.userId);
+          const orange = Boolean(activePostId && (respondedIds.has(m.userId) || p?.state === 'responded'));
+          const green = Boolean(p && !orange);
+          return (
+            <Pressable
+              key={m.userId}
+              style={styles.member}
+              onPress={() => router.push(`/diary/${m.userId}`)}
+            >
+              <View style={styles.dot}>
+                <Text>{(m.profile?.displayName ?? '?').slice(0, 1)}</Text>
+              </View>
+              <Text style={styles.memberName} numberOfLines={1}>
+                {m.profile?.displayName ?? 'Member'}
+              </Text>
+              {m.isPioneer ? <Text style={styles.pioneer}>{en.circle.pioneer}</Text> : null}
+              <View
+                style={[
+                  styles.statusDot,
+                  orange
+                    ? { backgroundColor: colors.orange }
+                    : green
+                      ? { backgroundColor: colors.green }
+                      : { backgroundColor: 'transparent' },
+                ]}
+              />
+            </Pressable>
+          );
+        })}
       </View>
 
-      <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/settings`)}>
-        <Text style={styles.linkText}>{en.circle.settings}</Text>
-      </Pressable>
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/notice`)}>
         <Text style={styles.linkText}>{en.circle.noticePoll}</Text>
+      </Pressable>
+      <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/settings`)}>
+        <Text style={styles.linkText}>{en.circle.settings}</Text>
       </Pressable>
       <Pressable
         style={styles.link}
@@ -137,6 +198,14 @@ const styles = StyleSheet.create({
   },
   memberName: { marginTop: 6, fontSize: 12, color: colors.ink },
   pioneer: { marginTop: 2, fontSize: 9, color: colors.accent },
+  statusDot: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
   link: {
     marginTop: 12,
     borderRadius: 14,

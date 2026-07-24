@@ -68,6 +68,46 @@ interface LocalDb {
   diary: DiaryEntry[];
   diaryVisibility: { entryId: string; circleId: string }[];
   blocks: { blockerId: string; blockedId: string }[];
+  posts: CirclePostRecord[];
+  pollOptions: PollOptionRecord[];
+  responses: ResponseRecord[];
+  reports: ReportRecord[];
+}
+
+export interface CirclePostRecord {
+  id: string;
+  circleId: string;
+  type: 'notice' | 'poll';
+  title: string;
+  body: string;
+  status: 'active' | 'closed' | 'hidden';
+  closesAt: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+interface PollOptionRecord {
+  id: string;
+  postId: string;
+  label: string;
+}
+
+interface ResponseRecord {
+  postId: string;
+  userId: string;
+  optionId?: string;
+  respondedAt: string;
+}
+
+export interface ReportRecord {
+  id: string;
+  reporterId: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  contentSnapshot: string;
+  status: 'open' | 'reviewing' | 'resolved' | 'dismissed';
+  createdAt: string;
 }
 
 const empty: LocalDb = {
@@ -82,9 +122,13 @@ const empty: LocalDb = {
   diary: [],
   diaryVisibility: [],
   blocks: [],
+  posts: [],
+  pollOptions: [],
+  responses: [],
+  reports: [],
 };
 
-let memory: LocalDb = { ...empty, profiles: [], draftMembers: [], drafts: [], circles: [], members: [], joinRequests: [], recommendations: [], diary: [], diaryVisibility: [], blocks: [] };
+let memory: LocalDb = structuredClone(empty);
 let loaded = false;
 
 function uid(): string {
@@ -111,7 +155,16 @@ async function persist(): Promise<void> {
 export async function loadLocalDb(): Promise<void> {
   if (loaded) return;
   const raw = await AsyncStorage.getItem(KEY);
-  memory = raw ? (JSON.parse(raw) as LocalDb) : structuredClone(empty);
+  if (raw) {
+    memory = { ...structuredClone(empty), ...(JSON.parse(raw) as Partial<LocalDb>) };
+    memory.posts ??= [];
+    memory.pollOptions ??= [];
+    memory.responses ??= [];
+    memory.reports ??= [];
+    memory.blocks ??= [];
+  } else {
+    memory = structuredClone(empty);
+  }
   loaded = true;
 }
 
@@ -341,6 +394,12 @@ export async function listMyCircleSummaries(userId: string): Promise<CircleSumma
       const wroteTodayCount = members.filter((x) =>
         memory.diary.some((d) => d.userId === x.userId && d.entryDate === today),
       ).length;
+      const hasActiveNotice = memory.posts.some(
+        (p) =>
+          p.circleId === c.id &&
+          p.status === 'active' &&
+          new Date(p.closesAt).getTime() > Date.now(),
+      );
       return {
         id: c.id,
         name: c.name,
@@ -348,7 +407,7 @@ export async function listMyCircleSummaries(userId: string): Promise<CircleSumma
         symbol: c.symbol,
         activeMemberCount: members.length,
         wroteTodayCount,
-        hasActiveNotice: false,
+        hasActiveNotice,
       };
     });
 }
@@ -548,9 +607,7 @@ export async function canViewDiary(
 ): Promise<boolean> {
   await loadLocalDb();
   if (viewerId === ownerId) return true;
-  if (memory.blocks.some((b) => b.blockerId === ownerId && b.blockedId === viewerId)) {
-    return false;
-  }
+  if (await isBlockedBetween(viewerId, ownerId)) return false;
   if (entry.visibilityMode === 'private') return false;
 
   const viewerCircles = new Set(
@@ -571,8 +628,221 @@ export async function canViewDiary(
 
 export async function blockUser(blockerId: string, blockedId: string): Promise<void> {
   await loadLocalDb();
+  if (blockerId === blockedId) {
+    throw new AppError('VALIDATION', 'You can’t block yourself.');
+  }
   if (!memory.blocks.some((b) => b.blockerId === blockerId && b.blockedId === blockedId)) {
     memory.blocks.push({ blockerId, blockedId });
     await persist();
   }
+}
+
+export async function isBlockedBetween(a: string, b: string): Promise<boolean> {
+  await loadLocalDb();
+  return memory.blocks.some(
+    (x) =>
+      (x.blockerId === a && x.blockedId === b) || (x.blockerId === b && x.blockedId === a),
+  );
+}
+
+export async function listBlocks(blockerId: string): Promise<string[]> {
+  await loadLocalDb();
+  return memory.blocks.filter((b) => b.blockerId === blockerId).map((b) => b.blockedId);
+}
+
+/** One active post per circle (mirrors partial unique index) */
+export async function createCirclePost(input: {
+  circleId: string;
+  createdBy: string;
+  type: 'notice' | 'poll';
+  title: string;
+  body?: string;
+  closesAt: string;
+  options?: string[];
+}): Promise<CirclePostRecord> {
+  await loadLocalDb();
+  if (!(await isCircleMember(input.circleId, input.createdBy))) {
+    throw new AppError('FORBIDDEN', 'Only members can post.');
+  }
+  const member = memory.members.find(
+    (m) => m.circleId === input.circleId && m.userId === input.createdBy && m.status === 'active',
+  );
+  if (!member || (member.role !== 'admin' && !member.isPioneer)) {
+    throw new AppError('FORBIDDEN', 'Only admins can create notices or polls.');
+  }
+  if (!input.title.trim()) {
+    throw new AppError('VALIDATION', 'Enter a title.');
+  }
+  if (new Date(input.closesAt).getTime() <= Date.now()) {
+    throw new AppError('VALIDATION', 'Choose an end time in the future.');
+  }
+  const active = memory.posts.find(
+    (p) =>
+      p.circleId === input.circleId &&
+      p.status === 'active' &&
+      new Date(p.closesAt).getTime() > Date.now(),
+  );
+  if (active) {
+    throw new AppError('CONFLICT', 'This circle already has an active notice or poll.');
+  }
+  if (input.type === 'poll') {
+    const opts = (input.options ?? []).map((o) => o.trim()).filter(Boolean);
+    if (opts.length < 2 || opts.length > 4) {
+      throw new AppError('VALIDATION', 'Polls need 2–4 options.');
+    }
+  }
+
+  const post: CirclePostRecord = {
+    id: uid(),
+    circleId: input.circleId,
+    type: input.type,
+    title: input.title.trim(),
+    body: input.body?.trim() ?? '',
+    status: 'active',
+    closesAt: input.closesAt,
+    createdBy: input.createdBy,
+    createdAt: now(),
+  };
+  memory.posts.push(post);
+
+  if (input.type === 'poll') {
+    for (const label of input.options ?? []) {
+      if (!label.trim()) continue;
+      memory.pollOptions.push({ id: uid(), postId: post.id, label: label.trim() });
+    }
+  }
+
+  await persist();
+  return post;
+}
+
+export async function getActivePost(circleId: string): Promise<CirclePostRecord | null> {
+  await loadLocalDb();
+  return (
+    memory.posts.find(
+      (p) =>
+        p.circleId === circleId &&
+        p.status === 'active' &&
+        new Date(p.closesAt).getTime() > Date.now(),
+    ) ?? null
+  );
+}
+
+export async function listPollOptions(postId: string): Promise<PollOptionRecord[]> {
+  await loadLocalDb();
+  return memory.pollOptions.filter((o) => o.postId === postId);
+}
+
+/** Persist response first; UI may turn orange only after success */
+export async function respondToPost(input: {
+  postId: string;
+  userId: string;
+  optionId?: string;
+}): Promise<ResponseRecord> {
+  await loadLocalDb();
+  const post = memory.posts.find((p) => p.id === input.postId);
+  if (!post || post.status !== 'active' || new Date(post.closesAt).getTime() <= Date.now()) {
+    throw new AppError('CONFLICT', 'This notice or poll is closed.');
+  }
+  if (!(await isCircleMember(post.circleId, input.userId))) {
+    throw new AppError('FORBIDDEN', 'Only members can respond.');
+  }
+  if (post.type === 'poll') {
+    if (!input.optionId) {
+      throw new AppError('VALIDATION', 'Pick an option.');
+    }
+    if (!memory.pollOptions.some((o) => o.id === input.optionId && o.postId === post.id)) {
+      throw new AppError('VALIDATION', 'Invalid option.');
+    }
+  }
+
+  memory.responses = memory.responses.filter(
+    (r) => !(r.postId === input.postId && r.userId === input.userId),
+  );
+  const response: ResponseRecord = {
+    postId: input.postId,
+    userId: input.userId,
+    optionId: input.optionId,
+    respondedAt: now(),
+  };
+  memory.responses.push(response);
+  await persist();
+  return response;
+}
+
+export async function hasResponded(postId: string, userId: string): Promise<boolean> {
+  await loadLocalDb();
+  return memory.responses.some((r) => r.postId === postId && r.userId === userId);
+}
+
+export async function listRespondedUserIds(postId: string): Promise<string[]> {
+  await loadLocalDb();
+  return memory.responses.filter((r) => r.postId === postId).map((r) => r.userId);
+}
+
+/** Aggregates only — never returns who picked what */
+export async function getPollSummary(
+  postId: string,
+  viewerId: string,
+): Promise<{ totalResponded: number; options: { id: string; label: string; count: number }[] }> {
+  await loadLocalDb();
+  const post = memory.posts.find((p) => p.id === postId);
+  if (!post) throw new AppError('NOT_FOUND', 'Poll not found.');
+  if (!(await isCircleMember(post.circleId, viewerId))) {
+    throw new AppError('FORBIDDEN', 'Only members can view results.');
+  }
+  const options = memory.pollOptions.filter((o) => o.postId === postId);
+  return {
+    totalResponded: memory.responses.filter((r) => r.postId === postId).length,
+    options: options.map((o) => ({
+      id: o.id,
+      label: o.label,
+      count: memory.responses.filter((r) => r.optionId === o.id).length,
+    })),
+  };
+}
+
+export async function closePost(postId: string, actorId: string): Promise<void> {
+  await loadLocalDb();
+  const post = memory.posts.find((p) => p.id === postId);
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found.');
+  const member = memory.members.find(
+    (m) => m.circleId === post.circleId && m.userId === actorId && m.status === 'active',
+  );
+  if (!member || (member.role !== 'admin' && !member.isPioneer)) {
+    throw new AppError('FORBIDDEN', 'Only admins can close this.');
+  }
+  post.status = 'closed';
+  await persist();
+}
+
+export async function submitReport(input: {
+  reporterId: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  contentSnapshot: string;
+}): Promise<ReportRecord> {
+  await loadLocalDb();
+  if (!input.reason.trim()) {
+    throw new AppError('VALIDATION', 'Choose a reason.');
+  }
+  const report: ReportRecord = {
+    id: uid(),
+    reporterId: input.reporterId,
+    targetType: input.targetType,
+    targetId: input.targetId,
+    reason: input.reason.trim(),
+    contentSnapshot: input.contentSnapshot.slice(0, 2000),
+    status: 'open',
+    createdAt: now(),
+  };
+  memory.reports.push(report);
+  await persist();
+  return report;
+}
+
+export async function listMyReports(reporterId: string): Promise<ReportRecord[]> {
+  await loadLocalDb();
+  return memory.reports.filter((r) => r.reporterId === reporterId);
 }

@@ -69,9 +69,11 @@ export const en = {
     save: 'Save',
     back: '← Back',
     privateBlocked: "This entry isn't shared with you.",
+    blockedRelation: 'You can’t view this diary while a block is in place.',
     guestbook: 'Guestbook',
     past: 'Past entries',
     album: 'Photo album',
+    safety: 'Safety',
   },
 
   moods: {
@@ -116,6 +118,21 @@ export const en = {
     noticeTitle: 'Notices & polls',
     noticeSub:
       'One active item per circle. Individual votes stay private; only totals are shown.',
+    noticeCreate: 'Create notice',
+    pollCreate: 'Create poll',
+    noticePlaceholder: 'e.g. Bring gym clothes tomorrow',
+    pollQuestion: 'Poll question',
+    optionN: (n: number) => `Option ${n}`,
+    acknowledge: 'Got it',
+    acknowledged: 'You’re marked as responded',
+    vote: 'Submit vote',
+    voted: 'Vote saved',
+    results: 'Results',
+    totalResponded: (n: number) => `${n} responded`,
+    noActive: 'No active notice or poll. Keep the circle quiet.',
+    closePost: 'Close',
+    present: 'Here now',
+    respondedBadge: 'Responded',
     aliasTitle: 'Alias board',
     aliasSub:
       'Ship report/block/moderation tools before alias posting. Real author IDs stay off the client.',
@@ -129,12 +146,28 @@ export const en = {
 
   reports: {
     title: 'Report',
-    sub: 'We keep a content snapshot so reviews still work after edits or deletes. Required before alias features.',
+    sub: 'We keep a content snapshot so reviews still work after edits or deletes.',
+    reason: 'Reason',
+    reasons: {
+      harassment: 'Harassment or bullying',
+      sexual: 'Sexual or inappropriate content',
+      threat: 'Threats or violence',
+      spam: 'Spam or scam',
+      other: 'Something else',
+    },
+    details: 'Optional details',
+    detailsPlaceholder: 'Anything moderators should know (no private info needed)',
+    submit: 'Submit report',
+    submitted: 'Report received. Thanks for helping keep the circle safe.',
+    hideForMe: 'Also hide this from me',
+    blockUser: 'Block this person',
+    blocked: 'Blocked. They can’t message you or visit your diary.',
+    reportProfile: 'Report profile',
   },
 
   guestbook: {
     title: 'Guestbook',
-    sub: 'Preview the latest 3. No photos or links. Report and block paths come next.',
+    sub: 'Preview the latest 3. No photos or links. Use Report if something feels wrong.',
   },
 
   calendar: {

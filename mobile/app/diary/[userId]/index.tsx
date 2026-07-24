@@ -14,6 +14,7 @@ import {
   getDiary,
   getProfile,
   getSessionProfile,
+  isBlockedBetween,
   upsertDiary,
 } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
@@ -39,6 +40,7 @@ export default function DiaryScreen() {
   const [shortText, setShortText] = useState('');
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false);
+  const [blockedRelation, setBlockedRelation] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -48,6 +50,11 @@ export default function DiaryScreen() {
         return;
       }
       setMe(session);
+      if (await isBlockedBetween(session.id, userId)) {
+        setBlockedRelation(true);
+        setOwner(await getProfile(userId));
+        return;
+      }
       setOwner(await getProfile(userId));
       const d = await getDiary(userId);
       setEntry(d);
@@ -93,14 +100,16 @@ export default function DiaryScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>{en.diary.back}</Text>
-      </Pressable>
+          <Text style={styles.back}>{en.diary.back}</Text>
+        </Pressable>
         <Text style={styles.title}>{owner.displayName}</Text>
         <Text style={styles.mood}>
           {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : en.diary.noMood}
         </Text>
 
-        {blocked ? (
+        {blockedRelation ? (
+          <Text style={styles.empty}>{en.diary.blockedRelation}</Text>
+        ) : blocked ? (
           <Text style={styles.empty}>{en.diary.privateBlocked}</Text>
         ) : editing && isMine ? (
           <View>
@@ -158,21 +167,43 @@ export default function DiaryScreen() {
           </View>
         )}
 
-        {isMine && !editing ? (
+        {isMine && !editing && !blockedRelation ? (
           <Pressable style={styles.btn} onPress={() => setEditing(true)}>
             <Text style={styles.btnText}>{en.diary.editToday}</Text>
           </Pressable>
         ) : null}
 
-        <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
-          <Text>{en.diary.guestbook}</Text>
-        </Pressable>
-        <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
-          <Text>{en.diary.past}</Text>
-        </Pressable>
-        <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
-          <Text>{en.diary.album}</Text>
-        </Pressable>
+        {!blockedRelation ? (
+          <>
+            <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
+              <Text>{en.diary.guestbook}</Text>
+            </Pressable>
+            <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
+              <Text>{en.diary.past}</Text>
+            </Pressable>
+            <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
+              <Text>{en.diary.album}</Text>
+            </Pressable>
+          </>
+        ) : null}
+
+        {!isMine && me ? (
+          <Pressable
+            style={styles.report}
+            onPress={() =>
+              router.push({
+                pathname: '/reports/create',
+                params: {
+                  targetType: 'diary',
+                  targetId: userId,
+                  targetUserId: userId,
+                },
+              })
+            }
+          >
+            <Text style={styles.reportText}>{en.reports.reportProfile}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -231,4 +262,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     padding: 14,
   },
+  report: {
+    marginTop: 20,
+    padding: 14,
+    alignItems: 'center',
+  },
+  reportText: { color: colors.warn, fontSize: 13 },
 });
