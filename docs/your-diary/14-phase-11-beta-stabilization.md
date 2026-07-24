@@ -117,5 +117,5 @@ npm run test:e2e
 
 ## 다음
 
-**비공개 베타** — 약 30~60명 · 10개 서클 · 4주.  
-기능 추가보다 「사람들이 실제로 서로의 다이어리를 찾아가는지」를 본다.
+**비공개 베타가 아니라 먼저 11.5 실기기 출시 게이트.**  
+상세: [16-phase-11.5-device-launch-gate.md](./16-phase-11.5-device-launch-gate.md) · 통합 체크리스트: [15](./15-beta-launch-checklist.md)

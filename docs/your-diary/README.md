@@ -21,7 +21,8 @@
 | [12-phase-10-spotify-music.md](./12-phase-10-spotify-music.md) | 10단계: Spotify 오늘의 음악 |
 | [13-phase-10.5-legacy-cleanup.md](./13-phase-10.5-legacy-cleanup.md) | 10.5단계: 레거시 정리 |
 | [14-phase-11-beta-stabilization.md](./14-phase-11-beta-stabilization.md) | 11단계: 통합 안정화·베타 준비 |
-| [15-beta-launch-checklist.md](./15-beta-launch-checklist.md) | 비공개 베타 출시 게이트·체크리스트 |
+| [15-beta-launch-checklist.md](./15-beta-launch-checklist.md) | 비공개 베타·**11.5 실기기** 출시 체크리스트 |
+| [16-phase-11.5-device-launch-gate.md](./16-phase-11.5-device-launch-gate.md) | 11.5단계: 실기기 출시 게이트 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.
