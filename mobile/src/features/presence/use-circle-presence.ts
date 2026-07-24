@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
+import { listBlocks } from '@/features/local/repository';
+import { filterPresenceMap } from '@/features/moderation/blocked-user-filter';
 import { circlePresenceService } from './circle-presence.service';
 import { useCirclePresenceStore } from './circle-presence.store';
 import type { RealtimeConnectionState } from './circle-presence.types';
@@ -10,7 +12,7 @@ import { useVerifiedResponseStore } from './verified-response.store';
 
 /**
  * Presence + verified badge sync for the open circle.
- * Reconnect / focus → re-fetch badge states (Broadcast may have been missed).
+ * Blocked users are stripped from the visible presence map (no personal badges).
  */
 export function useCirclePresence(input: {
   circleId: string | undefined;
@@ -19,16 +21,48 @@ export function useCirclePresence(input: {
   activePostId?: string | null;
 }) {
   const bind = useCirclePresenceStore((s) => s.bind);
-  const map = useCirclePresenceStore((s) => s.map);
+  const rawMap = useCirclePresenceStore((s) => s.map);
   const connection = useCirclePresenceStore((s) => s.connection);
   const verifiedMap = useVerifiedResponseStore((s) => s.map);
   const storeActivePostId = useVerifiedResponseStore((s) => s.activePostId);
   const clearVerified = useVerifiedResponseStore((s) => s.clear);
   const [ready, setReady] = useState(false);
+  const [blockedIds, setBlockedIds] = useState<string[]>([]);
 
   const activePostId = input.activePostId ?? storeActivePostId ?? null;
 
+  const map = useMemo(
+    () => filterPresenceMap(rawMap, blockedIds),
+    [rawMap, blockedIds],
+  );
+
+  const filteredVerified = useMemo(() => {
+    const blocked = new Set(blockedIds);
+    const next: typeof verifiedMap = {};
+    for (const [uid, entry] of Object.entries(verifiedMap)) {
+      if (blocked.has(uid)) continue;
+      next[uid] = entry;
+    }
+    return next;
+  }, [verifiedMap, blockedIds]);
+
   useEffect(() => bind(), [bind]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadBlocks() {
+      if (!input.userId) {
+        setBlockedIds([]);
+        return;
+      }
+      const mine = await listBlocks(input.userId);
+      if (!cancelled) setBlockedIds(mine);
+    }
+    void loadBlocks();
+    return () => {
+      cancelled = true;
+    };
+  }, [input.userId, input.circleId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +92,7 @@ export function useCirclePresence(input: {
           viewerId: input.userId,
         });
       } catch {
-        /* badge sync failure must not break presence */
+        /* ignore */
       }
 
       if (!cancelled) setReady(status === 'connected');
@@ -103,15 +137,17 @@ export function useCirclePresence(input: {
 
   return {
     map,
-    verifiedMap,
+    verifiedMap: filteredVerified,
     connection: connection as RealtimeConnectionState,
     ready,
     activePostId,
+    blockedIds,
+    setBlockedIds,
     isPresent: (userId: string) => isPresentInMap(map, userId),
     badgeFor: (userId: string) =>
       getMemberBadgeFromMaps({
         presenceMap: map,
-        verifiedMap,
+        verifiedMap: filteredVerified,
         userId,
         activePostId,
       }),

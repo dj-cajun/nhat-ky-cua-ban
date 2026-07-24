@@ -15,6 +15,7 @@
 | [06-phase-5-realtime-presence.md](./06-phase-5-realtime-presence.md) | 5단계: Realtime 초록 배지 |
 | [07-phase-6-circle-posts.md](./07-phase-6-circle-posts.md) | 6단계: 공지·투표 + 주홍 배지 |
 | [08-phase-6.5-verified-response-badges.md](./08-phase-6.5-verified-response-badges.md) | 6.5단계: 주홍 위조 방어 |
+| [09-phase-7-reports-blocks.md](./09-phase-7-reports-blocks.md) | 7단계: 신고·차단 기반 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.

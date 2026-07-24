@@ -38,6 +38,8 @@ import {
   canViewDiary,
   signUpLocal,
   submitReport,
+  addGuestbookEntry,
+  isContentHiddenForMe,
   upsertDiary,
 } from '@/features/local/repository';
 
@@ -330,16 +332,25 @@ describe('reports', () => {
     await clearLocalDb();
   });
 
-  it('stores a content snapshot with the report', async () => {
+  it('stores a server-built content snapshot with the report', async () => {
     const me = await signUpLocal('Alex');
+    const other = '00000000-0000-4000-8000-0000000000a1';
+    const entry = await addGuestbookEntry({
+      ownerUserId: other,
+      authorUserId: other,
+      body: 'bad note for review',
+    });
+    // Ensure target profile exists via demo directory after signup
     const report = await submitReport({
       reporterId: me.id,
-      targetType: 'diary',
-      targetId: '00000000-0000-4000-8000-0000000000a1',
+      targetType: 'guestbook_entry',
+      targetId: entry.id,
       reason: 'harassment',
-      contentSnapshot: '{"tenCharText":"bad note"}',
+      contentSnapshot: '{"forged":"should be ignored"}',
     });
-    expect(report.contentSnapshot).toContain('bad note');
-    expect(report.status).toBe('open');
+    expect(report.contentSnapshot).toContain('bad note for review');
+    expect(report.contentSnapshot).not.toContain('forged');
+    expect(report.status).toBe('submitted');
+    expect(await isContentHiddenForMe(me.id, 'guestbook_entry', entry.id)).toBe(true);
   });
 });

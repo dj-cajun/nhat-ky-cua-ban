@@ -7,6 +7,7 @@ import {
   getCircle,
   getProfile,
   getSessionProfile,
+  isBlockedBetween,
   isCircleMember,
   listCircleMembers,
 } from '@/features/local/repository';
@@ -26,7 +27,7 @@ export default function CircleHomeScreen() {
   const [isMember, setIsMember] = useState(false);
   const [activePostId, setActivePostId] = useState<string | null>(null);
 
-  const { badgeFor, connection } = useCirclePresence({
+  const { badgeFor, connection, setBlockedIds } = useCirclePresence({
     circleId,
     userId: meId,
     isMember: isMember && !forbidden,
@@ -58,9 +59,15 @@ export default function CircleHomeScreen() {
       })),
     );
     setMembers(enriched);
+    const blocked: string[] = [];
+    for (const m of list) {
+      if (m.userId === me.id) continue;
+      if (await isBlockedBetween(me.id, m.userId)) blocked.push(m.userId);
+    }
+    setBlockedIds(blocked);
     const active = await getActivePost(circleId);
     setActivePostId(active?.id ?? null);
-  }, [circleId]);
+  }, [circleId, setBlockedIds]);
 
   useFocusEffect(
     useCallback(() => {

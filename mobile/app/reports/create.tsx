@@ -2,25 +2,23 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  blockUser,
-  getDiary,
-  getProfile,
-  getSessionProfile,
-  submitReport,
-} from '@/features/local/repository';
-import { toAppError } from '@/lib/errors';
-import { track } from '@/lib/logger';
+import { getSessionProfile } from '@/features/local/repository';
+import { useReportContent } from '@/features/moderation/use-report-content';
+import type { ReportReason, ReportTargetType } from '@/features/moderation/moderation.types';
 import { colors } from '@/constants/theme';
 import { en } from '@/i18n/en';
 
-const REASONS = [
-  ['harassment', en.reports.reasons.harassment],
-  ['sexual', en.reports.reasons.sexual],
-  ['threat', en.reports.reasons.threat],
-  ['spam', en.reports.reasons.spam],
-  ['other', en.reports.reasons.other],
-] as const;
+const REASONS: ReportReason[] = [
+  'harassment',
+  'threat',
+  'hate',
+  'sexual_content',
+  'privacy',
+  'spam',
+  'impersonation',
+  'self_harm',
+  'other',
+];
 
 export default function CreateReportScreen() {
   const params = useLocalSearchParams<{
@@ -28,61 +26,34 @@ export default function CreateReportScreen() {
     targetId?: string;
     targetUserId?: string;
   }>();
-  const [reason, setReason] = useState<string>('');
+  const [meId, setMeId] = useState<string | null>(null);
+  const [reason, setReason] = useState<ReportReason | ''>('');
   const [details, setDetails] = useState('');
+  const [hideForMe, setHideForMe] = useState(true);
   const [alsoBlock, setAlsoBlock] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
-  const [snapshot, setSnapshot] = useState('');
+
+  const targetType = (params.targetType === 'diary'
+    ? 'diary_entry'
+    : params.targetType ?? 'profile') as ReportTargetType;
+  const targetId = params.targetId ?? params.targetUserId ?? '';
+
+  const { submit, pending, error, done } = useReportContent({
+    reporterId: meId,
+    targetType,
+    targetId,
+    targetUserId: params.targetUserId,
+  });
 
   useEffect(() => {
     void (async () => {
-      if (params.targetType === 'profile' && params.targetId) {
-        const p = await getProfile(params.targetId);
-        setSnapshot(JSON.stringify({ displayName: p?.displayName, id: params.targetId }));
-      } else if (params.targetType === 'diary' && params.targetId) {
-        const entry = await getDiary(params.targetId);
-        setSnapshot(
-          JSON.stringify({
-            mood: entry?.mood,
-            tenCharText: entry?.tenCharText,
-            shortText: entry?.shortText?.slice(0, 200),
-            entryDate: entry?.entryDate,
-          }),
-        );
-      } else {
-        setSnapshot(JSON.stringify({ targetId: params.targetId ?? 'unknown' }));
+      const me = await getSessionProfile();
+      if (!me) {
+        router.replace('/(auth)/sign-in');
+        return;
       }
+      setMeId(me.id);
     })();
-  }, [params.targetId, params.targetType]);
-
-  const submit = async () => {
-    setError('');
-    const me = await getSessionProfile();
-    if (!me) {
-      router.replace('/(auth)/sign-in');
-      return;
-    }
-    try {
-      await submitReport({
-        reporterId: me.id,
-        targetType: params.targetType ?? 'profile',
-        targetId: params.targetId ?? 'unknown',
-        reason,
-        contentSnapshot: `${snapshot}\n${details}`.trim(),
-      });
-      if (alsoBlock && params.targetUserId) {
-        await blockUser(me.id, params.targetUserId);
-      }
-      track('report_submitted', {
-        target_type: params.targetType ?? 'profile',
-        market: 'US',
-      });
-      setDone(true);
-    } catch (e) {
-      setError(toAppError(e).message);
-    }
-  };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -95,19 +66,23 @@ export default function CreateReportScreen() {
       {done ? (
         <Text style={styles.done}>
           {en.reports.submitted}
+          {'\n'}
+          {hideForMe ? en.reports.hiddenForYou : ''}
           {alsoBlock ? `\n${en.reports.blocked}` : ''}
         </Text>
       ) : (
         <>
           <Text style={styles.label}>{en.reports.reason}</Text>
           <View style={{ gap: 8 }}>
-            {REASONS.map(([id, label]) => (
+            {REASONS.map((id) => (
               <Pressable
                 key={id}
                 onPress={() => setReason(id)}
                 style={[styles.reason, reason === id && styles.reasonOn]}
               >
-                <Text style={{ color: reason === id ? '#fff' : colors.ink }}>{label}</Text>
+                <Text style={{ color: reason === id ? '#fff' : colors.ink }}>
+                  {en.reports.reasons[id]}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -122,23 +97,34 @@ export default function CreateReportScreen() {
             style={styles.input}
           />
 
+          <Pressable style={styles.check} onPress={() => setHideForMe((v) => !v)}>
+            <Text style={{ color: colors.ink }}>
+              {hideForMe ? '☑' : '☐'} {en.reports.hideForMe}
+            </Text>
+          </Pressable>
+
           {params.targetUserId ? (
-            <Pressable
-              style={styles.check}
-              onPress={() => setAlsoBlock((v) => !v)}
-            >
+            <Pressable style={styles.check} onPress={() => setAlsoBlock((v) => !v)}>
               <Text style={{ color: colors.ink }}>
                 {alsoBlock ? '☑' : '☐'} {en.reports.blockUser}
               </Text>
             </Pressable>
           ) : null}
+          {alsoBlock ? <Text style={styles.hint}>{en.reports.blockConfirm}</Text> : null}
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Pressable
-            style={[styles.btn, !reason && { opacity: 0.4 }]}
-            disabled={!reason}
-            onPress={() => void submit()}
+            style={[styles.btn, (!reason || pending) && { opacity: 0.4 }]}
+            disabled={!reason || pending}
+            onPress={() =>
+              void submit({
+                reason: reason as ReportReason,
+                details,
+                hideForMe,
+                alsoBlock,
+              })
+            }
           >
             <Text style={styles.btnText}>{en.reports.submit}</Text>
           </Pressable>
@@ -173,6 +159,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   check: { marginTop: 16 },
+  hint: { marginTop: 8, color: colors.soft, fontSize: 12, lineHeight: 18 },
   btn: {
     marginTop: 20,
     backgroundColor: colors.ink,

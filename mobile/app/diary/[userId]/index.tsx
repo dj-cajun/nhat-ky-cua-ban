@@ -17,6 +17,7 @@ import {
   isBlockedBetween,
   upsertDiary,
 } from '@/features/local/repository';
+import { blockUser } from '@/features/moderation/block.service';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import {
@@ -102,9 +103,15 @@ export default function DiaryScreen() {
         <Pressable onPress={() => router.back()}>
           <Text style={styles.back}>{en.diary.back}</Text>
         </Pressable>
-        <Text style={styles.title}>{owner.displayName}</Text>
+        <Text style={styles.title}>
+          {blockedRelation ? '—' : owner.displayName}
+        </Text>
         <Text style={styles.mood}>
-          {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : en.diary.noMood}
+          {blockedRelation
+            ? ''
+            : moodMeta
+              ? `${moodMeta.emoji} ${moodMeta.label}`
+              : en.diary.noMood}
         </Text>
 
         {blockedRelation ? (
@@ -187,22 +194,35 @@ export default function DiaryScreen() {
           </>
         ) : null}
 
-        {!isMine && me ? (
-          <Pressable
-            style={styles.report}
-            onPress={() =>
-              router.push({
-                pathname: '/reports/create',
-                params: {
-                  targetType: 'diary',
-                  targetId: userId,
-                  targetUserId: userId,
-                },
-              })
-            }
-          >
-            <Text style={styles.reportText}>{en.reports.reportProfile}</Text>
-          </Pressable>
+        {!isMine && me && !blockedRelation ? (
+          <>
+            <Pressable
+              style={styles.report}
+              onPress={() =>
+                router.push({
+                  pathname: '/reports/create',
+                  params: {
+                    targetType: 'profile',
+                    targetId: userId,
+                    targetUserId: userId,
+                  },
+                })
+              }
+            >
+              <Text style={styles.reportText}>{en.reports.reportProfile}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.report}
+              onPress={() =>
+                void (async () => {
+                  await blockUser(me.id, userId);
+                  router.replace('/(tabs)/universe');
+                })()
+              }
+            >
+              <Text style={styles.reportText}>{en.reports.blockUser}</Text>
+            </Pressable>
+          </>
         ) : null}
       </ScrollView>
     </SafeAreaView>

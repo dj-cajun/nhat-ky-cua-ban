@@ -102,6 +102,19 @@ interface LocalDb {
   reports: ReportRecord[];
   notifications: NotificationEvent[];
   realtimeOutbox: RealtimeOutboxRow[];
+  hiddenContent: HiddenContentRow[];
+  moderationStatus: ModerationStatusRow[];
+  guestbook: GuestbookRow[];
+  photos: PhotoAssetRow[];
+  adminAuditLogs: {
+    id: string;
+    adminId: string;
+    action: string;
+    targetType: string;
+    targetId: string;
+    reason: string;
+    createdAt: string;
+  }[];
 }
 
 export interface CirclePostRecord {
@@ -139,8 +152,41 @@ export interface ReportRecord {
   targetType: string;
   targetId: string;
   reason: string;
+  details?: string;
   contentSnapshot: string;
-  status: 'open' | 'reviewing' | 'resolved' | 'dismissed';
+  status: 'submitted' | 'reviewing' | 'resolved' | 'dismissed' | 'open';
+  createdAt: string;
+  reviewedAt?: string;
+  resolvedAt?: string;
+}
+
+interface HiddenContentRow {
+  userId: string;
+  targetType: string;
+  targetId: string;
+  hiddenAt: string;
+}
+
+interface ModerationStatusRow {
+  userId: string;
+  accountStatus: 'active' | 'restricted' | 'suspended';
+  reasonCode?: string;
+  updatedAt: string;
+}
+
+interface GuestbookRow {
+  id: string;
+  ownerUserId: string;
+  authorUserId: string;
+  body: string;
+  hidden: boolean;
+  createdAt: string;
+}
+
+interface PhotoAssetRow {
+  id: string;
+  userId: string;
+  storagePath: string;
   createdAt: string;
 }
 
@@ -162,6 +208,11 @@ const empty: LocalDb = {
   reports: [],
   notifications: [],
   realtimeOutbox: [],
+  hiddenContent: [],
+  moderationStatus: [],
+  guestbook: [],
+  photos: [],
+  adminAuditLogs: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -213,6 +264,11 @@ export async function loadLocalDb(): Promise<void> {
     memory.blocks ??= [];
     memory.notifications ??= [];
     memory.realtimeOutbox ??= [];
+    memory.hiddenContent ??= [];
+    memory.moderationStatus ??= [];
+    memory.guestbook ??= [];
+    memory.photos ??= [];
+    memory.adminAuditLogs ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -1029,13 +1085,25 @@ export async function canViewDiary(
 
 export async function blockUser(blockerId: string, blockedId: string): Promise<void> {
   await loadLocalDb();
+  assertNotSuspended(blockerId);
   if (blockerId === blockedId) {
     throw new AppError('VALIDATION', 'You can’t block yourself.');
+  }
+  if (!memory.profiles.some((p) => p.id === blockedId)) {
+    throw new AppError('NOT_FOUND', 'User not found.');
   }
   if (!memory.blocks.some((b) => b.blockerId === blockerId && b.blockedId === blockedId)) {
     memory.blocks.push({ blockerId, blockedId });
     await persist();
   }
+}
+
+export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
+  await loadLocalDb();
+  memory.blocks = memory.blocks.filter(
+    (b) => !(b.blockerId === blockerId && b.blockedId === blockedId),
+  );
+  await persist();
 }
 
 export async function isBlockedBetween(a: string, b: string): Promise<boolean> {
@@ -1049,6 +1117,13 @@ export async function isBlockedBetween(a: string, b: string): Promise<boolean> {
 export async function listBlocks(blockerId: string): Promise<string[]> {
   await loadLocalDb();
   return memory.blocks.filter((b) => b.blockerId === blockerId).map((b) => b.blockedId);
+}
+
+function assertNotSuspended(userId: string): void {
+  const row = memory.moderationStatus.find((m) => m.userId === userId);
+  if (row?.accountStatus === 'suspended') {
+    throw new AppError('FORBIDDEN', 'This account is temporarily limited.');
+  }
 }
 
 const POST_TITLE_MAX = 80;
@@ -1429,6 +1504,14 @@ export async function getActivePostBadgeStates(
     respondedUserIds: memory.responses
       .filter((r) => r.postId === post.id && activeMemberIds.has(r.userId))
       .map((r) => r.userId)
+      .filter((id) => {
+        // Exclude users in a block relation with the viewer
+        return !memory.blocks.some(
+          (b) =>
+            (b.blockerId === viewerId && b.blockedId === id) ||
+            (b.blockerId === id && b.blockedId === viewerId),
+        );
+      })
       .sort(),
   };
 }
@@ -1558,26 +1641,307 @@ export async function submitReport(input: {
   reason: string;
   contentSnapshot: string;
 }): Promise<ReportRecord> {
-  await loadLocalDb();
-  if (!input.reason.trim()) {
-    throw new AppError('VALIDATION', 'Choose a reason.');
-  }
-  const report: ReportRecord = {
-    id: uid(),
+  // Legacy path — prefer submitReportServerSnapshot (server builds snapshot)
+  return submitReportServerSnapshot({
     reporterId: input.reporterId,
     targetType: input.targetType,
     targetId: input.targetId,
-    reason: input.reason.trim(),
-    contentSnapshot: input.contentSnapshot.slice(0, 2000),
-    status: 'open',
+    reason: input.reason === 'sexual' ? 'sexual_content' : input.reason,
+    details: undefined,
+    hideForMe: true,
+    clientSnapshotIgnored: input.contentSnapshot,
+  }).then(async (id) => {
+    await loadLocalDb();
+    return memory.reports.find((r) => r.id === id)!;
+  });
+}
+
+function buildLocalReportSnapshot(targetType: string, targetId: string): Record<string, unknown> {
+  if (targetType === 'profile') {
+    const p = memory.profiles.find((x) => x.id === targetId);
+    if (!p) throw new AppError('NOT_FOUND', 'Target not found.');
+    return { authorId: p.id, displayName: p.displayName, createdAt: now() };
+  }
+  if (targetType === 'diary' || targetType === 'diary_entry') {
+    const e = memory.diary.find((d) => d.id === targetId || d.userId === targetId);
+    if (!e) throw new AppError('NOT_FOUND', 'Target not found.');
+    return {
+      authorId: e.userId,
+      body: e.shortText ?? e.tenCharText ?? '',
+      mood: e.mood,
+      entryDate: e.entryDate,
+      createdAt: e.createdAt,
+      visibilityMode: e.visibilityMode,
+    };
+  }
+  if (targetType === 'guestbook_entry') {
+    const g = memory.guestbook.find((x) => x.id === targetId);
+    if (!g) throw new AppError('NOT_FOUND', 'Target not found.');
+    return {
+      authorId: g.authorUserId,
+      ownerId: g.ownerUserId,
+      body: g.body,
+      createdAt: g.createdAt,
+    };
+  }
+  if (targetType === 'photo') {
+    const ph = memory.photos.find((x) => x.id === targetId);
+    if (!ph) throw new AppError('NOT_FOUND', 'Target not found.');
+    return { authorId: ph.userId, mediaPaths: [ph.storagePath], createdAt: ph.createdAt };
+  }
+  return { targetId };
+}
+
+async function assertCanReportTarget(
+  reporterId: string,
+  targetType: string,
+  targetId: string,
+): Promise<void> {
+  if (targetType === 'profile') {
+    if (!memory.profiles.some((p) => p.id === targetId)) {
+      throw new AppError('NOT_FOUND', 'Target not found.');
+    }
+    if (await isBlockedBetween(reporterId, targetId)) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+    return;
+  }
+  if (targetType === 'diary' || targetType === 'diary_entry') {
+    const e =
+      memory.diary.find((d) => d.id === targetId) ??
+      memory.diary.find((d) => d.userId === targetId);
+    if (!e) throw new AppError('NOT_FOUND', 'Target not found.');
+    if (e.userId === reporterId) {
+      throw new AppError('VALIDATION', 'You can’t report your own diary.');
+    }
+    if (!(await canViewDiary(reporterId, e.userId, e))) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+  }
+}
+
+/** Mirror submit_report — server builds snapshot; client snapshot ignored */
+export async function submitReportServerSnapshot(input: {
+  reporterId: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  details?: string;
+  hideForMe?: boolean;
+  clientSnapshotIgnored?: string;
+}): Promise<string> {
+  await loadLocalDb();
+  assertNotSuspended(input.reporterId);
+
+  const allowedReasons = new Set([
+    'harassment',
+    'threat',
+    'hate',
+    'sexual_content',
+    'privacy',
+    'spam',
+    'impersonation',
+    'self_harm',
+    'other',
+  ]);
+  const reason =
+    input.reason === 'sexual' ? 'sexual_content' : input.reason.trim();
+  if (!allowedReasons.has(reason)) {
+    throw new AppError('VALIDATION', 'Choose a valid reason.');
+  }
+
+  const targetType =
+    input.targetType === 'diary' ? 'diary_entry' : input.targetType;
+
+  await assertCanReportTarget(input.reporterId, targetType, input.targetId);
+
+  // Always build snapshot from local “server” store — never trust client payload
+  const snap = buildLocalReportSnapshot(targetType, input.targetId);
+  void input.clientSnapshotIgnored;
+
+  const existing = memory.reports.find(
+    (r) =>
+      r.reporterId === input.reporterId &&
+      r.targetType === targetType &&
+      r.targetId === input.targetId,
+  );
+  if (existing) {
+    if (input.details?.trim()) existing.details = input.details.trim();
+    await persist();
+    if (input.hideForMe !== false) {
+      await hideContentForMe({
+        userId: input.reporterId,
+        targetType,
+        targetId: input.targetId,
+      });
+    }
+    return existing.id;
+  }
+
+  const report: ReportRecord = {
+    id: uid(),
+    reporterId: input.reporterId,
+    targetType,
+    targetId: input.targetId,
+    reason,
+    details: input.details?.trim() || undefined,
+    contentSnapshot: JSON.stringify(snap).slice(0, 4000),
+    status: 'submitted',
     createdAt: now(),
   };
   memory.reports.push(report);
   await persist();
-  return report;
+
+  if (input.hideForMe !== false) {
+    await hideContentForMe({
+      userId: input.reporterId,
+      targetType,
+      targetId: input.targetId,
+    });
+  }
+  return report.id;
+}
+
+export async function hideContentForMe(input: {
+  userId: string;
+  targetType: string;
+  targetId: string;
+}): Promise<void> {
+  await loadLocalDb();
+  if (
+    !memory.hiddenContent.some(
+      (h) =>
+        h.userId === input.userId &&
+        h.targetType === input.targetType &&
+        h.targetId === input.targetId,
+    )
+  ) {
+    memory.hiddenContent.push({
+      userId: input.userId,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      hiddenAt: now(),
+    });
+    await persist();
+  }
+}
+
+export async function isContentHiddenForMe(
+  userId: string,
+  targetType: string,
+  targetId: string,
+): Promise<boolean> {
+  await loadLocalDb();
+  return memory.hiddenContent.some(
+    (h) =>
+      h.userId === userId && h.targetType === targetType && h.targetId === targetId,
+  );
 }
 
 export async function listMyReports(reporterId: string): Promise<ReportRecord[]> {
   await loadLocalDb();
   return memory.reports.filter((r) => r.reporterId === reporterId);
+}
+
+export async function createPhotoSignedUrlToken(
+  viewerId: string,
+  photoId: string,
+): Promise<{ photoId: string; storagePath: string; allowed: true }> {
+  await loadLocalDb();
+  assertNotSuspended(viewerId);
+  const photo = memory.photos.find((p) => p.id === photoId);
+  if (!photo) throw new AppError('NOT_FOUND', 'Photo not found.');
+  if (photo.userId !== viewerId) {
+    if (await isBlockedBetween(viewerId, photo.userId)) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+  }
+  return { photoId: photo.id, storagePath: photo.storagePath, allowed: true };
+}
+
+export async function addDemoPhoto(userId: string, path: string): Promise<PhotoAssetRow> {
+  await loadLocalDb();
+  const row: PhotoAssetRow = {
+    id: uid(),
+    userId,
+    storagePath: path,
+    createdAt: now(),
+  };
+  memory.photos.push(row);
+  await persist();
+  return row;
+}
+
+export async function addGuestbookEntry(input: {
+  ownerUserId: string;
+  authorUserId: string;
+  body: string;
+}): Promise<GuestbookRow> {
+  await loadLocalDb();
+  if (await isBlockedBetween(input.ownerUserId, input.authorUserId)) {
+    throw new AppError('FORBIDDEN', 'You can’t post here.');
+  }
+  const row: GuestbookRow = {
+    id: uid(),
+    ownerUserId: input.ownerUserId,
+    authorUserId: input.authorUserId,
+    body: input.body.trim().slice(0, 200),
+    hidden: false,
+    createdAt: now(),
+  };
+  memory.guestbook.push(row);
+  await persist();
+  return row;
+}
+
+export async function listGuestbook(
+  ownerUserId: string,
+  viewerId: string,
+): Promise<GuestbookRow[]> {
+  await loadLocalDb();
+  if (await isBlockedBetween(ownerUserId, viewerId)) {
+    throw new AppError('FORBIDDEN', 'You can’t view this.');
+  }
+  return memory.guestbook.filter(
+    (g) =>
+      g.ownerUserId === ownerUserId &&
+      !g.hidden &&
+      !memory.hiddenContent.some(
+        (h) =>
+          h.userId === viewerId &&
+          h.targetType === 'guestbook_entry' &&
+          h.targetId === g.id,
+      ),
+  );
+}
+
+export async function setUserModerationStatus(input: {
+  userId: string;
+  accountStatus: 'active' | 'restricted' | 'suspended';
+  reasonCode?: string;
+}): Promise<void> {
+  await loadLocalDb();
+  const existing = memory.moderationStatus.find((m) => m.userId === input.userId);
+  if (existing) {
+    existing.accountStatus = input.accountStatus;
+    existing.reasonCode = input.reasonCode;
+    existing.updatedAt = now();
+  } else {
+    memory.moderationStatus.push({
+      userId: input.userId,
+      accountStatus: input.accountStatus,
+      reasonCode: input.reasonCode,
+      updatedAt: now(),
+    });
+  }
+  await persist();
+}
+
+export async function getAccountStatus(
+  userId: string,
+): Promise<'active' | 'restricted' | 'suspended'> {
+  await loadLocalDb();
+  return (
+    memory.moderationStatus.find((m) => m.userId === userId)?.accountStatus ?? 'active'
+  );
 }
