@@ -12,6 +12,7 @@ import {
   clearIntroSeen,
   requestIntroReplay,
   resetUniverseVisitSession,
+  resetIntroLaunchSession,
 } from '@/features/universe-home';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
@@ -71,9 +72,10 @@ export default function SignInScreen() {
         onPress={async () => {
           try {
             const me = await signUpLocal('Alex');
-            // Seed circle + force fullscreen intro every demo tap.
+            // Seed circle + force fullscreen intro once for this demo launch.
             await ensureDemoOpenCircle(me.id);
             resetUniverseVisitSession();
+            resetIntroLaunchSession();
             await clearIntroSeen();
             await requestIntroReplay();
             track('circle_creation_started', { via: 'demo_shortcut', market: 'US' });

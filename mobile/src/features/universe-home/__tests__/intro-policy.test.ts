@@ -17,6 +17,7 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 import {
   markIntroSeen,
   requestIntroReplay,
+  resetIntroLaunchSession,
   resolveIntroMode,
 } from '../intro-policy';
 import { INTRO_HANDOFF } from '../handoff';
@@ -38,37 +39,45 @@ describe('INTRO_HANDOFF', () => {
 describe('resolveIntroMode', () => {
   beforeEach(() => {
     store.clear();
+    resetIntroLaunchSession();
   });
 
-  it('returns full on first install', async () => {
+  it('returns full once when entering the app (first install)', async () => {
     await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('full');
+    // same launch — no second play
+    await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('none');
   });
 
-  it('returns short after seen on cold start', async () => {
+  it('returns none after seen — no short cold-start replay', async () => {
     await markIntroSeen();
-    await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('short');
+    resetIntroLaunchSession();
+    await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('none');
   });
 
   it('returns none on tab return unless forced', async () => {
     await markIntroSeen();
+    resetIntroLaunchSession();
     await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
   });
 
-  it('force replay overrides tab return', async () => {
+  it('force replay overrides tab return once', async () => {
     await markIntroSeen();
+    resetIntroLaunchSession();
     await requestIntroReplay();
     await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('full');
-    // force flag consumed
+    // force flag consumed + launch marked
     await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
   });
 
-  it('EXPO_PUBLIC_FORCE_UNIVERSE_INTRO forces full even on tab return', async () => {
+  it('EXPO_PUBLIC_FORCE_UNIVERSE_INTRO plays full once per launch only', async () => {
     await markIntroSeen();
+    resetIntroLaunchSession();
     const prev = process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO;
     process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO = '1';
     try {
       await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('full');
-      await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('full');
+      await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
+      await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('none');
     } finally {
       if (prev === undefined) delete process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO;
       else process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO = prev;

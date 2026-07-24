@@ -6,7 +6,7 @@ import { AppLoadingState } from '@/components/states';
 import { getSessionProfile } from '@/features/local/repository';
 import type { Profile } from '@/types/domain';
 import { signOut } from '@/features/session/session-lifecycle';
-import { requestIntroReplay } from '@/features/universe-home';
+import { requestIntroReplay, resetIntroLaunchSession } from '@/features/universe-home';
 import { getFeatureFlags, setFeatureFlag, type FeatureFlagName } from '@/lib/feature-flags';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
@@ -115,6 +115,7 @@ export default function AccountSettingsScreen() {
         onPress={() => {
           void (async () => {
             await requestIntroReplay();
+            resetIntroLaunchSession();
             setReplayHint(t.settings.replayIntroDone);
           })();
         }}

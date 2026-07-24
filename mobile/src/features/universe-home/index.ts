@@ -14,6 +14,7 @@ export {
   requestIntroReplay,
   resolveIntroMode,
   isIntroForceEnv,
+  resetIntroLaunchSession,
 } from './intro-policy';
 export { resetUniverseVisitSession } from './session-visit';
 export { UniverseHome } from './universe-home';

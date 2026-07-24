@@ -14,7 +14,7 @@ export const INTRO_HANDOFF = {
   planetsStaggerSec: 1.0,
   /** Intro-size → home-size shrink after crossfade */
   settleDurationSec: 2.4,
-  /** Short cold-start when full intro already seen */
+  /** @deprecated short mode removed — intro is once per app entry only */
   shortAppearSec: 0.55,
   sphere: {
     /** Normalized center (0–1) of the 9:16 video frame */
