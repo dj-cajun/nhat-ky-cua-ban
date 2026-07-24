@@ -19,9 +19,15 @@ jobs:
 
       - run: npm ci
 
+      - name: Install mobile deps
+        run: npm ci --prefix mobile --legacy-peer-deps
+
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
+      - run: npm run test:security
+      - run: npm run mobile:typecheck
+      - run: npm run mobile:test
       - run: npm run build
 
       - name: Install Playwright

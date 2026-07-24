@@ -11,6 +11,7 @@
 | [02-tech-guidelines.md](./02-tech-guidelines.md) | 기술 스택 · 서버 신뢰 · RLS/RPC |
 | [03-us-market.md](./03-us-market.md) | 미국 앱 가정 · 카피 · 인증 |
 | [04-phase-4-join.md](./04-phase-4-join.md) | 4단계: 3인 추천 가입 (완료) |
+| [05-phase-4.5-rls.md](./05-phase-4.5-rls.md) | 4.5단계: RLS 침투 테스트 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.

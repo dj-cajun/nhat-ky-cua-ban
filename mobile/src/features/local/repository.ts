@@ -635,6 +635,23 @@ export async function respondCircleRecommendation(
   if (!(await isCircleMember(request.circleId, actorId))) {
     throw new AppError('FORBIDDEN', 'Only circle members can recommend.');
   }
+  if (await isBlockedBetween(actorId, request.applicantId)) {
+    throw new AppError('FORBIDDEN', 'Blocked users can’t complete this recommendation.');
+  }
+
+  if (decision === 'recommended') {
+    const already = memory.recommendations.filter(
+      (r) => r.requestId === request.id && r.decision === 'recommended',
+    );
+    const wouldBe = new Set([...already.map((r) => r.recommenderId), actorId]);
+    if (wouldBe.size >= CIRCLE_JOIN_RECOMMENDATION_COUNT) {
+      for (const rid of wouldBe) {
+        if (await isBlockedBetween(request.applicantId, rid)) {
+          throw new AppError('FORBIDDEN', 'A block prevents joining this circle.');
+        }
+      }
+    }
+  }
 
   rec.decision = decision;
   rec.respondedAt = now();
@@ -664,8 +681,9 @@ export async function respondCircleRecommendation(
       status: 'active',
     });
   }
+
   request.status = 'approved';
-  request.approvedAt = now();
+  request.approvedAt = request.approvedAt ?? now();
   request.updatedAt = now();
 
   for (const r of memory.recommendations) {
@@ -675,13 +693,21 @@ export async function respondCircleRecommendation(
     }
   }
 
-  memory.notifications.push({
-    id: uid(),
-    userId: request.applicantId,
-    eventType: 'join_request_approved',
-    payload: { requestId: request.id, circleId: request.circleId },
-    createdAt: now(),
-  });
+  const exists = memory.notifications.some(
+    (n) =>
+      n.userId === request.applicantId &&
+      n.eventType === 'join_request_approved' &&
+      n.payload.requestId === request.id,
+  );
+  if (!exists) {
+    memory.notifications.push({
+      id: uid(),
+      userId: request.applicantId,
+      eventType: 'join_request_approved',
+      payload: { requestId: request.id, circleId: request.circleId },
+      createdAt: now(),
+    });
+  }
 
   await persist();
   return 'approved';
@@ -860,6 +886,30 @@ export async function switchSession(userId: string): Promise<Profile> {
   memory.sessionUserId = userId;
   await persist();
   return profile;
+}
+
+export async function countJoinArtifacts(
+  circleId: string,
+  applicantId: string,
+): Promise<{ requests: number; recommendations: number; membership: number; approvals: number }> {
+  await loadLocalDb();
+  const requests = memory.joinRequests.filter(
+    (r) => r.circleId === circleId && r.applicantId === applicantId,
+  );
+  const requestIds = new Set(requests.map((r) => r.id));
+  return {
+    requests: requests.length,
+    recommendations: memory.recommendations.filter((r) => requestIds.has(r.requestId)).length,
+    membership: memory.members.filter(
+      (m) => m.circleId === circleId && m.userId === applicantId && m.status === 'active',
+    ).length,
+    approvals: memory.notifications.filter(
+      (n) =>
+        n.userId === applicantId &&
+        n.eventType === 'join_request_approved' &&
+        n.payload.circleId === circleId,
+    ).length,
+  };
 }
 
 export async function upsertDiary(input: {
