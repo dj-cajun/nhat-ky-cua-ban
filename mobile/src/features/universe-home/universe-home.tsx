@@ -24,28 +24,33 @@ import {
   isUniverseTabReturn,
   markUniverseTabBlurred,
 } from './session-visit';
+import type { UniverseGraphFriend } from './fallback-universe';
 import { UniverseScene3D } from './universe-scene';
 
 type Props = {
   profile: Profile;
   circles: CircleSummary[];
+  friends?: UniverseGraphFriend[];
   canCreate: boolean;
   onPressSelf: () => void;
   onPressCircle: (id: string) => void;
+  onPressFriend?: (userId: string) => void;
   onCreateCircle: () => void;
   forceFallback?: boolean;
   onIntroPlayingChange?: (playing: boolean) => void;
 };
 
 /**
- * Fullscreen intro Modal (MP4) → crossfade → universe home.
+ * Fullscreen intro Modal (MP4) → crossfade → Obsidian-like knowledge graph.
  */
 export function UniverseHome({
   profile,
   circles,
+  friends = [],
   canCreate,
   onPressSelf,
   onPressCircle,
+  onPressFriend,
   onCreateCircle,
   forceFallback,
   onIntroPlayingChange,
@@ -158,10 +163,12 @@ export function UniverseHome({
           <UniverseScene3D
             profile={profile}
             circles={circles}
+            friends={friends}
             revealProfile={revealProfile}
             revealPlanets={revealPlanets}
             onPressSelf={onPressSelf}
             onPressCircle={onPressCircle}
+            onPressFriend={onPressFriend}
             forceFallback={forceFallback}
             animateSettle={mode === 'full' || mode === 'short'}
           />
@@ -186,6 +193,7 @@ export function UniverseHome({
             <UniverseScene3D
               profile={profile}
               circles={circles}
+              friends={friends}
               revealProfile={false}
               revealPlanets={false}
               onPressSelf={() => {}}

@@ -8,10 +8,13 @@ import {
   OfflineBanner,
 } from '@/components/states';
 import {
+  getProfile,
   getSessionProfile,
+  listCircleMembers,
   listMyCircleSummaries,
 } from '@/features/local/repository';
 import { UniverseHome } from '@/features/universe-home';
+import type { UniverseGraphFriend } from '@/features/universe-home/fallback-universe';
 import { INTRO_HANDOFF } from '@/features/universe-home/handoff';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
@@ -22,6 +25,7 @@ export default function UniverseScreen() {
   const navigation = useNavigation();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [circles, setCircles] = useState<CircleSummary[]>([]);
+  const [friends, setFriends] = useState<UniverseGraphFriend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [offline, setOffline] = useState(false);
@@ -37,7 +41,33 @@ export default function UniverseScreen() {
         return;
       }
       setProfile(p);
-      setCircles(await listMyCircleSummaries(p.id));
+      const myCircles = await listMyCircleSummaries(p.id);
+      setCircles(myCircles);
+
+      const rows: UniverseGraphFriend[] = [];
+      const seen = new Set<string>();
+      for (const c of myCircles) {
+        try {
+          const members = await listCircleMembers(c.id, p.id);
+          for (const m of members) {
+            if (m.userId === p.id) continue;
+            const key = `${c.id}:${m.userId}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const friend = await getProfile(m.userId);
+            if (friend) {
+              rows.push({
+                userId: friend.id,
+                displayName: friend.displayName,
+                circleId: c.id,
+              });
+            }
+          }
+        } catch {
+          /* roster forbidden — skip */
+        }
+      }
+      setFriends(rows);
     } catch (e) {
       const app = toAppError(e);
       if (app.code === 'OFFLINE') setOffline(true);
@@ -76,8 +106,6 @@ export default function UniverseScreen() {
 
   const canCreate = isFeatureEnabled('circle_creation_enabled');
 
-  // No SafeArea padding around the scene — intro video + 3D/2D spheres share
-  // the full window. Chrome inside UniverseHome applies insets itself.
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
       {!introPlaying ? <OfflineBanner visible={offline} /> : null}
@@ -87,12 +115,17 @@ export default function UniverseScreen() {
       <UniverseHome
         profile={profile}
         circles={circles}
+        friends={friends}
         canCreate={canCreate}
         onIntroPlayingChange={setIntroPlaying}
         onPressSelf={() => router.push(`/diary/${profile.id}`)}
         onPressCircle={(id) => {
           track(AnalyticsEvents.circle_opened, { circle_id: id, market: 'US' });
           router.push(`/circles/${id}`);
+        }}
+        onPressFriend={(userId) => {
+          track(AnalyticsEvents.diary_viewed, { market: 'US' });
+          router.push(`/diary/${userId}`);
         }}
         onCreateCircle={() => router.push('/circles/create')}
       />

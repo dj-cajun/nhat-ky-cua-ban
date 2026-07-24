@@ -18,4 +18,4 @@ export {
 export { resetUniverseVisitSession } from './session-visit';
 export { UniverseHome } from './universe-home';
 export { UniverseScene3D } from './universe-scene';
-export { FallbackUniverse } from './fallback-universe';
+export { FallbackUniverse, type UniverseGraphFriend } from './fallback-universe';
