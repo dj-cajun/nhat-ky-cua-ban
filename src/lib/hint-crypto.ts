@@ -1,5 +1,5 @@
 import type { HintData, HintShield } from '@/types';
-import { vi } from '@/i18n/vi';
+import { getMessages } from '@/i18n';
 
 const HINT_PEPPER =
   import.meta.env.VITE_HINT_PEPPER ?? 'nhat-ky-hint-pepper-v1-local-only';
@@ -61,27 +61,27 @@ export function formatHintShield(
 ): string {
   switch (shield) {
     case 'surname':
-      return `Họ: ${surname}`;
+      return `${getMessages().hintShield.surname}: ${surname}`;
     case 'height':
-      return vi.hintFormat.height(hint.heightRange);
+      return getMessages().hintFormat.height(hint.heightRange);
     case 'gender':
       return hint.gender === 'male'
-        ? vi.hintFormat.genderMale
+        ? getMessages().hintFormat.genderMale
         : hint.gender === 'female'
-          ? vi.hintFormat.genderFemale
-          : vi.hintFormat.genderOther;
+          ? getMessages().hintFormat.genderFemale
+          : getMessages().hintFormat.genderOther;
     case 'commute': {
       const labels: Record<HintData['commute'], string> = {
-        motorbike: vi.hintFormat.commuteMotorbike,
-        bicycle: vi.hintFormat.commuteBicycle,
-        walk: vi.hintFormat.commuteWalk,
-        bus: vi.hintFormat.commuteBus,
-        other: vi.hintFormat.commuteOther,
+        motorbike: getMessages().hintFormat.commuteMotorbike,
+        bicycle: getMessages().hintFormat.commuteBicycle,
+        walk: getMessages().hintFormat.commuteWalk,
+        bus: getMessages().hintFormat.commuteBus,
+        other: getMessages().hintFormat.commuteOther,
       };
-      return vi.hintFormat.commute(labels[hint.commute]);
+      return getMessages().hintFormat.commute(labels[hint.commute]);
     }
     default:
-      return vi.hintFormat.none;
+      return getMessages().hintFormat.none;
   }
 }
 

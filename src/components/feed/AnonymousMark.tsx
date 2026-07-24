@@ -2,7 +2,7 @@ import { useSetAtom } from 'jotai';
 import type { FeedPost } from '@/types';
 import { db } from '@/lib/db';
 import { showInterstitialAd } from '@/lib/zalo-ads';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { strangerUserAtom, viewModeAtom, strangerHostIdAtom } from '@/stores/atoms';
 
 type AnonymousMarkProps = {
@@ -12,6 +12,7 @@ type AnonymousMarkProps = {
 };
 
 export function AnonymousMark({ post, disabled, onWarp }: AnonymousMarkProps) {
+  const t = useMessages();
   const setViewMode = useSetAtom(viewModeAtom);
   const setStrangerUser = useSetAtom(strangerUserAtom);
   const setHostId = useSetAtom(strangerHostIdAtom);
@@ -36,9 +37,9 @@ export function AnonymousMark({ post, disabled, onWarp }: AnonymousMarkProps) {
       onClick={(e) => void handleWarp(e)}
       disabled={disabled}
       className="shrink-0 leading-none disabled:opacity-40"
-      aria-label={vi.home.anonymous}
+      aria-label={t.home.anonymous}
     >
-      {vi.home.anonymousMark}
+      {t.home.anonymousMark}
     </button>
   );
 }

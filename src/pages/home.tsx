@@ -14,9 +14,10 @@ import { InvestigationPanel } from '@/components/dotori/InvestigationPanel';
 import { GiftSheet } from '@/components/dotori/GiftSheet';
 import { ReportSheet } from '@/components/moderation/ReportSheet';
 import { viewModeAtom, showVoteOverlayAtom, currentUserAtom, displayUserAtom } from '@/stores/atoms';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 
 export function HomePage() {
+  const t = useMessages();
   const viewMode = useAtomValue(viewModeAtom);
   const currentUser = useAtomValue(currentUserAtom);
   const displayUser = useAtomValue(displayUserAtom);
@@ -44,7 +45,7 @@ export function HomePage() {
             onClick={() => setViewMode('my')}
             className="cy-hard-btn flex-1 bg-pastel-blush px-3 py-1.5 text-xs font-bold"
           >
-            {vi.home.backToMine}
+            {t.home.backToMine}
           </button>
           <button
             type="button"

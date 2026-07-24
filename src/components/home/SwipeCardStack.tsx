@@ -1,7 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { BoardType, FeedPost } from '@/types';
-import { BOARD_LABELS } from '@/i18n/vi';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import {
   activeBoardAtom,
   appPageAtom,
@@ -38,6 +37,7 @@ type SwipeCardStackProps = {
 };
 
 export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProps) {
+  const t = useMessages();
   const allPosts = useAtomValue(postsAtom);
   const voteLock = useAtomValue(voteLockAtom);
   const setActiveBoard = useSetAtom(activeBoardAtom);
@@ -68,7 +68,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
                 disabled={voteLock}
                 className={`cy-board-section-title cy-board-row-tappable w-full ${BOARD_TITLE_PASTEL[board]}`}
               >
-                <span className="min-w-0 flex-1 truncate">{BOARD_LABELS[board]}</span>
+                <span className="min-w-0 flex-1 truncate">{t.boards[board]}</span>
                 <span className="cy-board-post-row-cue" aria-hidden>
                   ›
                 </span>
@@ -79,7 +79,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
                   return (
                     <div key={`${board}-slot-${slotIndex}`} className="cy-board-post-row">
                       {posts.length === 0 && slotIndex === 0 ? (
-                        <span className="text-[10px] text-zinc-400">{vi.home.noPosts}</span>
+                        <span className="text-[10px] text-zinc-400">{t.home.noPosts}</span>
                       ) : null}
                     </div>
                   );
@@ -112,7 +112,7 @@ export function SwipeCardStack({ onWrite, canWrite = false }: SwipeCardStackProp
       {canWrite && onWrite && (
         <div className="cy-board-preview-write-bar">
           <button type="button" onClick={onWrite} className="cy-write-btn">
-            {vi.home.write}
+            {t.home.write}
           </button>
         </div>
       )}

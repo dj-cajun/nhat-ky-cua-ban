@@ -1,4 +1,4 @@
-import { REALTIME_MESSAGES } from '@/config/app-content';
+import { getMessages } from '@/i18n';
 import { ensureRemoteAvailable, isUuid } from '@/lib/supabase-remote';
 
 type RealtimeEvent =
@@ -45,7 +45,7 @@ export function initSupabaseRealtime(remoteClassId: string | undefined): (() => 
             filter: `class_id=eq.${remoteClassId}`,
           },
           () => {
-            emitRealtime({ type: 'new_post', message: REALTIME_MESSAGES.newSchoolPost });
+            emitRealtime({ type: 'new_post', message: getMessages().realtime.newSchoolPost });
           },
         )
         .on(
@@ -57,7 +57,7 @@ export function initSupabaseRealtime(remoteClassId: string | undefined): (() => 
             filter: `class_id=eq.${remoteClassId}`,
           },
           () => {
-            emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
+            emitRealtime({ type: 'member_joined', message: getMessages().realtime.memberJoined });
           },
         )
         .subscribe();
@@ -79,9 +79,9 @@ export function initSupabaseRealtime(remoteClassId: string | undefined): (() => 
 /** Demo realtime events */
 export function simulateRealtimeDemo(): void {
   setTimeout(() => {
-    emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
+    emitRealtime({ type: 'member_joined', message: getMessages().realtime.memberJoined });
   }, 4000);
   setTimeout(() => {
-    emitRealtime({ type: 'new_post', message: REALTIME_MESSAGES.newSchoolPost });
+    emitRealtime({ type: 'new_post', message: getMessages().realtime.newSchoolPost });
   }, 8000);
 }

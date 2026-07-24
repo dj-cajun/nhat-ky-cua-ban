@@ -23,11 +23,12 @@
 ## 카피·톤
 
 - 브랜드가 첫 화면에서 약하지 않게 (제품명 hero급)  
+- **1차 UI 언어**: English · 한국어 ([17-i18n-en-ko.md](./17-i18n-en-ko.md))  
 - 거절 대신: **Not sure** / **잘 모르겠어요**  
 - 조회·방문 자랑 UI 없음  
 - 폐쇄 서클의 신뢰·조용함을 강조  
 
-원본 카피 소스: `mobile/src/i18n/en.ts`
+원본 카피 소스: `mobile/src/i18n/en.ts` · `mobile/src/i18n/ko.ts` · 웹 `src/i18n/{en,ko}.ts`
 
 ---
 

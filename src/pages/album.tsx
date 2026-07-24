@@ -4,7 +4,7 @@ import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
 import { pickAlbumPhoto } from '@/lib/photo-picker';
 import { MAX_ALBUM_PHOTOS, MAX_CAPTION_CHARS } from '@/types';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { viewModeAtom } from '@/stores/atoms';
 import { useAtomValue } from 'jotai';
 
@@ -13,6 +13,7 @@ type AlbumPageProps = {
 };
 
 export function AlbumPage({ onBack }: AlbumPageProps) {
+  const t = useMessages();
   const viewMode = useAtomValue(viewModeAtom);
   const [photos, setPhotos] = useState(() => db.getPhotoGallery());
   const [viewingId, setViewingId] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
 
   const handleUpload = async () => {
     if (photos.length >= MAX_ALBUM_PHOTOS) {
-      setError(vi.album.maxPhotos(MAX_ALBUM_PHOTOS));
+      setError(t.album.maxPhotos(MAX_ALBUM_PHOTOS));
       return;
     }
 
@@ -99,7 +100,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
 
   const handleDelete = (photoId: string) => {
     if (!canEdit) return;
-    if (!window.confirm(vi.album.deleteConfirm)) return;
+    if (!window.confirm(t.album.deleteConfirm)) return;
     db.deletePhotoCard(photoId);
     refreshPhotos();
     closeViewer();
@@ -111,17 +112,17 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
       <div className="cy-canvas flex min-h-0 flex-1 flex-col">
         <header className="cy-card flex shrink-0 items-center justify-between px-3 py-2">
           <button type="button" onClick={onBack} className="text-xs font-bold">
-            {vi.album.back}
+            {t.album.back}
           </button>
-          <h1 className="text-sm font-bold">{vi.album.title}</h1>
+          <h1 className="text-sm font-bold">{t.album.title}</h1>
           <span className="font-mono text-[10px] font-bold text-zinc-500">
-            {vi.album.counter(photos.length, MAX_ALBUM_PHOTOS)}
+            {t.album.counter(photos.length, MAX_ALBUM_PHOTOS)}
           </span>
         </header>
 
         <section className="scrollbar-hide relative min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {photos.length === 0 ? (
-            <p className="py-8 text-center text-xs text-zinc-500">{vi.home.noPhoto}</p>
+            <p className="py-8 text-center text-xs text-zinc-500">{t.home.noPhoto}</p>
           ) : (
             <div className="cy-pinterest-grid">
               {photos.map((photo) => (
@@ -135,7 +136,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
                     <img src={photo.imageUrl} alt="" draggable={false} loading="lazy" />
                   </div>
                   <p className="cy-pinterest-pin-caption">
-                    {photo.caption || vi.home.captionPlaceholder}
+                    {photo.caption || t.home.captionPlaceholder}
                   </p>
                 </button>
               ))}
@@ -155,7 +156,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
               disabled={picking || photos.length >= MAX_ALBUM_PHOTOS}
               className="cy-write-btn w-full py-2 text-sm disabled:opacity-40"
             >
-              {picking ? vi.album.uploading : vi.album.upload}
+              {picking ? t.album.uploading : t.album.upload}
             </button>
           </div>
         )}
@@ -165,7 +166,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
         <div className="cy-photo-lightbox">
           <header className="flex shrink-0 items-center justify-between px-4 py-3 text-white">
             <button type="button" onClick={closeViewer} className="text-xs font-bold">
-              {vi.album.viewClose}
+              {t.album.viewClose}
             </button>
             {canEdit ? (
               <div className="flex items-center gap-3">
@@ -174,14 +175,14 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
                   onClick={() => handleDelete(viewingPhoto.id)}
                   className="text-xs font-bold text-red-300"
                 >
-                  {vi.album.delete}
+                  {t.album.delete}
                 </button>
                 <button
                   type="button"
                   onClick={() => openEdit(viewingPhoto)}
                   className="text-xs font-bold text-y2k-pink-light"
                 >
-                  {vi.album.edit}
+                  {t.album.edit}
                 </button>
               </div>
             ) : (
@@ -199,7 +200,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
           </div>
 
           <p className="shrink-0 px-4 pb-4 text-center text-sm font-bold text-white">
-            {viewingPhoto.caption || vi.home.captionPlaceholder}
+            {viewingPhoto.caption || t.home.captionPlaceholder}
           </p>
         </div>
       )}
@@ -208,7 +209,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="cy-card w-full max-w-sm p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold">{vi.album.edit}</h3>
+              <h3 className="text-sm font-bold">{t.album.edit}</h3>
               <button type="button" onClick={closeEdit} className="text-xs text-zinc-500">
                 ✕
               </button>
@@ -223,7 +224,7 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
               <div className="cy-photo-edit-preview">
                 <img src={draftImage} alt="" draggable={false} />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-xs font-bold text-white">
-                  {picking ? vi.album.uploading : vi.home.choosePhoto}
+                  {picking ? t.album.uploading : t.home.choosePhoto}
                 </span>
               </div>
             </button>
@@ -234,21 +235,21 @@ export function AlbumPage({ onBack }: AlbumPageProps) {
               maxLength={MAX_CAPTION_CHARS}
               onChange={(e) => setDraftCaption(e.target.value)}
               className="cy-card-inset mb-2 w-full rounded px-2 py-2 text-center text-sm"
-              placeholder={vi.home.photoPlaceholder}
+              placeholder={t.home.photoPlaceholder}
             />
             <p className="mb-2 text-right text-xs text-zinc-500">
               {draftCaption.length}/{MAX_CAPTION_CHARS}
             </p>
             {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
             <button type="button" onClick={saveEdit} className="cy-write-btn mb-2 w-full py-2 text-sm">
-              {vi.home.save}
+              {t.home.save}
             </button>
             <button
               type="button"
               onClick={() => handleDelete(editingPhoto.id)}
               className="pencil-btn-danger w-full py-2 text-sm"
             >
-              {vi.album.delete}
+              {t.album.delete}
             </button>
           </div>
         </div>

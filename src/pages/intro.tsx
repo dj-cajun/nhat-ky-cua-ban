@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { APP_META } from '@/config/app-content';
-import { vi } from '@/i18n/vi';
+import { useLocale, useMessages } from '@/i18n';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 
 interface IntroPageProps {
   onComplete: () => void;
 }
 
 export function IntroPage({ onComplete }: IntroPageProps) {
+  const t = useMessages();
+  const [locale] = useLocale();
   const [step, setStep] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const slides = vi.intro.slides;
+  const slides = t.intro.slides;
   const isLast = step >= slides.length - 1;
+  const brand = locale === 'ko' ? '너의 다이어리' : 'Your Diary';
 
   const goNext = () => {
     if (isLast) {
@@ -26,8 +29,11 @@ export function IntroPage({ onComplete }: IntroPageProps) {
   return (
     <div className="page-shell justify-between p-6">
       <header className="shrink-0 pt-2">
-        <p className="text-xs font-medium text-emerald-700">{vi.app.tagline}</p>
-        <h1 className="mt-1 text-xl font-bold leading-tight">{APP_META.name}</h1>
+        <div className="mb-3 flex justify-end">
+          <LanguageSwitcher compact />
+        </div>
+        <p className="text-xs font-medium text-emerald-700">{t.app.tagline}</p>
+        <h1 className="mt-1 text-xl font-bold leading-tight">{brand}</h1>
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col justify-center py-4">
@@ -53,19 +59,19 @@ export function IntroPage({ onComplete }: IntroPageProps) {
               className="mt-0.5"
             />
             <span>
-              {vi.terms.acceptLabel}{' '}
-              <a href={vi.terms.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                {vi.terms.privacy}
+              {t.terms.acceptLabel}{' '}
+              <a href={t.terms.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                {t.terms.privacy}
               </a>
               {' · '}
-              <a href={vi.terms.serviceUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                {vi.terms.service}
+              <a href={t.terms.serviceUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                {t.terms.service}
               </a>
             </span>
           </label>
         )}
 
-        <div className="mt-5 flex justify-center gap-2" role="tablist" aria-label={vi.intro.stepLabel}>
+        <div className="mt-5 flex justify-center gap-2" role="tablist" aria-label={t.intro.stepLabel}>
           {slides.map((_, index) => (
             <span
               key={index}
@@ -86,7 +92,7 @@ export function IntroPage({ onComplete }: IntroPageProps) {
           disabled={isLast && !termsAccepted}
           className="pencil-btn-primary py-3.5 disabled:opacity-40"
         >
-          {isLast ? vi.intro.start : vi.intro.next}
+          {isLast ? t.intro.start : t.intro.next}
         </button>
         {!isLast && (
           <button
@@ -94,11 +100,11 @@ export function IntroPage({ onComplete }: IntroPageProps) {
             onClick={onComplete}
             className="w-full py-1 text-center text-xs text-slate-500 underline-offset-2 hover:underline"
           >
-            {vi.intro.skip}
+            {t.intro.skip}
           </button>
         )}
-        <p className="text-center text-[10px] text-slate-400">{vi.app.anonymousFooter}</p>
-        <p className="text-center text-xs font-semibold text-amber-800">{vi.app.demoNotice}</p>
+        <p className="text-center text-[10px] text-slate-400">{t.app.anonymousFooter}</p>
+        <p className="text-center text-xs font-semibold text-amber-800">{t.app.demoNotice}</p>
       </footer>
     </div>
   );

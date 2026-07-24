@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { db } from '@/lib/db';
 import { isVoteHourVN, todayDateStr } from '@/lib/vote-service';
-import { vi } from '@/i18n/vi';
+import { getMessages } from '@/i18n';
 import {
   activeBoardAtom,
   showVoteOverlayAtom,
@@ -80,13 +80,13 @@ export function useVoteNotifications(): void {
       if (nominations.length === 0 && !forceDemo) return;
 
       const nomination = nominations[0];
-      const hintText = nomination?.hintText ?? vi.vote.defaultHint;
+      const hintText = nomination?.hintText ?? getMessages().vote.defaultHint;
 
       localStorage.setItem(`vote_notified_${today}`, 'true');
       void import('@/lib/realtime').then(({ emitRealtime }) => {
         emitRealtime({
           type: 'vote_nomination',
-          message: vi.realtime.voteNomination,
+          message: getMessages().realtime.voteNomination,
           hint: hintText,
         });
       });

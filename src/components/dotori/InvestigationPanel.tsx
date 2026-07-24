@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { DOTORI_PRICES } from '@/types/dotori';
 import {
   buyHintUnlock,
@@ -11,6 +11,7 @@ import {
 import { currentUserAtom, displayUserAtom } from '@/stores/atoms';
 
 export function InvestigationPanel() {
+  const t = useMessages();
   const target = useAtomValue(displayUserAtom);
   const setUser = useSetAtom(currentUserAtom);
   const [hints, setHints] = useState<string[]>(() =>
@@ -26,10 +27,10 @@ export function InvestigationPanel() {
   const showFail = (reason: string) => {
     const msg =
       reason === 'insufficient'
-        ? vi.dotori.spendFail.insufficient
+        ? t.dotori.spendFail.insufficient
         : reason === 'limit'
-          ? vi.dotori.spendFail.limit
-          : vi.dotori.spendFail.already_owned;
+          ? t.dotori.spendFail.limit
+          : t.dotori.spendFail.already_owned;
     setToast(msg);
     window.setTimeout(() => setToast(''), 2000);
   };
@@ -56,7 +57,7 @@ export function InvestigationPanel() {
 
   return (
     <section className="cy-card cy-box-lemon shrink-0 p-2.5">
-      <h3 className="mb-2 text-xs font-bold">{vi.investigate.title}</h3>
+      <h3 className="mb-2 text-xs font-bold">{t.investigate.title}</h3>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -65,8 +66,8 @@ export function InvestigationPanel() {
           className="cy-hard-btn rounded px-2 py-1 text-[10px] font-bold disabled:opacity-40"
         >
           {letter
-            ? `${letter}… (${vi.investigate.owned})`
-            : vi.investigate.surnameLetter(DOTORI_PRICES.surname_letter)}
+            ? `${letter}… (${t.investigate.owned})`
+            : t.investigate.surnameLetter(DOTORI_PRICES.surname_letter)}
         </button>
         <button
           type="button"
@@ -75,15 +76,15 @@ export function InvestigationPanel() {
           className="cy-hard-btn rounded px-2 py-1 text-[10px] font-bold disabled:opacity-40"
         >
           {hints.length >= 2
-            ? vi.investigate.owned
-            : vi.investigate.hintUnlock(DOTORI_PRICES.hint_unlock)}
+            ? t.investigate.owned
+            : t.investigate.hintUnlock(DOTORI_PRICES.hint_unlock)}
         </button>
       </div>
       {hints.length > 0 && (
         <ul className="mt-2 space-y-1 text-[10px] text-zinc-700">
           {hints.map((hint) => (
             <li key={hint}>
-              {vi.investigate.revealed} {hint}
+              {t.investigate.revealed} {hint}
             </li>
           ))}
         </ul>

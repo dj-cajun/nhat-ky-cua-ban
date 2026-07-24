@@ -16,7 +16,7 @@ import {
 import { db } from '@/lib/db';
 import { getLoggedInZaloUser } from '@/lib/zalo-auth';
 import { FOUNDING_QUIZ_COUNT, FOUNDING_REQUIRED_MEMBERS, type ClassFoundingRecord } from '@/types/founding';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 
 type FoundingPageProps = {
   schoolName: string;
@@ -32,6 +32,7 @@ function routeToScreen(route: FoundingRoute): Screen {
 }
 
 export function FoundingPage({ schoolName, className, joinToken, onComplete }: FoundingPageProps) {
+  const t = useMessages();
   const zaloUser = getLoggedInZaloUser();
   const [record, setRecord] = useState<ClassFoundingRecord | null>(() =>
     getFounding(schoolName, className),
@@ -70,7 +71,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
 
     const result = joinFoundingByToken(joinToken, zaloUser.id, zaloUser.name);
     if (!result.ok) {
-      setMessage(vi.founding.joinErrors[result.reason]);
+      setMessage(t.founding.joinErrors[result.reason]);
       syncRoute();
       return;
     }
@@ -86,7 +87,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
     }
 
     setRecord(result.record);
-    setMessage(vi.founding.joinSuccess);
+    setMessage(t.founding.joinSuccess);
     syncRoute(result.record.schoolName, result.record.className);
   }, [joinToken, schoolName, className, zaloUser.id, zaloUser.name, syncRoute]);
 
@@ -134,7 +135,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
   const handleSubmitQuizzes = () => {
     const result = submitFoundingQuizzes(schoolName, className, quizzes);
     if (!result.ok) {
-      setMessage(vi.founding.quizErrors[result.reason]);
+      setMessage(t.founding.quizErrors[result.reason]);
       return;
     }
     setMessage('');
@@ -174,7 +175,7 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
       <div className="cy-canvas flex min-h-0 flex-1 flex-col">
         <header className="cy-card flex shrink-0 items-center justify-between px-3 py-2">
           <span className="w-10" />
-          <h1 className="text-sm font-bold">{vi.founding.title}</h1>
+          <h1 className="text-sm font-bold">{t.founding.title}</h1>
           <span className="w-10" />
         </header>
 
@@ -183,27 +184,27 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
             <p className="mb-1 text-[10px] font-bold tracking-wide text-y2k-pink">
               {schoolName} · {className}
             </p>
-            <p className="text-xs leading-relaxed text-zinc-700">{vi.founding.summary}</p>
+            <p className="text-xs leading-relaxed text-zinc-700">{t.founding.summary}</p>
           </section>
 
           {screen === 'claim' && (
             <section className="cy-card space-y-3 p-3">
-              <h2 className="text-sm font-bold">{vi.founding.step1Title}</h2>
-              <p className="text-xs text-zinc-600">{vi.founding.step1Desc}</p>
-              <p className="text-xs text-zinc-500">{vi.founding.bootstrapping}</p>
+              <h2 className="text-sm font-bold">{t.founding.step1Title}</h2>
+              <p className="text-xs text-zinc-600">{t.founding.step1Desc}</p>
+              <p className="text-xs text-zinc-500">{t.founding.bootstrapping}</p>
             </section>
           )}
 
           {screen === 'waiting' && record && (
             <section className="cy-card space-y-3 p-3">
               <div className="pencil-found-box">
-                <p className="text-xs font-bold text-red-600">{vi.founding.waitingTitle}</p>
+                <p className="text-xs font-bold text-red-600">{t.founding.waitingTitle}</p>
               </div>
-              <p className="text-xs leading-relaxed text-zinc-600">{vi.founding.waitingDesc}</p>
+              <p className="text-xs leading-relaxed text-zinc-600">{t.founding.waitingDesc}</p>
               <div className="cy-card-inset px-3 py-2 text-center">
-                <p className="text-[10px] text-zinc-500">{vi.founding.progressLabel}</p>
+                <p className="text-[10px] text-zinc-500">{t.founding.progressLabel}</p>
                 <p className="text-lg font-bold">
-                  {vi.founding.progress(memberCount, FOUNDING_REQUIRED_MEMBERS)}
+                  {t.founding.progress(memberCount, FOUNDING_REQUIRED_MEMBERS)}
                 </p>
               </div>
             </section>
@@ -212,44 +213,44 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
           {screen === 'pending' && record && (
             <section className="cy-card space-y-3 p-3">
               <div className="pencil-found-box">
-                <p className="text-xs font-bold text-red-600">{vi.founding.lockedTitle}</p>
+                <p className="text-xs font-bold text-red-600">{t.founding.lockedTitle}</p>
               </div>
-              <p className="text-xs leading-relaxed">{vi.founding.step2Desc}</p>
+              <p className="text-xs leading-relaxed">{t.founding.step2Desc}</p>
               <div className="cy-card-inset px-3 py-2 text-center">
-                <p className="text-[10px] text-zinc-500">{vi.founding.progressLabel}</p>
+                <p className="text-[10px] text-zinc-500">{t.founding.progressLabel}</p>
                 <p className="text-lg font-bold">
-                  {vi.founding.progress(memberCount, FOUNDING_REQUIRED_MEMBERS)}
+                  {t.founding.progress(memberCount, FOUNDING_REQUIRED_MEMBERS)}
                 </p>
               </div>
               <ul className="space-y-1 text-[11px]">
                 {record.members.map((member) => (
                   <li key={member.userId} className="pencil-list-item px-2 py-1">
                     {member.name}
-                    {member.userId === record.founderUserId ? ` ${vi.founding.founderMark}` : ''}
+                    {member.userId === record.founderUserId ? ` ${t.founding.founderMark}` : ''}
                   </li>
                 ))}
               </ul>
               <button type="button" onClick={() => void handleShare()} className="cy-hard-btn w-full rounded-lg bg-white py-2 text-sm font-bold">
-                {copied ? vi.founding.copied : vi.founding.shareBtn}
+                {copied ? t.founding.copied : t.founding.shareBtn}
               </button>
               <p className="break-all rounded bg-zinc-100 p-2 font-mono text-[9px] text-zinc-600">
                 {inviteUrl}
               </p>
-              <p className="text-[10px] text-zinc-500">{vi.founding.shareHint}</p>
+              <p className="text-[10px] text-zinc-500">{t.founding.shareHint}</p>
               <button type="button" onClick={handleSimulateJoin} className="cy-card-inset w-full py-2 text-xs font-bold">
-                {vi.founding.simulateJoin}
+                {t.founding.simulateJoin}
               </button>
             </section>
           )}
 
           {screen === 'forming' && record && (
             <section className="cy-card space-y-3 p-3">
-              <h2 className="text-sm font-bold">{vi.founding.step4Title}</h2>
-              <p className="text-xs text-zinc-600">{vi.founding.step4Desc}</p>
+              <h2 className="text-sm font-bold">{t.founding.step4Title}</h2>
+              <p className="text-xs text-zinc-600">{t.founding.step4Desc}</p>
               {Array.from({ length: FOUNDING_QUIZ_COUNT }, (_, index) => (
                 <div key={index}>
                   <label className="mb-1 block text-xs font-bold">
-                    {vi.founding.quizLabel(index + 1)}
+                    {t.founding.quizLabel(index + 1)}
                   </label>
                   <input
                     type="text"
@@ -260,23 +261,23 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
                       setQuizzes(next);
                     }}
                     className="cy-card-inset w-full rounded px-2 py-2 text-sm"
-                    placeholder={vi.founding.quizPlaceholder}
+                    placeholder={t.founding.quizPlaceholder}
                   />
                 </div>
               ))}
               <button type="button" onClick={handleSubmitQuizzes} className="cy-write-btn w-full py-2 text-sm">
-                {vi.founding.activateBtn}
+                {t.founding.activateBtn}
               </button>
             </section>
           )}
 
           {screen === 'gate' && record && (
             <section className="cy-card space-y-3 p-3">
-              <h2 className="text-sm font-bold">{vi.founding.gateTitle}</h2>
-              <p className="text-xs text-zinc-600">{vi.founding.gateDesc}</p>
+              <h2 className="text-sm font-bold">{t.founding.gateTitle}</h2>
+              <p className="text-xs text-zinc-600">{t.founding.gateDesc}</p>
               {record.quizzes.map((quiz, index) => (
                 <div key={`${quiz}-${index}`}>
-                  <p className="mb-1 text-[11px] font-bold">{vi.founding.gateQuestion(index + 1)}</p>
+                  <p className="mb-1 text-[11px] font-bold">{t.founding.gateQuestion(index + 1)}</p>
                   <input
                     type="text"
                     value={gateAnswers[index]}
@@ -287,13 +288,13 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
                       setGateError(false);
                     }}
                     className="cy-card-inset w-full rounded px-2 py-2 text-sm"
-                    placeholder={vi.founding.gatePlaceholder}
+                    placeholder={t.founding.gatePlaceholder}
                   />
                 </div>
               ))}
-              {gateError && <p className="text-xs text-red-600">{vi.founding.gateWrong}</p>}
+              {gateError && <p className="text-xs text-red-600">{t.founding.gateWrong}</p>}
               <button type="button" onClick={handleVerifyGate} className="cy-write-btn w-full py-2 text-sm">
-                {vi.founding.gateSubmit}
+                {t.founding.gateSubmit}
               </button>
             </section>
           )}
@@ -303,14 +304,14 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
           )}
 
           <section className="cy-card-inset p-3">
-            <p className="mb-2 text-[10px] font-bold text-zinc-500">{vi.founding.flowTitle}</p>
+            <p className="mb-2 text-[10px] font-bold text-zinc-500">{t.founding.flowTitle}</p>
             <ol className="list-decimal space-y-1 pl-4 text-[10px] leading-relaxed text-zinc-600">
-              {vi.founding.flowSteps.map((step) => (
+              {t.founding.flowSteps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>
             <button type="button" onClick={handleResetDemo} className="mt-3 text-[10px] font-bold text-zinc-500 underline">
-              {vi.founding.resetDemo}
+              {t.founding.resetDemo}
             </button>
           </section>
         </main>

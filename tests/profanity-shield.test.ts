@@ -42,7 +42,7 @@ describe('assertCleanText', () => {
     const result = assertCleanText('l0n');
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('không thể lưu');
+      expect(result.message).toMatch(/can.?t be saved|저장할 수 없는/i);
     }
   });
 });

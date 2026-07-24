@@ -32,6 +32,7 @@
 | **10.5** | 레거시 정리 | ✅ | [13](./13-phase-10.5-legacy-cleanup.md) |
 | **11** | 통합 안정화·베타 | ✅ | [14](./14-phase-11-beta-stabilization.md) |
 | **11.5** | 실기기 출시 게이트 | 🔜 | [16](./16-phase-11.5-device-launch-gate.md), [15](./15-beta-launch-checklist.md) |
+| **i18n 1차** | English · 한국어 | ✅ | [17](./17-i18n-en-ko.md) |
 | 베타 | 30~60명 · 10서클 · 4주 | 대기 | 11.5 통과 후 |
 
 ---

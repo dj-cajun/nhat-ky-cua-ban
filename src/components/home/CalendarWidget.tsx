@@ -9,7 +9,7 @@ import {
   type VNDate,
 } from '@/lib/vn-calendar';
 import { MAX_DIARY_CHARS } from '@/types';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 
 function displayMemo(content: string | undefined): string {
   const text = content?.trim() ?? '';
@@ -18,6 +18,7 @@ function displayMemo(content: string | undefined): string {
 }
 
 export function CalendarWidget() {
+  const t = useMessages();
   const today = useMemo(() => getTodayVN(), []);
   const weekDates = useMemo(() => getVNWeekFromSunday(today), [today]);
   const [entries, setEntries] = useState(db.getCalendar());
@@ -61,7 +62,7 @@ export function CalendarWidget() {
             const dateStr = toDateKey(date);
             const entry = entries.find((e) => e.date === dateStr);
             const isToday = isSameVNDate(date, today);
-            const dayLabel = vi.calendarDays[index];
+            const dayLabel = t.calendarDays[index];
 
             return (
               <button
@@ -92,15 +93,15 @@ export function CalendarWidget() {
       {selectedDate && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
           <div className="cy-card w-full max-w-xs p-4">
-            <h3 className="mb-2 text-sm font-bold">{vi.home.calendarTitle(selectedDate)}</h3>
-            <p className="mb-2 text-xs text-zinc-500">{vi.home.maxChars(MAX_DIARY_CHARS)}</p>
+            <h3 className="mb-2 text-sm font-bold">{t.home.calendarTitle(selectedDate)}</h3>
+            <p className="mb-2 text-xs text-zinc-500">{t.home.maxChars(MAX_DIARY_CHARS)}</p>
             <input
               type="text"
               value={draft}
               maxLength={MAX_DIARY_CHARS}
               onChange={(e) => setDraft(e.target.value)}
               className="cy-card-inset mb-2 w-full rounded px-2 py-2 text-center text-sm"
-              placeholder={vi.home.calendarPlaceholder}
+              placeholder={t.home.calendarPlaceholder}
             />
             <p className="mb-2 text-right text-xs text-zinc-500">
               {draft.length}/{MAX_DIARY_CHARS}
@@ -112,14 +113,14 @@ export function CalendarWidget() {
                 onClick={() => setSelectedDate(null)}
                 className="cy-hard-btn min-h-[44px] flex-1 rounded bg-white py-2 text-sm"
               >
-                {vi.home.cancel}
+                {t.home.cancel}
               </button>
               <button
                 type="button"
                 onClick={saveEntry}
                 className="cy-write-btn min-h-[44px] flex-1 py-2 text-sm"
               >
-                {vi.home.save}
+                {t.home.save}
               </button>
             </div>
           </div>

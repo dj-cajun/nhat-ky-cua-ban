@@ -7,9 +7,8 @@ import { getLoggedInZaloUser } from '@/lib/zalo-auth';
 import { joinClassAfterOnboarding } from '@/lib/class-founding';
 import { db } from '@/lib/db';
 import { emitRealtime } from '@/lib/realtime';
-import { REALTIME_MESSAGES } from '@/config/app-content';
 import { markOnboarded } from '@/lib/session';
-import { vi } from '@/i18n/vi';
+import { getMessages, useMessages } from '@/i18n';
 import { currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 import type { HintData } from '@/types';
 
@@ -20,6 +19,7 @@ interface OnboardingPageProps {
 }
 
 export function OnboardingPage({ onComplete, initialSchool, initialClass }: OnboardingPageProps) {
+  const t = useMessages();
   const setUser = useSetAtom(currentUserAtom);
   const setPosts = useSetAtom(postsAtom);
   const setVisitors = useSetAtom(visitorsAtom);
@@ -45,7 +45,7 @@ export function OnboardingPage({ onComplete, initialSchool, initialClass }: Onbo
     setPosts(db.getPosts());
     setVisitors(db.getVisitors());
     markOnboarded();
-    emitRealtime({ type: 'member_joined', message: REALTIME_MESSAGES.memberJoined });
+    emitRealtime({ type: 'member_joined', message: getMessages().realtime.memberJoined });
     onComplete();
   };
 
@@ -53,41 +53,41 @@ export function OnboardingPage({ onComplete, initialSchool, initialClass }: Onbo
     <div className="page-shell p-4">
       <header className="shrink-0 pb-3">
         <h1 className="mb-1 text-xl font-bold">
-          {step === 0 ? vi.onboarding.title : vi.onboarding.hintTitle}
+          {step === 0 ? t.onboarding.title : t.onboarding.hintTitle}
         </h1>
         <p className="mb-3 text-sm text-slate-600">
-          {step === 0 ? vi.onboarding.subtitle : vi.onboarding.hintSubtitle}
+          {step === 0 ? t.onboarding.subtitle : t.onboarding.hintSubtitle}
         </p>
         <p className="diary-border rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-          {vi.onboarding.zaloDone} {zaloUser.name}
+          {t.onboarding.zaloDone} {zaloUser.name}
         </p>
       </header>
 
       <main className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
         {step === 0 ? (
           <section className="diary-panel p-4">
-            <h2 className="mb-2 text-sm font-bold">{vi.onboarding.schoolClass}</h2>
-            <p className="mb-4 text-xs leading-relaxed text-slate-500">{vi.onboarding.classDesc}</p>
-            <label className="mb-3 block text-xs">{vi.onboarding.school}</label>
+            <h2 className="mb-2 text-sm font-bold">{t.onboarding.schoolClass}</h2>
+            <p className="mb-4 text-xs leading-relaxed text-slate-500">{t.onboarding.classDesc}</p>
+            <label className="mb-3 block text-xs">{t.onboarding.school}</label>
             <select
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               className="diary-border mb-4 w-full rounded px-3 py-2 text-sm"
             >
-              <option value="">{vi.onboarding.select}</option>
+              <option value="">{t.onboarding.select}</option>
               {SCHOOLS.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
             </select>
-            <label className="mb-3 block text-xs">{vi.onboarding.class}</label>
+            <label className="mb-3 block text-xs">{t.onboarding.class}</label>
             <select
               value={className}
               onChange={(e) => setClassName(e.target.value)}
               className="diary-border w-full rounded px-3 py-2 text-sm"
             >
-              <option value="">{vi.onboarding.select}</option>
+              <option value="">{t.onboarding.select}</option>
               {CLASSES.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -109,7 +109,7 @@ export function OnboardingPage({ onComplete, initialSchool, initialClass }: Onbo
             onClick={() => setStep(0)}
             className="w-full py-1 text-center text-xs text-slate-500 underline-offset-2 hover:underline"
           >
-            {vi.onboarding.back}
+            {t.onboarding.back}
           </button>
         )}
         <button
@@ -124,7 +124,7 @@ export function OnboardingPage({ onComplete, initialSchool, initialClass }: Onbo
           }}
           className="pencil-btn-primary min-h-[48px] disabled:opacity-40"
         >
-          {step === 0 ? vi.onboarding.next : vi.onboarding.enterHome}
+          {step === 0 ? t.onboarding.next : t.onboarding.enterHome}
         </button>
       </footer>
     </div>

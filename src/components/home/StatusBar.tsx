@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { getUnopenedGiftCount } from '@/lib/dotori-economy';
 import { currentUserAtom, appPageAtom } from '@/stores/atoms';
 import { GiftInbox } from '@/components/dotori/GiftInbox';
 import { TodayVisitorsPanel } from '@/components/home/TodayVisitorsPanel';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 
 export function StatusBar() {
+  const t = useMessages();
   const user = useAtomValue(currentUserAtom);
   const setPage = useSetAtom(appPageAtom);
   const [showTodayHints, setShowTodayHints] = useState(false);
@@ -41,7 +43,7 @@ export function StatusBar() {
                   className={`cy-today-count inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded-sm px-1 text-sm font-bold underline decoration-dotted underline-offset-2 ${
                     showTodayHints ? 'cy-today-count--open' : ''
                   }`}
-                  aria-label={vi.home.todayVisitorsTitle}
+                  aria-label={t.home.todayVisitorsTitle}
                   aria-expanded={showTodayHints}
                   aria-haspopup="menu"
                 >
@@ -57,22 +59,23 @@ export function StatusBar() {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <LanguageSwitcher compact className="mr-1" />
             <button
               type="button"
               onClick={() => setShowGifts(true)}
               className="cy-status-btn cy-status-btn--gift"
-              aria-label={vi.status.giftAria}
+              aria-label={t.status.giftAria}
             >
-              {vi.status.giftBtn}
+              {t.status.giftBtn}
               {giftCount > 0 && <span className="cy-status-btn-count">{giftCount}</span>}
             </button>
             <button
               type="button"
               onClick={() => setPage('dotori')}
               className="cy-status-btn cy-status-btn--dotori"
-              aria-label={vi.status.dotoriAria}
+              aria-label={t.status.dotoriAria}
             >
-              {vi.status.dotoriBtn}
+              {t.status.dotoriBtn}
               <span className="cy-status-btn-count">{user.dotoriBalance}</span>
             </button>
           </div>

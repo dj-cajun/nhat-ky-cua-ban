@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import type { FeedPost } from '@/types';
-import { BOARD_LABELS } from '@/i18n/vi';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { activeBoardAtom, postsAtom, viewModeAtom, voteLockAtom } from '@/stores/atoms';
 import { AnonymousMark } from '@/components/feed/AnonymousMark';
 import { MediaIcons } from '@/components/feed/MediaIcons';
@@ -14,6 +13,7 @@ type BoardPageProps = {
 };
 
 export function BoardPage({ onBack }: BoardPageProps) {
+  const t = useMessages();
   const activeBoard = useAtomValue(activeBoardAtom);
   const allPosts = useAtomValue(postsAtom);
   const voteLock = useAtomValue(voteLockAtom);
@@ -30,9 +30,9 @@ export function BoardPage({ onBack }: BoardPageProps) {
       <div className="cy-canvas flex min-h-0 flex-1 flex-col">
         <header className="cy-card flex shrink-0 items-center justify-between px-3 py-2">
           <button type="button" onClick={onBack} className="text-xs font-bold">
-            {vi.board.back}
+            {t.board.back}
           </button>
-          <h1 className="text-sm font-bold">{BOARD_LABELS[activeBoard]}</h1>
+          <h1 className="text-sm font-bold">{t.boards[activeBoard]}</h1>
           <span className="w-10" />
         </header>
 
@@ -41,7 +41,7 @@ export function BoardPage({ onBack }: BoardPageProps) {
         >
           <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
             {posts.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-zinc-400">{vi.home.noPosts}</p>
+              <p className="px-4 py-8 text-center text-sm text-zinc-400">{t.home.noPosts}</p>
             ) : (
               posts.map((post, index) => (
                 <div key={post.id} className={index > 0 ? 'sk-divider-top' : ''}>
@@ -68,7 +68,7 @@ export function BoardPage({ onBack }: BoardPageProps) {
                 onClick={() => setShowComposer(true)}
                 className="cy-write-btn"
               >
-                {vi.home.write}
+                {t.home.write}
               </button>
             </div>
           )}

@@ -1,6 +1,6 @@
 import type { HintData } from '@/types';
 import { HEIGHT_RANGES } from '@/config/hint-options';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 
 interface HintFormProps {
   value: HintData;
@@ -8,18 +8,19 @@ interface HintFormProps {
 }
 
 export function HintForm({ value, onChange }: HintFormProps) {
+  const t = useMessages();
   return (
     <div className="space-y-4">
-      <p className="text-xs leading-relaxed text-slate-500">{vi.onboarding.hintEncrypted}</p>
+      <p className="text-xs leading-relaxed text-slate-500">{t.onboarding.hintEncrypted}</p>
 
       <fieldset>
-        <legend className="mb-2 block text-xs font-bold">{vi.onboarding.gender}</legend>
+        <legend className="mb-2 block text-xs font-bold">{t.onboarding.gender}</legend>
         <div className="flex flex-wrap gap-2">
           {(
             [
-              ['female', vi.onboarding.female],
-              ['male', vi.onboarding.male],
-              ['other', vi.onboarding.other],
+              ['female', t.onboarding.female],
+              ['male', t.onboarding.male],
+              ['other', t.onboarding.other],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="flex items-center gap-1 text-xs">
@@ -36,7 +37,7 @@ export function HintForm({ value, onChange }: HintFormProps) {
       </fieldset>
 
       <label className="block text-xs">
-        <span className="mb-2 block font-bold">{vi.onboarding.height}</span>
+        <span className="mb-2 block font-bold">{t.onboarding.height}</span>
         <select
           value={value.heightRange}
           onChange={(e) => onChange({ ...value, heightRange: e.target.value })}
@@ -51,12 +52,12 @@ export function HintForm({ value, onChange }: HintFormProps) {
       </label>
 
       <fieldset>
-        <legend className="mb-2 block text-xs font-bold">{vi.onboarding.mbti}</legend>
+        <legend className="mb-2 block text-xs font-bold">{t.onboarding.mbti}</legend>
         <div className="flex gap-4">
           {(
             [
-              ['E', vi.onboarding.extrovert],
-              ['I', vi.onboarding.introvert],
+              ['E', t.onboarding.extrovert],
+              ['I', t.onboarding.introvert],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="flex items-center gap-1 text-xs">
@@ -73,7 +74,7 @@ export function HintForm({ value, onChange }: HintFormProps) {
       </fieldset>
 
       <label className="block text-xs">
-        <span className="mb-2 block font-bold">{vi.onboarding.commute}</span>
+        <span className="mb-2 block font-bold">{t.onboarding.commute}</span>
         <select
           value={value.commute}
           onChange={(e) =>
@@ -84,10 +85,10 @@ export function HintForm({ value, onChange }: HintFormProps) {
           }
           className="diary-border w-full rounded px-3 py-2 text-sm"
         >
-          <option value="motorbike">{vi.onboarding.motorbike}</option>
-          <option value="bicycle">{vi.onboarding.bicycle}</option>
-          <option value="walk">{vi.onboarding.walk}</option>
-          <option value="bus">{vi.onboarding.bus}</option>
+          <option value="motorbike">{t.onboarding.motorbike}</option>
+          <option value="bicycle">{t.onboarding.bicycle}</option>
+          <option value="walk">{t.onboarding.walk}</option>
+          <option value="bus">{t.onboarding.bus}</option>
         </select>
       </label>
     </div>

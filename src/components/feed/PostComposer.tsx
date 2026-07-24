@@ -4,8 +4,7 @@ import type { BoardType } from '@/types';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
 import { emitRealtime } from '@/lib/realtime';
-import { REALTIME_MESSAGES } from '@/config/app-content';
-import { vi } from '@/i18n/vi';
+import { getMessages, useMessages } from '@/i18n';
 import { currentUserAtom, postsAtom, viewModeAtom, strangerHostIdAtom } from '@/stores/atoms';
 
 interface PostComposerProps {
@@ -14,6 +13,7 @@ interface PostComposerProps {
 }
 
 export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
+  const t = useMessages();
   const viewMode = useAtomValue(viewModeAtom);
   const user = useAtomValue(currentUserAtom);
   const hostId = useAtomValue(strangerHostIdAtom);
@@ -31,10 +31,10 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
 
   const title =
     boardType === 'diary'
-      ? vi.feed.writeSecret
+      ? t.feed.writeSecret
       : boardType === 'school'
-        ? vi.feed.schoolBoard
-        : vi.feed.guestbookCard;
+        ? t.feed.schoolBoard
+        : t.feed.guestbookCard;
 
   const handleSubmit = () => {
     const check = assertCleanText(content);
@@ -43,7 +43,7 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
       return;
     }
     if (!content.trim()) {
-      setError(vi.feed.emptyContent);
+      setError(t.feed.emptyContent);
       return;
     }
 
@@ -62,7 +62,7 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
     if (boardType === 'school' || boardType === 'diary') {
       emitRealtime({
         type: 'new_post',
-        message: REALTIME_MESSAGES.newSchoolPost,
+        message: getMessages().realtime.newSchoolPost,
       });
     }
 
@@ -87,14 +87,14 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
                 onClick={() => setBoard('diary')}
                 className={`pencil-chip px-2 py-1 ${board === 'diary' ? 'pencil-chip--selected font-bold' : ''}`}
               >
-                {vi.feed.secretTab}
+                {t.feed.secretTab}
               </button>
               <button
                 type="button"
                 onClick={() => setBoard('school')}
                 className={`pencil-chip px-2 py-1 ${board === 'school' ? 'pencil-chip--selected font-bold' : ''}`}
               >
-                {vi.feed.schoolTab}
+                {t.feed.schoolTab}
               </button>
             </>
           )}
@@ -105,18 +105,18 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
           onChange={(e) => setContent(e.target.value)}
           rows={4}
           maxLength={200}
-          placeholder={viewMode === 'my' ? vi.feed.placeholderMy : vi.feed.placeholderGuest}
+          placeholder={viewMode === 'my' ? t.feed.placeholderMy : t.feed.placeholderGuest}
           className="diary-border mb-2 w-full resize-none p-3 text-sm"
         />
 
         <div className="mb-3 flex gap-3 text-xs">
           <label className="flex items-center gap-1">
             <input type="checkbox" checked={hasPhoto} onChange={(e) => setHasPhoto(e.target.checked)} />
-            {vi.feed.photo}
+            {t.feed.photo}
           </label>
           <label className="flex items-center gap-1">
             <input type="checkbox" checked={hasLink} onChange={(e) => setHasLink(e.target.checked)} />
-            {vi.feed.link}
+            {t.feed.link}
           </label>
         </div>
 
@@ -127,7 +127,7 @@ export function PostComposer({ onClose, initialBoard }: PostComposerProps) {
           onClick={handleSubmit}
           className="pencil-btn-primary"
         >
-          {vi.feed.publish}
+          {t.feed.publish}
         </button>
       </div>
     </div>

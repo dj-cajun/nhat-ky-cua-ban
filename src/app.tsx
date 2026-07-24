@@ -39,7 +39,7 @@ import {
 } from '@/lib/session';
 import { primeProfanityBlacklist } from '@/lib/profanity-remote';
 import * as v1Store from '@/lib/v1-store';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
 import {
   v1CirclesAtom,
@@ -73,6 +73,7 @@ function resolveStage(): AppStage {
 
 /** 원래 5층 홈피 (StatusBar · ProfileCard · Calendar · Album · Swipe) */
 function HompyApp() {
+  const t = useMessages();
   const page = useAtomValue(appPageAtom);
   const setPage = useSetAtom(appPageAtom);
   const setUser = useSetAtom(currentUserAtom);
@@ -162,7 +163,7 @@ function HompyApp() {
   if (stage === 'boot') {
     return (
       <div className="flex h-screen items-center justify-center bg-[#faf9f6] text-sm text-slate-500">
-        {vi.app.loading}
+        {t.app.loading}
       </div>
     );
   }
@@ -205,7 +206,7 @@ function HompyApp() {
     if (!profile) {
       return (
         <div className="flex h-screen items-center justify-center bg-[#faf9f6] text-sm text-slate-500">
-          {vi.app.loading}
+          {t.app.loading}
         </div>
       );
     }

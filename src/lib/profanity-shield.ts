@@ -2,7 +2,7 @@
  * Profanity Shield Engine
  */
 
-import { vi } from '@/i18n/vi';
+import { getMessages } from '@/i18n';
 
 const VIETNAMESE_TONE_MAP: Record<string, string> = {
   à: 'a',
@@ -228,7 +228,7 @@ export function assertCleanText(
 ): { ok: true } | { ok: false; message: string } {
   const result = checkProfanity(text, blacklist);
   if (result.blocked) {
-    return { ok: false, message: vi.profanity.blocked };
+    return { ok: false, message: getMessages().profanity.blocked };
   }
   return { ok: true };
 }

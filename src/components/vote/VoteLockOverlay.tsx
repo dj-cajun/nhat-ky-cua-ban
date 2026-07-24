@@ -5,10 +5,11 @@ import { db } from '@/lib/db';
 import { getHintShieldText } from '@/lib/supabase-sync';
 import { todayDateStr } from '@/lib/vote-service';
 import { generateVoteQuestions, HINT_SHIELD_OPTIONS } from '@/lib/vote-service';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { voteLockAtom, showVoteOverlayAtom } from '@/stores/atoms';
 
 export function VoteLockOverlay() {
+  const t = useMessages();
   const setVoteLock = useSetAtom(voteLockAtom);
   const setShowVote = useSetAtom(showVoteOverlayAtom);
   const questions = useMemo(() => generateVoteQuestions(), []);
@@ -68,7 +69,7 @@ export function VoteLockOverlay() {
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
       <div className="diary-panel flex max-h-[85dvh] w-full max-w-sm flex-col p-4">
         <div className="mb-3 shrink-0 flex items-center justify-between">
-          <h2 className="text-sm font-bold">{vi.vote.title}</h2>
+          <h2 className="text-sm font-bold">{t.vote.title}</h2>
           <span className="text-xs text-slate-500">
             {step + 1} / {total}
           </span>
@@ -94,7 +95,7 @@ export function VoteLockOverlay() {
             </div>
           ) : (
             <div className="mb-2 space-y-2">
-              <p className="text-xs text-slate-600">{vi.vote.shieldPick}</p>
+              <p className="text-xs text-slate-600">{t.vote.shieldPick}</p>
               {HINT_SHIELD_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -118,11 +119,11 @@ export function VoteLockOverlay() {
             onClick={submitAnswer}
             className="pencil-btn-primary min-h-[48px] disabled:opacity-40"
           >
-            {step < total - 1 || phase === 'vote' ? vi.vote.next : vi.vote.done}
+            {step < total - 1 || phase === 'vote' ? t.vote.next : t.vote.done}
           </button>
 
           <p className="mt-2 text-center text-[10px] text-slate-400">
-            {vi.vote.lockNote}
+            {t.vote.lockNote}
           </p>
         </div>
       </div>

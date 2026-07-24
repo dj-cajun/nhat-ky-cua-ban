@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { APP_META } from '@/config/app-content';
-import { vi } from '@/i18n/vi';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { useLocale, useMessages } from '@/i18n';
 import { loginWithZalo } from '@/lib/zalo-auth';
 
 interface LoginPageProps {
@@ -8,8 +8,11 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLoggedIn }: LoginPageProps) {
+  const t = useMessages();
+  const [locale] = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const brand = locale === 'ko' ? '너의 다이어리' : 'Your Diary';
 
   const handleLogin = async () => {
     setLoading(true);
@@ -18,7 +21,7 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
       await loginWithZalo();
       onLoggedIn();
     } catch {
-      setError(vi.login.error);
+      setError(t.login.error);
     } finally {
       setLoading(false);
     }
@@ -26,27 +29,29 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
 
   return (
     <div className="page-shell justify-between p-6">
+      <div className="mb-4 flex justify-end">
+        <LanguageSwitcher compact />
+      </div>
       <div className="flex flex-1 flex-col justify-center">
-        <p className="mb-2 text-xs font-medium text-emerald-700">{vi.app.tagline}</p>
-        <h1 className="mb-2 text-2xl font-bold leading-tight">{APP_META.name}</h1>
-        <p className="mb-8 text-sm text-slate-600">{APP_META.slogan}</p>
+        <p className="mb-2 text-xs font-medium text-emerald-700">{t.app.tagline}</p>
+        <h1 className="mb-2 text-2xl font-bold leading-tight">{brand}</h1>
+        <p className="mb-8 text-sm text-slate-600">{t.app.tagline}</p>
 
         <div className="diary-panel space-y-3 p-5">
-          <p className="text-sm font-bold">{vi.login.title}</p>
+          <p className="text-sm font-bold">{t.login.title}</p>
           <p className="text-xs text-slate-500">
-            {vi.login.desc}
+            {t.login.desc}
             <br />
-            {vi.login.descLine2}
+            {t.login.descLine2}
           </p>
 
           <button
             type="button"
             disabled={loading}
             onClick={() => void handleLogin()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0068ff] py-3.5 text-sm font-bold text-white disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 py-3.5 text-sm font-bold text-white disabled:opacity-60"
           >
-            <span className="text-lg">Z</span>
-            {loading ? vi.login.loggingIn : vi.login.continue}
+            {loading ? t.login.loggingIn : t.login.continue}
           </button>
 
           {error && (
@@ -54,10 +59,10 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
           )}
         </div>
 
-        <p className="mt-4 text-center text-[10px] text-slate-400">{vi.login.devNote}</p>
+        <p className="mt-4 text-center text-[10px] text-slate-400">{t.login.devNote}</p>
       </div>
 
-      <p className="text-center text-[10px] text-slate-400">{vi.app.anonymousFooter}</p>
+      <p className="text-center text-[10px] text-slate-400">{t.app.anonymousFooter}</p>
     </div>
   );
 }

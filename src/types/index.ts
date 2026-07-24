@@ -66,11 +66,12 @@ export interface HintData {
   commute: 'motorbike' | 'bicycle' | 'walk' | 'bus' | 'other';
 }
 
+/** @deprecated Prefer getMessages().boards / useMessages().boards */
 export const BOARD_LABELS: Record<BoardType, string> = {
-  diary: 'Nhật ký',
-  school: 'Bảng tin toàn trường',
-  vote: 'Kho phiếu bầu',
-  guestbook: 'Sổ lưu bút',
+  diary: 'Diary',
+  school: 'School board',
+  vote: 'Vote vault',
+  guestbook: 'Guestbook',
 };
 
 export const MAX_DIARY_CHARS = 15;

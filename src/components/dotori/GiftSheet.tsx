@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { DOTORI_GIFT_AMOUNTS, DOTORI_PRICES, PROFILE_DECO_OPTIONS } from '@/types/dotori';
 import { sendDecoGift, sendDotoriGift } from '@/lib/dotori-economy';
 import { currentUserAtom, displayUserAtom } from '@/stores/atoms';
@@ -10,6 +10,7 @@ type GiftSheetProps = {
 };
 
 export function GiftSheet({ onClose }: GiftSheetProps) {
+  const t = useMessages();
   const target = useAtomValue(displayUserAtom);
   const setUser = useSetAtom(currentUserAtom);
   const [amount, setAmount] = useState<(typeof DOTORI_GIFT_AMOUNTS)[number]>(5);
@@ -26,13 +27,13 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
     if (!result.ok) {
       setToast(
         result.reason === 'insufficient'
-          ? vi.dotori.spendFail.insufficient
-          : vi.dotori.spendFail.limit,
+          ? t.dotori.spendFail.insufficient
+          : t.dotori.spendFail.limit,
       );
       return;
     }
     setUser((u) => ({ ...u, dotoriBalance: result.balance }));
-    setToast(vi.dotori.giftSent);
+    setToast(t.dotori.giftSent);
     window.setTimeout(onClose, 800);
   };
 
@@ -40,9 +41,9 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
       <div className="diary-panel w-full max-w-md p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold">{vi.gift.title}</h2>
+          <h2 className="text-sm font-bold">{t.gift.title}</h2>
           <button type="button" onClick={onClose} className="text-xs">
-            {vi.home.cancel}
+            {t.home.cancel}
           </button>
         </div>
 
@@ -52,14 +53,14 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
             onClick={() => setTab('dotori')}
             className={`flex-1 py-1 text-xs font-bold pencil-chip ${tab === 'dotori' ? 'pencil-chip--selected bg-pastel-lavender' : ''}`}
           >
-            {vi.gift.dotori}
+            {t.gift.dotori}
           </button>
           <button
             type="button"
             onClick={() => setTab('deco')}
             className={`flex-1 py-1 text-xs font-bold pencil-chip ${tab === 'deco' ? 'pencil-chip--selected bg-pastel-lavender' : ''}`}
           >
-            {vi.gift.deco} ({DOTORI_PRICES.gift_deco} 🌰)
+            {t.gift.deco} ({DOTORI_PRICES.gift_deco} 🌰)
           </button>
         </div>
 
@@ -94,7 +95,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
         <input
           value={message}
           onChange={(e) => setMessage(e.target.value.slice(0, 10))}
-          placeholder={vi.gift.messagePlaceholder}
+          placeholder={t.gift.messagePlaceholder}
           className="diary-border mb-3 w-full px-3 py-2 text-sm"
         />
 
@@ -103,7 +104,7 @@ export function GiftSheet({ onClose }: GiftSheetProps) {
           onClick={submit}
           className="pencil-btn-primary"
         >
-          {vi.gift.send}
+          {t.gift.send}
         </button>
         {toast && <p className="mt-2 text-center text-xs text-emerald-700">{toast}</p>}
       </div>

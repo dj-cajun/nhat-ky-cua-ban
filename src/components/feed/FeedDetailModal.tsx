@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai';
 import type { FeedPost } from '@/types';
 import { assertCleanText } from '@/lib/profanity-shield';
 import { db } from '@/lib/db';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { currentUserAtom } from '@/stores/atoms';
 import { AnonymousMark } from '@/components/feed/AnonymousMark';
 
@@ -13,6 +13,7 @@ interface FeedDetailModalProps {
 }
 
 export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
+  const t = useMessages();
   const currentUser = useAtomValue(currentUserAtom);
 
   const [comments, setComments] = useState(() => db.getComments(post.id));
@@ -36,9 +37,9 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
     <div className="page-shell fixed inset-0 z-50 flex flex-col">
       <header className="sk-divider-bottom flex items-center justify-between bg-[var(--paper)] p-3">
         <button type="button" onClick={onClose} className="text-sm font-bold">
-          {vi.feed.close}
+          {t.feed.close}
         </button>
-        <span className="text-sm font-bold">{vi.feed.detail}</span>
+        <span className="text-sm font-bold">{t.feed.detail}</span>
         <span className="w-10" />
       </header>
 
@@ -51,20 +52,20 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
 
         {(post.hasPhoto || post.hasVideo) && (
           <div className="diary-border mb-4 flex aspect-video items-center justify-center bg-pastel-lavender/40">
-            {post.hasPhoto && <span className="text-4xl">{vi.feed.media}</span>}
-            {post.hasVideo && <span className="text-4xl">{vi.feed.video}</span>}
+            {post.hasPhoto && <span className="text-4xl">{t.feed.media}</span>}
+            {post.hasVideo && <span className="text-4xl">{t.feed.video}</span>}
           </div>
         )}
 
         <section className="diary-panel p-3">
-          <h4 className="mb-2 text-sm font-bold">{vi.feed.comments}</h4>
+          <h4 className="mb-2 text-sm font-bold">{t.feed.comments}</h4>
           <div className="mb-3 space-y-2">
             {comments.length === 0 && (
-              <p className="text-xs text-slate-400">{vi.feed.noComments}</p>
+              <p className="text-xs text-slate-400">{t.feed.noComments}</p>
             )}
             {comments.map((c) => (
               <div key={c.id} className="text-xs">
-                <span className="font-bold">{vi.home.anonymousMark}</span>
+                <span className="font-bold">{t.home.anonymousMark}</span>
                 <span className="ml-2">{c.content}</span>
               </div>
             ))}
@@ -74,7 +75,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={vi.feed.commentPlaceholder}
+              placeholder={t.feed.commentPlaceholder}
               className="diary-border flex-1 px-3 py-2 text-sm"
             />
             <button
@@ -82,7 +83,7 @@ export function FeedDetailModal({ post, onClose }: FeedDetailModalProps) {
               onClick={handleComment}
               className="pencil-btn-secondary px-3 text-sm"
             >
-              {vi.feed.submit}
+              {t.feed.submit}
             </button>
           </div>
           {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

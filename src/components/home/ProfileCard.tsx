@@ -7,15 +7,16 @@ import { ensureProfileName, getProfileDisplayName } from '@/lib/profile-name';
 import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 import { hasSurnameLetterUnlock } from '@/lib/dotori-economy';
 import { isSurnameBlurred } from '@/lib/local-db';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 import { MAX_STATUS_MESSAGE_CHARS } from '@/types';
 import { currentUserAtom, displayUserAtom, viewModeAtom } from '@/stores/atoms';
 import { ProfileAvatar } from './ProfileAvatar';
 
 function DetectiveSilhouette() {
+  const t = useMessages();
   return (
     <div className="cy-avatar" aria-hidden>
-      <span className="text-3xl grayscale" title={vi.home.detective}>
+      <span className="text-3xl grayscale" title={t.home.detective}>
         🕵️
       </span>
     </div>
@@ -31,21 +32,22 @@ function MaskedName({
   firstLetter?: string | null;
   fullyHidden?: boolean;
 }) {
+  const t = useMessages();
   if (fullyHidden) {
     return (
       <span className="cy-badge-pink inline-flex items-center gap-1.5 text-sm">
-        <span>{vi.home.surnameLabel}</span>
+        <span>{t.home.surnameLabel}</span>
         <span className="cy-name-mask" aria-hidden>
-          {vi.home.nameHidden}
+          {t.home.nameHidden}
         </span>
       </span>
     );
   }
   return (
     <span className="cy-badge-pink inline-flex items-center gap-1.5 text-sm">
-      <span>{vi.home.surnameLabel} {surname}</span>
+      <span>{t.home.surnameLabel} {surname}</span>
       <span className="cy-name-mask" aria-hidden>
-        {firstLetter ? `${firstLetter}…` : vi.home.nameHidden}
+        {firstLetter ? `${firstLetter}…` : t.home.nameHidden}
       </span>
     </span>
   );
@@ -60,6 +62,7 @@ function TodayMeBlock({
   editable: boolean;
   onSave?: (next: string) => { ok: true } | { ok: false; message: string };
 }) {
+  const t = useMessages();
   const [draft, setDraft] = useState(message);
   const [error, setError] = useState('');
 
@@ -86,7 +89,7 @@ function TodayMeBlock({
 
   return (
     <div className="cy-today-me">
-      <p className="cy-today-me-label">{vi.home.todayMeLabel}</p>
+      <p className="cy-today-me-label">{t.home.todayMeLabel}</p>
       {editable ? (
         <>
           <input
@@ -103,15 +106,15 @@ function TodayMeBlock({
                 e.currentTarget.blur();
               }
             }}
-            placeholder={vi.home.todayMePlaceholder}
+            placeholder={t.home.todayMePlaceholder}
             className="cy-today-me-input"
-            aria-label={vi.home.todayMeLabel}
+            aria-label={t.home.todayMeLabel}
           />
           {error && <p className="text-[10px] text-red-600">{error}</p>}
         </>
       ) : (
         <p className="cy-today-me-text">
-          {message.trim() || vi.home.todayMePlaceholder}
+          {message.trim() || t.home.todayMePlaceholder}
         </p>
       )}
     </div>
@@ -119,6 +122,7 @@ function TodayMeBlock({
 }
 
 export function ProfileCard() {
+  const t = useMessages();
   const user = useAtomValue(displayUserAtom);
   const currentUser = useAtomValue(currentUserAtom);
   const setUser = useSetAtom(currentUserAtom);
@@ -168,7 +172,7 @@ export function ProfileCard() {
           type="button"
           onClick={() => void handlePhotoPick()}
           className="cy-avatar cy-avatar-editable"
-          aria-label={vi.home.profilePhotoTap}
+          aria-label={t.home.profilePhotoTap}
         >
           <ProfileAvatar avatarUrl={currentUser.avatarUrl} />
         </button>

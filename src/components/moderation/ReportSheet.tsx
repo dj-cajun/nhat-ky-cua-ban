@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { blockUser, reportUser } from '@/lib/moderation';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 
 interface ReportSheetProps {
   targetUserId: string;
@@ -9,12 +9,13 @@ interface ReportSheetProps {
 }
 
 export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps) {
+  const t = useMessages();
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
 
   const handleReport = () => {
     reportUser(targetUserId, reason);
-    setMessage(vi.moderation.submitted);
+    setMessage(t.moderation.submitted);
     window.setTimeout(() => {
       onDone?.();
       onClose();
@@ -23,7 +24,7 @@ export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps)
 
   const handleBlock = () => {
     blockUser(targetUserId);
-    setMessage(vi.moderation.blocked);
+    setMessage(t.moderation.blocked);
     window.setTimeout(() => {
       onDone?.();
       onClose();
@@ -33,11 +34,11 @@ export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps)
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
       <div className="diary-panel w-full max-w-md p-4">
-        <h2 className="mb-3 text-sm font-bold">{vi.moderation.reportTitle}</h2>
+        <h2 className="mb-3 text-sm font-bold">{t.moderation.reportTitle}</h2>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value.slice(0, 100))}
-          placeholder={vi.moderation.reportReason}
+          placeholder={t.moderation.reportReason}
           className="diary-border mb-3 w-full px-3 py-2 text-sm"
           rows={3}
         />
@@ -48,17 +49,17 @@ export function ReportSheet({ targetUserId, onClose, onDone }: ReportSheetProps)
             onClick={handleReport}
             className="pencil-btn-secondary"
           >
-            {vi.moderation.submit}
+            {t.moderation.submit}
           </button>
           <button
             type="button"
             onClick={handleBlock}
             className="pencil-btn-danger"
           >
-            {vi.moderation.block}
+            {t.moderation.block}
           </button>
           <button type="button" onClick={onClose} className="px-3 text-xs text-slate-500">
-            {vi.home.cancel}
+            {t.home.cancel}
           </button>
         </div>
       </div>

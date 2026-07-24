@@ -1,7 +1,8 @@
 import { useRealtimeToasts } from '@/hooks/useRealtime';
-import { vi } from '@/i18n/vi';
+import { useMessages } from '@/i18n';
 
 export function RealtimeToast() {
+  const t = useMessages();
   const toasts = useRealtimeToasts();
 
   if (toasts.length === 0) return null;
@@ -18,7 +19,7 @@ export function RealtimeToast() {
           {toast.text}
           {toast.hint && (
             <p className="mt-1 text-xs text-zinc-600">
-              {vi.realtime.hintLabel} {toast.hint}
+              {t.realtime.hintLabel} {toast.hint}
             </p>
           )}
         </div>
