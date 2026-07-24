@@ -2,7 +2,16 @@
 
 **`universe-birth.mp4`** — vertical 9:16 cinematic birth → gold identity orb.
 
-## Preview locally (full intro every cold start)
+## Preview the video now (browser)
+
+```bash
+cd mobile
+npm run preview:intro
+```
+
+Open **http://localhost:8765** — autoplays the 9:16 intro (Replay button on page).
+
+## Preview in the app (full intro every cold start)
 
 ```bash
 cd mobile
@@ -10,8 +19,7 @@ npm install --legacy-peer-deps
 npm run start:intro
 ```
 
-Then open the app → **Try the demo** (or already signed in → My Universe).  
-Full intro plays from the bundled MP4. Settings → “Replay My Universe intro” also works.
+Then **Try the demo** → My Universe. Settings → “Replay My Universe intro” also works.
 
 ## Regenerate
 
