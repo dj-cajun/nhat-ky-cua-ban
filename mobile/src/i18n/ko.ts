@@ -51,6 +51,8 @@ export const ko = {
     notice: '공지',
     emptyTitle: '열린 서클이 아직 없어요.',
     emptySub: '세 사람이 모이면 첫 서클이 열립니다.',
+    tapSphere: '내 다이어리 열기',
+    tapPlanet: '서클 열기',
   },
 
   notifications: {
@@ -336,6 +338,8 @@ export const ko = {
     blockedUsersSub: '차단을 해제하면 새 개인 콘텐츠를 다시 볼 수 있어요. 숨긴 항목은 그대로예요.',
     unblock: '차단 해제',
     emptyBlocks: '차단한 사람이 없어요.',
+    replayIntro: '내 유니버스 인트로 다시 보기',
+    replayIntroDone: '준비됐어요 — 다음에 내 유니버스를 열면 전체 인트로가 다시 재생돼요.',
   },
 
   guestbook: {

@@ -51,6 +51,8 @@ export const en = {
     notice: 'Notice',
     emptyTitle: 'No open circles yet.',
     emptySub: 'When three people gather, your first circle opens.',
+    tapSphere: 'Open my diary',
+    tapPlanet: 'Open circle',
   },
 
   notifications: {
@@ -336,6 +338,8 @@ export const en = {
     blockedUsersSub: 'Unblock to allow new personal content again. Hidden items stay hidden.',
     unblock: 'Unblock',
     emptyBlocks: 'You haven’t blocked anyone.',
+    replayIntro: 'Replay My Universe intro',
+    replayIntroDone: 'Ready — open My Universe next to watch the full intro again.',
   },
 
   guestbook: {

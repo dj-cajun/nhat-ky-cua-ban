@@ -50,6 +50,7 @@
 | [16-phase-11.5-device-launch-gate.md](./16-phase-11.5-device-launch-gate.md) | 11.5단계: 실기기 출시 게이트 |
 | [17-i18n-en-ko.md](./17-i18n-en-ko.md) | 1차 UI 언어: English · 한국어 |
 | [18-minihome-ui-mapping.md](./18-minihome-ui-mapping.md) | 미니홈피 UI → Your Diary 매핑 |
+| [19-universe-intro-3d.md](./19-universe-intro-3d.md) | 내 우주 인트로 영상 → 3D 핸드오프 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.

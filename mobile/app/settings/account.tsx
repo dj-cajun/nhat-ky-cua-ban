@@ -6,6 +6,7 @@ import { AppLoadingState } from '@/components/states';
 import { getSessionProfile } from '@/features/local/repository';
 import type { Profile } from '@/types/domain';
 import { signOut } from '@/features/session/session-lifecycle';
+import { requestIntroReplay } from '@/features/universe-home';
 import { getFeatureFlags, setFeatureFlag, type FeatureFlagName } from '@/lib/feature-flags';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
@@ -57,6 +58,7 @@ export default function AccountSettingsScreen() {
   const [flags, setFlags] = useState(getFeatureFlags());
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [replayHint, setReplayHint] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -107,6 +109,21 @@ export default function AccountSettingsScreen() {
       <Text style={styles.sub}>{profile.displayName}</Text>
 
       <LanguageSwitcher />
+
+      <Pressable
+        style={styles.link}
+        onPress={() => {
+          void (async () => {
+            await requestIntroReplay();
+            setReplayHint(t.settings.replayIntroDone);
+          })();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={t.settings.replayIntro}
+      >
+        <Text style={styles.linkText}>{t.settings.replayIntro}</Text>
+      </Pressable>
+      {replayHint ? <Text style={styles.hint}>{replayHint}</Text> : null}
 
       <Pressable
         style={styles.link}
