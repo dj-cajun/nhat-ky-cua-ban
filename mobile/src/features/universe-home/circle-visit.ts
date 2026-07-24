@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 
 /**
  * Remembers which circle graph the user is visiting so diary → back
@@ -37,23 +37,31 @@ export function openDiaryFromCircle(userId: string, circleId: string) {
   router.push(`/diary/${userId}?fromCircleId=${encodeURIComponent(circleId)}`);
 }
 
+function dismissOrReplace(href: Href) {
+  if (typeof router.dismissTo === 'function') {
+    router.dismissTo(href);
+    return;
+  }
+  router.replace(href);
+}
+
 /** Friend home → circle graph (always, not universe) */
 export function backToCircleGraph(fromParam?: string | string[]) {
   const circleId = resolveCircleGraphId(fromParam);
   if (circleId) {
     rememberCircleGraph(circleId);
-    router.replace(`/circles/${circleId}/graph`);
+    dismissOrReplace(`/circles/${circleId}/graph` as Href);
     return;
   }
   if (router.canGoBack()) {
     router.back();
     return;
   }
-  router.replace('/(tabs)/universe');
+  dismissOrReplace('/(tabs)/universe');
 }
 
 /** Circle graph → My Universe (circles only) */
 export function backToUniverseCircles() {
   clearCircleGraph();
-  router.replace('/(tabs)/universe');
+  dismissOrReplace('/(tabs)/universe');
 }

@@ -6,6 +6,7 @@ vi.mock('expo-router', () => ({
   router: {
     push: (href: string) => calls.push({ method: 'push', arg: href }),
     replace: (href: string) => calls.push({ method: 'replace', arg: href }),
+    dismissTo: (href: string) => calls.push({ method: 'dismissTo', arg: href }),
     back: () => calls.push({ method: 'back' }),
     canGoBack: () => false,
   },
@@ -44,7 +45,7 @@ describe('circle-visit navigation', () => {
     const { rememberCircleGraph, backToCircleGraph } = await import('../circle-visit');
     rememberCircleGraph('c1');
     backToCircleGraph();
-    expect(calls[0]).toEqual({ method: 'replace', arg: '/circles/c1/graph' });
+    expect(calls[0]).toEqual({ method: 'dismissTo', arg: '/circles/c1/graph' });
   });
 
   it('graph back clears memory and goes to universe', async () => {
@@ -53,6 +54,6 @@ describe('circle-visit navigation', () => {
     rememberCircleGraph('c1');
     backToUniverseCircles();
     expect(peekCircleGraph()).toBeNull();
-    expect(calls[0]).toEqual({ method: 'replace', arg: '/(tabs)/universe' });
+    expect(calls[0]).toEqual({ method: 'dismissTo', arg: '/(tabs)/universe' });
   });
 });
