@@ -1,6 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { useLocale, useMessages } from '@/i18n';
 import * as store from '@/lib/v1-store';
 import {
@@ -15,6 +14,7 @@ import { DIARY_MOODS, type DiaryMood } from '@/types/circle';
  * Your Diary mini-hompy
  * Keeps pastel profile / calendar / album / guestbook atmosphere.
  * Maps to circle diary data — no school, Zalo, Dotori, visitors, investigation.
+ * No brand line, no my-home/friend visit strip.
  */
 export function DiaryHomePage() {
   const t = useMessages();
@@ -23,7 +23,6 @@ export function DiaryHomePage() {
   const ownerId = useAtomValue(v1DiaryOwnerIdAtom);
   const circles = useAtomValue(v1CirclesAtom);
   const setPage = useSetAtom(v1PageAtom);
-  const setOwner = useSetAtom(v1DiaryOwnerIdAtom);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((n) => n + 1);
 
@@ -33,29 +32,6 @@ export function DiaryHomePage() {
   const guestbook = ownerId ? store.listGuestbook(ownerId, 4) : [];
   const entries = ownerId ? store.listDiaryEntries(ownerId) : [];
   const mood = DIARY_MOODS.find((m) => m.id === entry?.mood);
-  const brand = locale === 'ko' ? '너의 다이어리' : 'Your Diary';
-
-  const members = useMemo(() => {
-    if (!me) return [];
-    const seen = new Set<string>();
-    const list: { id: string; name: string }[] = [];
-    for (const c of circles) {
-      for (const m of store.listCircleMembers(c.id, me.id)) {
-        if (m.userId === me.id || seen.has(m.userId)) continue;
-        seen.add(m.userId);
-        const p = store.getProfileById(m.userId);
-        if (p) list.push({ id: p.id, name: p.displayName });
-      }
-    }
-    if (list.length === 0) {
-      for (const p of store.listDirectoryProfiles(me.id).slice(0, 5)) {
-        list.push({ id: p.id, name: p.displayName });
-      }
-    }
-    return list;
-    // tick forces refresh after guestbook / owner change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [circles, me, tick]);
 
   const canView = useMemo(() => {
     if (!me || !ownerId) return false;
@@ -77,7 +53,7 @@ export function DiaryHomePage() {
   return (
     <div className="cy-shell" data-theme="default">
       <div className="cy-canvas">
-        <header className="cy-card cy-box-sky flex shrink-0 items-center justify-between gap-2 px-3 py-2">
+        <header className="cy-card cy-box-sky flex shrink-0 items-center gap-2 px-3 py-2">
           <button
             type="button"
             onClick={() => setPage('universe')}
@@ -85,8 +61,6 @@ export function DiaryHomePage() {
           >
             ← {locale === 'ko' ? '내 우주' : 'Universe'}
           </button>
-          <p className="text-xs font-bold tracking-wide text-slate-800">{brand}</p>
-          <LanguageSwitcher compact />
         </header>
 
         <section className="cy-card cy-box-blush shrink-0 p-3">
@@ -137,40 +111,6 @@ export function DiaryHomePage() {
             )}
           </div>
         </section>
-
-        {members.length > 0 && (
-          <section className="cy-card cy-box-lemon flex shrink-0 gap-2 overflow-x-auto px-2 py-2">
-            <button
-              type="button"
-              onClick={() => {
-                setOwner(me.id);
-                refresh();
-              }}
-              className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-bold ${
-                isMine ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 bg-white'
-              }`}
-            >
-              {locale === 'ko' ? '내 홈' : 'My home'}
-            </button>
-            {members.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  setOwner(m.id);
-                  refresh();
-                }}
-                className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-bold ${
-                  ownerId === m.id
-                    ? 'border-slate-800 bg-slate-800 text-white'
-                    : 'border-slate-300 bg-white'
-                }`}
-              >
-                {m.name}
-              </button>
-            ))}
-          </section>
-        )}
 
         <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-hidden">
           <DiaryWeekCalendar

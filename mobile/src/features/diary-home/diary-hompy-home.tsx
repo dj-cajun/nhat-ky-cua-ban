@@ -10,10 +10,9 @@ import {
 import type { DiaryMusicCard } from '@/features/diary-music/diary-music.types';
 import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
 import type { GuestbookRow } from '@/features/local/repository';
-import { openDiaryFromCircle } from '@/features/universe-home/circle-visit';
 import { DotPaper, OutlineBox } from '@/features/diary-home/hompy-outline';
 import { hompy } from '@/constants/hompy-theme';
-import { useLocale, useMessages, APP_NAME } from '@/i18n';
+import { useLocale, useMessages } from '@/i18n';
 import {
   DIARY_MOODS,
   type CircleSummary,
@@ -31,7 +30,8 @@ type Props = {
   guestbook: GuestbookRow[];
   guestbookAuthors: Record<string, string>;
   circles: CircleSummary[];
-  visitMembers: VisitMember[];
+  /** Kept for call-site compatibility; visit strip removed. */
+  visitMembers?: VisitMember[];
   music: DiaryMusicCard | null;
   canView: boolean;
   onEditToday: () => void;
@@ -42,9 +42,8 @@ type Props = {
 };
 
 /**
- * Pastel mini-hompy — restore web `DiaryHomePage` outline (cy-shell / sk-outline),
- * then only add circle-diary features (Spotify, visit strip, circle back).
- * No StatusBar / Dotori / Investigation.
+ * Pastel mini-hompy — web `DiaryHomePage` outline (cy-shell / sk-outline).
+ * No brand line, no my-home/friend visit strip.
  */
 export function DiaryHompyHome({
   me,
@@ -54,30 +53,19 @@ export function DiaryHompyHome({
   guestbook,
   guestbookAuthors,
   circles,
-  visitMembers,
   music,
   canView,
   onEditToday,
   onOpenMusic,
   onBack,
   backLabel,
-  fromCircleId,
 }: Props) {
   const t = useMessages();
   const [locale] = useLocale();
   const isMine = me.id === owner.id;
   const moodMeta = DIARY_MOODS.find((m) => m.id === entry?.mood);
-  const brand = locale === 'ko' ? '너의 다이어리' : APP_NAME;
   const circle = circles[0];
   const week = useMemo(() => buildWeek(recentEntries, locale), [recentEntries, locale]);
-
-  const openDiary = (targetId: string) => {
-    if (fromCircleId) {
-      openDiaryFromCircle(targetId, fromCircleId);
-      return;
-    }
-    router.push(`/diary/${targetId}`);
-  };
 
   const handleBack = () => {
     if (onBack) {
@@ -105,7 +93,7 @@ export function DiaryHompyHome({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header — cy-box-sky */}
+          {/* Header — back only (no brand line) */}
           <OutlineBox
             fill={hompy.sky}
             stroke={hompy.skyInk}
@@ -119,8 +107,6 @@ export function DiaryHompyHome({
             >
               <Text style={styles.headerBtnText}>← {resolvedBackLabel}</Text>
             </Pressable>
-            <Text style={styles.brand}>{brand}</Text>
-            <View style={styles.headerSpacer} />
           </OutlineBox>
 
           {/* Profile — cy-box-blush */}
@@ -176,35 +162,6 @@ export function DiaryHompyHome({
               </Text>
             </OutlineBox>
           </OutlineBox>
-
-          {/* Visit strip — cy-box-lemon (additive directory hop) */}
-          {visitMembers.length > 0 ? (
-            <OutlineBox
-              fill={hompy.lemon}
-              stroke={hompy.lemonInk}
-              contentStyle={styles.visitPad}
-            >
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.visitRow}
-              >
-                <Chip
-                  label={locale === 'ko' ? '내 홈' : 'My home'}
-                  on={isMine}
-                  onPress={() => openDiary(me.id)}
-                />
-                {visitMembers.map((m) => (
-                  <Chip
-                    key={m.id}
-                    label={m.name}
-                    on={m.id === owner.id}
-                    onPress={() => openDiary(m.id)}
-                  />
-                ))}
-              </ScrollView>
-            </OutlineBox>
-          ) : null}
 
           {/* Calendar | Album — original 2-col */}
           <View style={styles.grid2}>
@@ -377,31 +334,6 @@ function HardBtn({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-function Chip({
-  label,
-  on,
-  onPress,
-}: {
-  label: string;
-  on: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button">
-      <OutlineBox
-        size="sm"
-        fill={on ? hompy.hard : '#FFFFFF'}
-        stroke={on ? hompy.hard : hompy.pencilLight}
-        contentStyle={styles.chipInner}
-      >
-        <Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
-          {label}
-        </Text>
-      </OutlineBox>
-    </Pressable>
-  );
-}
-
 function buildWeek(entries: DiaryEntry[], locale: string) {
   const days =
     locale === 'ko'
@@ -442,20 +374,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 10,
     minHeight: 44,
   },
   headerBtn: { minHeight: 36, justifyContent: 'center', minWidth: 72 },
   headerBtnText: { fontSize: 11, fontWeight: '700', color: hompy.ink },
-  brand: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: hompy.ink,
-    letterSpacing: 0.4,
-  },
-  headerSpacer: { width: 72 },
   profilePad: { padding: 12 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatarBox: { width: 56, height: 56 },
@@ -479,16 +403,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   todayText: { fontSize: 13, color: hompy.ink, lineHeight: 18 },
-  visitPad: { paddingVertical: 8, paddingHorizontal: 8 },
-  visitRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  chipInner: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minHeight: 34,
-    justifyContent: 'center',
-  },
-  chipText: { fontSize: 11, fontWeight: '700', color: hompy.ink, maxWidth: 88 },
-  chipTextOn: { color: '#fff' },
   grid2: { flexDirection: 'row', gap: 8 },
   gridCell: { flex: 1, minHeight: 168 },
   panelPad: { padding: 8, flexGrow: 1 },
