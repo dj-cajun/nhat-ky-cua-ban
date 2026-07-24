@@ -121,7 +121,7 @@ export default function UniverseScreen() {
         onPressSelf={() => router.push(`/diary/${profile.id}`)}
         onPressCircle={(id) => {
           track(AnalyticsEvents.circle_opened, { circle_id: id, market: 'US' });
-          router.push(`/circles/${id}`);
+          router.push(`/circles/${id}/graph`);
         }}
         onPressFriend={(userId) => {
           track(AnalyticsEvents.diary_viewed, { market: 'US' });

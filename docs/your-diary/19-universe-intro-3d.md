@@ -11,12 +11,12 @@
 ```text
 인트로 영상
 → A(나)가 중앙에 남음 (공통분모)
-→ 각 서클이 A를 감싸는 큰 다이어그램 링으로 등장
-→ 서클 칩/링을 누르면 그 서클 친구들이 A와 선으로 연결 (옵시디언)
-→ A → 미니홈피 · 친구 → 그 사람 다이어리 · 서클 롱프레스 → 서클 상세
+→ 각 서클 = A를 감싸는 큰 파스텔 채움 원 (내용은 원 안 텍스트, 칩 노드 아님)
+→ 서클을 누르면 새 페이지(`/circles/[id]/graph`)에서 그 서클 친구들이 A와 선으로 연결 (옵시디언)
+→ A/친구 → 미니홈피 · 헤더「Open circle」→ 서클 상세
 ```
 
-우주 홈 메타포: **내가 모든 서클의 공통 중심**, 서클은 나를 감싼 다이어그램, 펼치면 지식그래프.
+우주 홈 메타포: **내가 모든 서클의 공통 중심**, 서클은 나를 감싼 파스텔 원, 탭하면 친구 지식그래프 **새 페이지**.
 
 ---
 
@@ -42,7 +42,7 @@ npm run start:intro   # 전체 인트로 강제 (iOS/Android 시뮬레이터 권
 
 1. **Try the demo** → 데모 서클(Brooklyn Friends) 시드 + 전체 인트로 예약  
 2. My Universe: `universe-birth.mp4` → 크로스페이드 → 구체/행성  
-3. 중앙 구체 → **미니홈피** · 행성 → 서클 상세 · Diary 탭 → 같은 미니홈피
+3. 중앙 구체 → **미니홈피** · 파스텔 서클 → 친구 그래프 페이지 · Diary 탭 → 같은 미니홈피
 
 웹만 볼 때: `npm run web:intro` (인트로는 MP4, 우주는 2D glow fallback).
 
@@ -85,8 +85,8 @@ npm run start:intro   # 전체 인트로 강제 (iOS/Android 시뮬레이터 권
 ## 기술
 
 - 영상: `expo-video` (웹은 HTML `<video>`)
-- 우주 홈: **옵시디언형 2D 지식 그래프** (나·서클·친구 + 엣지, 터치 시 확대)
-- 전환: 크로스페이드 → settle-shrink → 그래프 페이드인
+- 우주 홈: **파스텔 채움 서클원**이 A를 감쌈 (칩 노드 아님). 탭 → `/circles/[id]/graph` 친구 그래프 페이지
+- 전환: 크로스페이드 → settle-shrink → 서클 다이어그램 페이드인
 - `three` / R3F / `expo-gl`은 의존성에 남아 있으나 기본 경로 미사용
 
 ---
@@ -95,3 +95,4 @@ npm run start:intro   # 전체 인트로 강제 (iOS/Android 시뮬레이터 권
 
 - `mobile/src/features/universe-home/`
 - 화면: `mobile/app/(tabs)/universe.tsx`
+- 친구 그래프: `mobile/app/circles/[circleId]/graph.tsx`
