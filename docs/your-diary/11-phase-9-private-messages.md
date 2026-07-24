@@ -46,4 +46,5 @@
 
 ## 다음
 
-**10단계 Spotify 오늘의 음악 카드** — 미니홈피 감성·표현
+**10단계 Spotify 오늘의 음악 카드** — 완료 → [12-phase-10-spotify-music.md](./12-phase-10-spotify-music.md)  
+다음은 **11단계 통합 안정화·베타 준비**.

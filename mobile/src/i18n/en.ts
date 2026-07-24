@@ -75,6 +75,28 @@ export const en = {
     album: 'Photo album',
     safety: 'Safety',
     leaveNote: 'Leave a note',
+    musicSection: 'Today’s music',
+  },
+
+  diaryMusic: {
+    today: 'Today’s music',
+    spotify: 'Spotify',
+    listenOnSpotify: 'Listen on Spotify',
+    add: 'Add today’s music',
+    change: 'Change song',
+    remove: 'Remove song',
+    pickerTitle: 'Pick a song for today',
+    searchPlaceholder: 'Search song or artist',
+    orPaste: 'Or paste a Spotify track link',
+    linkPlaceholder: 'https://open.spotify.com/track/…',
+    resolveLink: 'Look up link',
+    confirmTitle: 'Place this song on today’s diary?',
+    confirm: 'Use this song',
+    backToSearch: 'Back to search',
+    cancel: 'Cancel',
+    noResults: 'No tracks found.',
+    openFailed: "Couldn't open this track in Spotify.",
+    saveFailed: "Couldn't update today’s music. Your previous track is unchanged.",
   },
 
   moods: {

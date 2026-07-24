@@ -157,6 +157,21 @@ interface LocalDb {
     aliasEnabled: boolean;
     updatedAt: string;
   }[];
+  diaryMusic: {
+    id: string;
+    diaryEntryId: string;
+    externalTrackId: string;
+    spotifyUri: string;
+    externalUrl: string;
+    trackName: string;
+    artistNames: string[];
+    albumName: string | null;
+    artworkUrl: string | null;
+    durationMs: number | null;
+    explicit: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }[];
 }
 
 export interface CirclePostRecord {
@@ -260,6 +275,7 @@ const empty: LocalDb = {
   privateMessages: [],
   privateMessageUserStates: [],
   messagePreferences: [],
+  diaryMusic: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -321,6 +337,7 @@ export async function loadLocalDb(): Promise<void> {
     memory.privateMessages ??= [];
     memory.privateMessageUserStates ??= [];
     memory.messagePreferences ??= [];
+    memory.diaryMusic ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -2938,3 +2955,136 @@ export async function resolvePrivateMessageSender(input: {
     senderMode: msg.senderMode,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Phase 10 — diary Spotify music (local catalog mirror)
+// ---------------------------------------------------------------------------
+
+const DEMO_SPOTIFY_TRACKS = [
+  {
+    id: 'demoTrackSeasons',
+    uri: 'spotify:track:demoTrackSeasons',
+    externalUrl: 'https://open.spotify.com/track/demoTrackSeasons',
+    trackName: 'seasons',
+    artistNames: ['wave to earth'],
+    albumName: 'summer flies',
+    artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273demo0001' as string | null,
+    durationMs: 240000,
+    explicit: false,
+  },
+  {
+    id: 'demoTrackQuiet',
+    uri: 'spotify:track:demoTrackQuiet',
+    externalUrl: 'https://open.spotify.com/track/demoTrackQuiet',
+    trackName: 'Quiet Morning',
+    artistNames: ['Demo Artist'],
+    albumName: 'Soft Days',
+    artworkUrl: null as string | null,
+    durationMs: 198000,
+    explicit: false,
+  },
+  {
+    id: 'demoTrackNight',
+    uri: 'spotify:track:demoTrackNight',
+    externalUrl: 'https://open.spotify.com/track/demoTrackNight',
+    trackName: 'Night Walk',
+    artistNames: ['Harbor Lights'],
+    albumName: 'City Notes',
+    artworkUrl: 'https://i.scdn.co/image/ab67616d0000b273demo0002' as string | null,
+    durationMs: 212000,
+    explicit: true,
+  },
+];
+
+function parseSpotifyTrackIdLocal(input: string): string | null {
+  const v = input.trim();
+  if (!v) return null;
+  if (/\/(album|artist|playlist|episode|show)\//i.test(v)) return null;
+  const uri = v.match(/spotify:track:([A-Za-z0-9]+)/i);
+  if (uri?.[1]) return uri[1];
+  const url = v.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/i);
+  if (url?.[1]) return url[1];
+  if (/^[A-Za-z0-9]{10,30}$/.test(v)) return v;
+  return null;
+}
+
+export async function searchSpotifyTracksLocal(input: {
+  query: string;
+  limit?: number;
+}) {
+  const q = input.query.trim().toLowerCase();
+  const lim = Math.max(1, Math.min(input.limit ?? 10, 10));
+  return DEMO_SPOTIFY_TRACKS.filter(
+    (t) =>
+      t.trackName.toLowerCase().includes(q) ||
+      t.artistNames.some((a) => a.toLowerCase().includes(q)),
+  ).slice(0, lim);
+}
+
+export async function resolveSpotifyTrackLocal(urlOrUri: string) {
+  const id = parseSpotifyTrackIdLocal(urlOrUri);
+  if (!id) return null;
+  return DEMO_SPOTIFY_TRACKS.find((t) => t.id === id) ?? null;
+}
+
+export async function applyDiarySpotifyTrackLocal(input: {
+  diaryEntryId: string;
+  actorId: string;
+  track: (typeof DEMO_SPOTIFY_TRACKS)[number];
+}) {
+  await loadLocalDb();
+  const entry = memory.diary.find((d) => d.id === input.diaryEntryId);
+  if (!entry) throw new AppError('NOT_FOUND', 'Diary entry not found.');
+  if (entry.userId !== input.actorId) {
+    throw new AppError('FORBIDDEN', "You can't edit this diary.");
+  }
+  const art =
+    input.track.artworkUrl && /^https:\/\/i\.scdn\.co\//i.test(input.track.artworkUrl)
+      ? input.track.artworkUrl
+      : null;
+  const existing = memory.diaryMusic.find((m) => m.diaryEntryId === input.diaryEntryId);
+  const row = {
+    id: existing?.id ?? uid(),
+    diaryEntryId: input.diaryEntryId,
+    externalTrackId: input.track.id,
+    spotifyUri: input.track.uri,
+    externalUrl: input.track.externalUrl,
+    trackName: input.track.trackName,
+    artistNames: input.track.artistNames,
+    albumName: input.track.albumName,
+    artworkUrl: art,
+    durationMs: input.track.durationMs,
+    explicit: input.track.explicit,
+    createdAt: existing?.createdAt ?? now(),
+    updatedAt: now(),
+  };
+  memory.diaryMusic = memory.diaryMusic.filter((m) => m.diaryEntryId !== input.diaryEntryId);
+  memory.diaryMusic.push(row);
+  await persist();
+  return row;
+}
+
+export async function removeDiaryMusicLocal(
+  diaryEntryId: string,
+  actorId: string,
+): Promise<void> {
+  await loadLocalDb();
+  const entry = memory.diary.find((d) => d.id === diaryEntryId);
+  if (!entry) throw new AppError('NOT_FOUND', 'Diary entry not found.');
+  if (entry.userId !== actorId) {
+    throw new AppError('FORBIDDEN', "You can't edit this diary.");
+  }
+  memory.diaryMusic = memory.diaryMusic.filter((m) => m.diaryEntryId !== diaryEntryId);
+  await persist();
+}
+
+export async function getDiaryMusicLocal(diaryEntryId: string, viewerId: string) {
+  await loadLocalDb();
+  const entry = memory.diary.find((d) => d.id === diaryEntryId);
+  if (!entry) return null;
+  if (!(await canViewDiary(viewerId, entry.userId, entry))) {
+    throw new AppError('FORBIDDEN', "You can't view this.");
+  }
+  return memory.diaryMusic.find((m) => m.diaryEntryId === diaryEntryId) ?? null;
+}
+

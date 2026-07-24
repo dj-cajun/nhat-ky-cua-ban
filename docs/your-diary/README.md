@@ -18,6 +18,7 @@
 | [09-phase-7-reports-blocks.md](./09-phase-7-reports-blocks.md) | 7단계: 신고·차단 기반 |
 | [10-phase-8-anonymous-board.md](./10-phase-8-anonymous-board.md) | 8단계: 가명 게시판 |
 | [11-phase-9-private-messages.md](./11-phase-9-private-messages.md) | 9단계: 실명·가명 쪽지 |
+| [12-phase-10-spotify-music.md](./12-phase-10-spotify-music.md) | 10단계: Spotify 오늘의 음악 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.

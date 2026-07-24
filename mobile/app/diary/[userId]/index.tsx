@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -9,6 +9,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
+import {
+  getDiaryMusic,
+  openSpotifyTrack,
+  removeDiaryMusic,
+  setDiarySpotifyTrack,
+} from '@/features/diary-music/diary-music.service';
+import type { DiaryMusicCard } from '@/features/diary-music/diary-music.types';
+import { SpotifyTrackPicker } from '@/features/diary-music/spotify-track-picker';
 import {
   canViewDiary,
   getDiary,
@@ -35,13 +44,23 @@ export default function DiaryScreen() {
   const [me, setMe] = useState<Profile | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
+  const [music, setMusic] = useState<DiaryMusicCard | null>(null);
   const [editing, setEditing] = useState(false);
+  const [pickingMusic, setPickingMusic] = useState(false);
   const [mood, setMood] = useState<DiaryMood | undefined>();
   const [ten, setTen] = useState('');
   const [shortText, setShortText] = useState('');
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false);
   const [blockedRelation, setBlockedRelation] = useState(false);
+
+  const loadMusic = useCallback(async (entryId: string, viewerId: string) => {
+    try {
+      setMusic(await getDiaryMusic(entryId, viewerId));
+    } catch {
+      setMusic(null);
+    }
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -62,13 +81,15 @@ export default function DiaryScreen() {
       if (d) {
         if (!(await canViewDiary(session.id, userId, d)) && session.id !== userId) {
           setBlocked(true);
+        } else {
+          await loadMusic(d.id, session.id);
         }
         setMood(d.mood ?? undefined);
         setTen(d.tenCharText ?? '');
         setShortText(d.shortText ?? '');
       }
     })();
-  }, [userId]);
+  }, [userId, loadMusic]);
 
   const isMine = me?.id === userId;
   const moodMeta = DIARY_MOODS.find((m) => m.id === (entry?.mood ?? mood));
@@ -85,13 +106,64 @@ export default function DiaryScreen() {
       });
       setEntry(saved);
       setEditing(false);
+      setPickingMusic(false);
+      await loadMusic(saved.id, me.id);
       track('diary_entry_saved', {
         entry_has_photo: false,
-        entry_has_music: false,
+        entry_has_music: Boolean(music),
         market: 'US',
       });
     } catch (e) {
       setError(toAppError(e).message);
+    }
+  };
+
+  const onSelectTrack = async (trackResult: { id: string }) => {
+    if (!me) return;
+    setError('');
+    try {
+      let diary = entry;
+      if (!diary) {
+        diary = await upsertDiary({
+          userId: me.id,
+          mood,
+          tenCharText: ten.trim() || undefined,
+          shortText: shortText.trim() || undefined,
+          visibilityMode: 'private',
+        });
+        setEntry(diary);
+      }
+      const saved = await setDiarySpotifyTrack({
+        diaryEntryId: diary.id,
+        spotifyTrackId: trackResult.id,
+        actorId: me.id,
+      });
+      setMusic(saved);
+      setPickingMusic(false);
+      track('diary_music_saved', { market: 'US' });
+    } catch (e) {
+      setError(toAppError(e).message || en.diaryMusic.saveFailed);
+    }
+  };
+
+  const onRemoveMusic = async () => {
+    if (!me || !entry) return;
+    try {
+      await removeDiaryMusic(entry.id, me.id);
+      setMusic(null);
+      track('diary_music_removed', { market: 'US' });
+    } catch (e) {
+      setError(toAppError(e).message);
+    }
+  };
+
+  const onOpenMusic = async () => {
+    if (!music) return;
+    try {
+      await openSpotifyTrack(music);
+      track('diary_music_opened_in_spotify', { market: 'US' });
+    } catch (e) {
+      setError(toAppError(e).message || en.diaryMusic.openFailed);
     }
   };
 
@@ -151,6 +223,29 @@ export default function DiaryScreen() {
               style={[styles.input, { minHeight: 100 }]}
               placeholderTextColor={colors.soft}
             />
+
+            <Text style={styles.label}>{en.diary.musicSection}</Text>
+            {music && !pickingMusic ? (
+              <>
+                <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
+                <Pressable style={styles.link} onPress={() => setPickingMusic(true)}>
+                  <Text>{en.diaryMusic.change}</Text>
+                </Pressable>
+                <Pressable style={styles.link} onPress={() => void onRemoveMusic()}>
+                  <Text>{en.diaryMusic.remove}</Text>
+                </Pressable>
+              </>
+            ) : pickingMusic ? (
+              <SpotifyTrackPicker
+                onSelect={(t) => void onSelectTrack(t)}
+                onCancel={() => setPickingMusic(false)}
+              />
+            ) : (
+              <Pressable style={styles.link} onPress={() => setPickingMusic(true)}>
+                <Text>{en.diaryMusic.add}</Text>
+              </Pressable>
+            )}
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Pressable style={styles.btn} onPress={() => void save()}>
               <Text style={styles.btnText}>{en.diary.save}</Text>
@@ -170,7 +265,11 @@ export default function DiaryScreen() {
                 <Text style={styles.body}>{entry.shortText}</Text>
               </View>
             ) : null}
+            {music ? (
+              <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
+            ) : null}
             {!entry ? <Text style={styles.empty}>{en.diary.emptyToday}</Text> : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
         )}
 
@@ -270,33 +369,29 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: colors.line,
-    backgroundColor: colors.card,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    padding: 12,
     color: colors.ink,
+    backgroundColor: colors.card,
+    marginBottom: 4,
   },
-  error: { color: colors.warn, marginTop: 8 },
   btn: {
-    marginTop: 20,
-    backgroundColor: colors.ink,
-    borderRadius: 16,
-    padding: 14,
+    marginTop: 16,
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   btnText: { color: '#fff', fontWeight: '600' },
   link: {
-    marginTop: 10,
+    marginTop: 12,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.card,
     padding: 14,
   },
-  report: {
-    marginTop: 20,
-    padding: 14,
-    alignItems: 'center',
-  },
+  report: { marginTop: 10, padding: 12 },
   reportText: { color: colors.warn, fontSize: 13 },
+  error: { color: colors.warn, marginTop: 8 },
 });
