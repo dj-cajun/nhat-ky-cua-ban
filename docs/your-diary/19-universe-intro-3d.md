@@ -25,7 +25,7 @@
 
 `mobile/assets/intro/universe-birth.mp4`
 
-**사용자가 영상을 제작**한다. 앱은 슬롯 + 크로스페이드 + 3D만 담당.
+**기본 영상**이 레포에 포함되어 있다. 직접 만든 영상으로 교체해도 된다. 앱은 슬롯 + 크로스페이드 + 3D만 담당.
 
 1. 파일을 위 경로에 저장 (또는 `cd mobile && npm run render:intro`로 생성)
 2. `cd mobile && npm run sync:intro` (또는 `npm start`)
