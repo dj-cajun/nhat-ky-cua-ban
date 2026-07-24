@@ -31,6 +31,11 @@ import {
 import type { Circle, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { useMessages } from '@/i18n';
+import {
+  backToUniverseCircles,
+  openDiaryFromCircle,
+  rememberCircleGraph,
+} from '@/features/universe-home/circle-visit';
 
 /** Black space — only me + friends + thin lines. */
 const GRAPH = {
@@ -149,8 +154,9 @@ export default function CircleGraphScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (circleId) rememberCircleGraph(String(circleId));
       void reload();
-    }, [reload]),
+    }, [circleId, reload]),
   );
 
   useEffect(() => {
@@ -196,7 +202,7 @@ export default function CircleGraphScreen() {
           title={t.states.forbiddenTitle}
           subtitle={t.states.forbiddenSub}
           actionLabel={t.diary.back}
-          onAction={() => router.replace('/(tabs)/universe')}
+          onAction={() => backToUniverseCircles()}
           style={styles.forbidden}
         />
       </SafeAreaView>
@@ -215,7 +221,7 @@ export default function CircleGraphScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.replace('/(tabs)/universe')}
+          onPress={() => backToUniverseCircles()}
           hitSlop={12}
           accessibilityRole="button"
         >
@@ -254,22 +260,12 @@ export default function CircleGraphScreen() {
             opacity={n.opacity}
             hot={hotId === n.id}
             onHot={(on) => setHotId(on ? n.id : null)}
-            onPress={() =>
-              router.push({
-                pathname: '/diary/[userId]',
-                params: { userId: n.id, fromCircleId: circle.id },
-              })
-            }
+            onPress={() => openDiaryFromCircle(n.id, circle.id)}
           />
         ))}
 
         <Pressable
-          onPress={() =>
-            router.push({
-              pathname: '/diary/[userId]',
-              params: { userId: me.id, fromCircleId: circle.id },
-            })
-          }
+          onPress={() => openDiaryFromCircle(me.id, circle.id)}
           style={[styles.selfWrap, { left: cx - 28, top: cy - 28 }]}
           accessibilityRole="button"
           accessibilityLabel={me.displayName}

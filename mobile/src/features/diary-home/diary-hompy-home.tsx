@@ -10,6 +10,7 @@ import {
 import type { DiaryMusicCard } from '@/features/diary-music/diary-music.types';
 import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
 import type { GuestbookRow } from '@/features/local/repository';
+import { openDiaryFromCircle } from '@/features/universe-home/circle-visit';
 import { hompy } from '@/constants/hompy-theme';
 import { useLocale, useMessages, APP_NAME } from '@/i18n';
 import {
@@ -73,21 +74,19 @@ export function DiaryHompyHome({
 
   const openDiary = (targetId: string) => {
     if (fromCircleId) {
-      router.push({
-        pathname: '/diary/[userId]',
-        params: { userId: targetId, fromCircleId },
-      });
+      openDiaryFromCircle(targetId, fromCircleId);
       return;
     }
     router.push(`/diary/${targetId}`);
   };
 
-  const handleBack =
-    onBack ??
-    (() => {
-      if (router.canGoBack()) router.back();
-      else router.replace('/(tabs)/universe');
-    });
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    router.replace('/(tabs)/universe');
+  };
 
   const resolvedBackLabel =
     backLabel ?? (locale === 'ko' ? '내 우주' : 'Universe');

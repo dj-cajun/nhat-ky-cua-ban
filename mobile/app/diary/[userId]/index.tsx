@@ -56,6 +56,11 @@ import {
 import { colors } from '@/constants/theme';
 import { hompy } from '@/constants/hompy-theme';
 import { useMessages, DEFAULT_TIMEZONE, useLocale } from '@/i18n';
+import {
+  backToCircleGraph,
+  openDiaryFromCircle,
+  resolveCircleGraphId,
+} from '@/features/universe-home/circle-visit';
 
 export default function DiaryScreen() {
   const t = useMessages();
@@ -64,7 +69,7 @@ export default function DiaryScreen() {
     userId: string;
     fromCircleId?: string;
   }>();
-  const circleReturnId = Array.isArray(fromCircleId) ? fromCircleId[0] : fromCircleId;
+  const circleReturnId = resolveCircleGraphId(fromCircleId);
   const [me, setMe] = useState<Profile | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
@@ -349,13 +354,7 @@ export default function DiaryScreen() {
         <AppForbiddenState
           title={t.diary.privateBlocked}
           actionLabel={t.diary.back}
-          onAction={() => {
-            if (circleReturnId) {
-              router.replace(`/circles/${circleReturnId}/graph`);
-              return;
-            }
-            router.back();
-          }}
+          onAction={() => backToCircleGraph(fromCircleId)}
         />
       </SafeAreaView>
     );
@@ -383,24 +382,14 @@ export default function DiaryScreen() {
           canView={canView}
           onEditToday={() => setEditing(true)}
           onOpenMusic={() => void onOpenMusic()}
-          fromCircleId={circleReturnId}
+          fromCircleId={circleReturnId ?? undefined}
           backLabel={
             circleReturnId
               ? circles.find((c) => c.id === circleReturnId)?.name ??
                 (locale === 'ko' ? '서클' : 'Circle')
               : undefined
           }
-          onBack={() => {
-            if (circleReturnId) {
-              router.replace(`/circles/${circleReturnId}/graph`);
-              return;
-            }
-            if (router.canGoBack()) {
-              router.back();
-              return;
-            }
-            router.replace('/(tabs)/universe');
-          }}
+          onBack={() => backToCircleGraph(fromCircleId)}
         />
         {!isMine ? (
           <View style={styles.hompySafety}>
@@ -425,11 +414,7 @@ export default function DiaryScreen() {
                 void (async () => {
                   await blockUser(me.id, userId);
                   track(AnalyticsEvents.block_created, { market: 'US' });
-                  if (circleReturnId) {
-                    router.replace(`/circles/${circleReturnId}/graph`);
-                    return;
-                  }
-                  router.replace('/(tabs)/universe');
+                  backToCircleGraph(fromCircleId);
                 })()
               }
             >

@@ -16,6 +16,7 @@ import {
 import { UniverseHome } from '@/features/universe-home';
 import type { UniverseGraphFriend } from '@/features/universe-home/fallback-universe';
 import { INTRO_HANDOFF } from '@/features/universe-home/handoff';
+import { openCircleGraph } from '@/features/universe-home/circle-visit';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { isFeatureEnabled } from '@/lib/feature-flags';
@@ -121,7 +122,7 @@ export default function UniverseScreen() {
         onPressSelf={() => router.push(`/diary/${profile.id}`)}
         onPressCircle={(id) => {
           track(AnalyticsEvents.circle_opened, { circle_id: id, market: 'US' });
-          router.push(`/circles/${id}/graph`);
+          openCircleGraph(id);
         }}
         onPressFriend={(userId) => {
           track(AnalyticsEvents.diary_viewed, { market: 'US' });
