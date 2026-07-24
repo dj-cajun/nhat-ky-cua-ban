@@ -140,8 +140,38 @@ export const en = {
     respondedBadge: 'Responded',
     aliasTitle: 'Alias board',
     aliasSub:
-      'Ship report/block/moderation tools before alias posting. Real author IDs stay off the client.',
+      'Short thoughts under a circle-only alias. Other members see the alias — not your name.',
+    aliasPreviewEmpty: 'No alias posts yet.',
+    aliasViewBoard: 'View board',
     joinInvite: 'Join with recommendations',
+  },
+
+  aliasBoard: {
+    title: 'Alias board',
+    composeTitle: 'Leave a note as your alias',
+    currentAlias: (name: string) => `Your alias: ${name}`,
+    placeholder: 'Share a short thought…',
+    post: 'Post',
+    empty: 'No posts yet. Leave the first one.',
+    loadMore: 'Load more',
+    mine: 'Yours',
+    delete: 'Delete',
+    report: 'Report',
+    hide: 'Hide for me',
+    blockAuthor: 'Block author',
+    blockConfirmTitle: 'Block this author?',
+    blockConfirmBody:
+      'Block the person who wrote this post? You won’t see each other’s alias posts. Real names stay hidden.',
+    blockConfirm: 'Block',
+    cancel: 'Cancel',
+    deleted: 'Post deleted.',
+    noticeVisibility:
+      'Only members of this circle can see these posts.',
+    noticeSafety:
+      'Other members see your alias, but if a post is reported for safety issues, moderators can identify the account.',
+    back: '← Back',
+    menu: '⋯',
+    charCount: (n: number, max: number) => `${n}/${max}`,
   },
 
   join: {

@@ -106,6 +106,23 @@ interface LocalDb {
   moderationStatus: ModerationStatusRow[];
   guestbook: GuestbookRow[];
   photos: PhotoAssetRow[];
+  circleAliases: {
+    id: string;
+    circleId: string;
+    userId: string;
+    aliasName: string;
+    createdAt: string;
+  }[];
+  anonymousPosts: {
+    id: string;
+    circleId: string;
+    authorUserId: string;
+    aliasId: string;
+    body: string;
+    status: 'active' | 'deleted' | 'removed';
+    createdAt: string;
+    clientRequestId?: string;
+  }[];
   adminAuditLogs: {
     id: string;
     adminId: string;
@@ -212,6 +229,8 @@ const empty: LocalDb = {
   moderationStatus: [],
   guestbook: [],
   photos: [],
+  circleAliases: [],
+  anonymousPosts: [],
   adminAuditLogs: [],
 };
 
@@ -268,6 +287,8 @@ export async function loadLocalDb(): Promise<void> {
     memory.moderationStatus ??= [];
     memory.guestbook ??= [];
     memory.photos ??= [];
+    memory.circleAliases ??= [];
+    memory.anonymousPosts ??= [];
     memory.adminAuditLogs ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
@@ -1689,6 +1710,19 @@ function buildLocalReportSnapshot(targetType: string, targetId: string): Record<
     if (!ph) throw new AppError('NOT_FOUND', 'Target not found.');
     return { authorId: ph.userId, mediaPaths: [ph.storagePath], createdAt: ph.createdAt };
   }
+  if (targetType === 'anonymous_post') {
+    const ap = memory.anonymousPosts.find((x) => x.id === targetId);
+    if (!ap) throw new AppError('NOT_FOUND', 'Target not found.');
+    const alias = memory.circleAliases.find((a) => a.id === ap.aliasId);
+    return {
+      postId: ap.id,
+      circleId: ap.circleId,
+      authorUserId: ap.authorUserId,
+      aliasName: alias?.aliasName ?? 'Unknown',
+      body: ap.body,
+      createdAt: ap.createdAt,
+    };
+  }
   return { targetId };
 }
 
@@ -1715,6 +1749,17 @@ async function assertCanReportTarget(
       throw new AppError('VALIDATION', 'You can’t report your own diary.');
     }
     if (!(await canViewDiary(reporterId, e.userId, e))) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+    return;
+  }
+  if (targetType === 'anonymous_post') {
+    const ap = memory.anonymousPosts.find((x) => x.id === targetId);
+    if (!ap) throw new AppError('NOT_FOUND', 'Target not found.');
+    if (!(await isCircleMember(ap.circleId, reporterId))) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+    if (await isBlockedBetween(reporterId, ap.authorUserId)) {
       throw new AppError('FORBIDDEN', 'You can’t view this.');
     }
   }
@@ -1944,4 +1989,287 @@ export async function getAccountStatus(
   return (
     memory.moderationStatus.find((m) => m.userId === userId)?.accountStatus ?? 'active'
   );
+}
+
+const ALIAS_ADJ = [
+  'Quiet', 'Slow', 'Soft', 'Small', 'Calm', 'Gentle', 'Bright', 'Warm',
+  'Cool', 'Silent', 'Pale', 'Kind', 'Still', 'Light', 'Clear', 'Mild',
+];
+const ALIAS_NOUN = [
+  'Comet', 'Wave', 'Lantern', 'Cloud', 'Stone', 'River', 'Pine', 'Ember',
+  'Moss', 'Drift', 'Harbor', 'Meadow', 'Pebble', 'Breeze', 'Grove', 'Dusk',
+];
+
+function pickAliasName(circleId: string): string {
+  for (let i = 0; i < 40; i++) {
+    const name = `${ALIAS_ADJ[Math.floor(Math.random() * ALIAS_ADJ.length)]} ${
+      ALIAS_NOUN[Math.floor(Math.random() * ALIAS_NOUN.length)]
+    }`;
+    if (!memory.circleAliases.some((a) => a.circleId === circleId && a.aliasName === name)) {
+      return name;
+    }
+  }
+  return `Quiet Star ${uid().slice(0, 6)}`;
+}
+
+export async function getOrCreateCircleAlias(
+  circleId: string,
+  userId: string,
+): Promise<{ aliasName: string; aliasId: string }> {
+  await loadLocalDb();
+  assertNotSuspended(userId);
+  if (!(await isCircleMember(circleId, userId))) {
+    throw new AppError('FORBIDDEN', 'Only members can use the alias board.');
+  }
+  const existing = memory.circleAliases.find(
+    (a) => a.circleId === circleId && a.userId === userId,
+  );
+  if (existing) return { aliasName: existing.aliasName, aliasId: existing.id };
+
+  const row = {
+    id: uid(),
+    circleId,
+    userId,
+    aliasName: pickAliasName(circleId),
+    createdAt: now(),
+  };
+  memory.circleAliases.push(row);
+  await persist();
+  return { aliasName: row.aliasName, aliasId: row.id };
+}
+
+function validateAnonBodyLocal(body: string): void {
+  const trim = body.trim();
+  if (trim.length < 1 || trim.length > 300) {
+    throw new AppError('VALIDATION', 'Write 1–300 characters.');
+  }
+  if (/https?:\/\//i.test(trim) || /www\./i.test(trim)) {
+    throw new AppError('VALIDATION', 'Links aren’t allowed.');
+  }
+  if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(trim)) {
+    throw new AppError('VALIDATION', 'Email addresses aren’t allowed.');
+  }
+  if (trim.replace(/\D/g, '').length >= 7) {
+    throw new AppError('VALIDATION', 'Phone numbers aren’t allowed.');
+  }
+  if (/(.)\1{9,}/.test(trim)) {
+    throw new AppError('VALIDATION', 'That text looks spammy.');
+  }
+}
+
+export async function createAnonymousPost(input: {
+  circleId: string;
+  userId: string;
+  body: string;
+  clientRequestId?: string;
+}): Promise<{
+  id: string;
+  aliasName: string;
+  body: string;
+  createdAt: string;
+  isMine: true;
+}> {
+  await loadLocalDb();
+  assertNotSuspended(input.userId);
+  if (!(await isCircleMember(input.circleId, input.userId))) {
+    throw new AppError('FORBIDDEN', 'Only members can post.');
+  }
+  const mod = memory.moderationStatus.find((m) => m.userId === input.userId);
+  if (mod?.accountStatus === 'restricted') {
+    throw new AppError('FORBIDDEN', 'Posting is temporarily limited.');
+  }
+  validateAnonBodyLocal(input.body);
+
+  if (input.clientRequestId) {
+    const dup = memory.anonymousPosts.find(
+      (p) =>
+        p.authorUserId === input.userId && p.clientRequestId === input.clientRequestId,
+    );
+    if (dup) {
+      const alias = memory.circleAliases.find((a) => a.id === dup.aliasId)!;
+      return {
+        id: dup.id,
+        aliasName: alias.aliasName,
+        body: dup.body,
+        createdAt: dup.createdAt,
+        isMine: true,
+      };
+    }
+  }
+
+  const tenMin = Date.now() - 10 * 60_000;
+  const day = Date.now() - 24 * 60 * 60_000;
+  const recent = memory.anonymousPosts.filter(
+    (p) =>
+      p.authorUserId === input.userId &&
+      p.circleId === input.circleId &&
+      new Date(p.createdAt).getTime() > tenMin,
+  ).length;
+  if (recent >= 2) throw new AppError('RATE_LIMITED', 'Please wait before posting again.');
+  const dayCount = memory.anonymousPosts.filter(
+    (p) =>
+      p.authorUserId === input.userId &&
+      p.circleId === input.circleId &&
+      new Date(p.createdAt).getTime() > day,
+  ).length;
+  if (dayCount >= 10) throw new AppError('RATE_LIMITED', 'Daily post limit reached.');
+
+  const alias = await getOrCreateCircleAlias(input.circleId, input.userId);
+  const post = {
+    id: uid(),
+    circleId: input.circleId,
+    authorUserId: input.userId,
+    aliasId: alias.aliasId,
+    body: input.body.trim(),
+    status: 'active' as const,
+    createdAt: now(),
+    clientRequestId: input.clientRequestId,
+  };
+  memory.anonymousPosts.push(post);
+  await persist();
+  return {
+    id: post.id,
+    aliasName: alias.aliasName,
+    body: post.body,
+    createdAt: post.createdAt,
+    isMine: true,
+  };
+}
+
+export async function getAnonymousCirclePosts(input: {
+  circleId: string;
+  viewerId: string;
+  cursorCreatedAt?: string | null;
+  cursorId?: string | null;
+  limit?: number;
+}): Promise<{
+  items: {
+    id: string;
+    aliasName: string;
+    body: string;
+    createdAt: string;
+    isMine: boolean;
+  }[];
+  nextCursor: { createdAt: string; id: string } | null;
+}> {
+  await loadLocalDb();
+  assertNotSuspended(input.viewerId);
+  if (!(await isCircleMember(input.circleId, input.viewerId))) {
+    throw new AppError('FORBIDDEN', 'Only members can view this board.');
+  }
+  const lim = Math.max(1, Math.min(input.limit ?? 20, 20));
+  let rows = memory.anonymousPosts
+    .filter((p) => p.circleId === input.circleId && p.status === 'active')
+    .sort((a, b) => {
+      const t = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return t !== 0 ? t : b.id.localeCompare(a.id);
+    });
+
+  rows = rows.filter((p) => {
+    const blocked = memory.blocks.some(
+      (b) =>
+        (b.blockerId === input.viewerId && b.blockedId === p.authorUserId) ||
+        (b.blockerId === p.authorUserId && b.blockedId === input.viewerId),
+    );
+    if (blocked) return false;
+    if (
+      memory.hiddenContent.some(
+        (h) =>
+          h.userId === input.viewerId &&
+          h.targetType === 'anonymous_post' &&
+          h.targetId === p.id,
+      )
+    ) {
+      return false;
+    }
+    if (input.cursorCreatedAt && input.cursorId) {
+      const ct = new Date(input.cursorCreatedAt).getTime();
+      const pt = new Date(p.createdAt).getTime();
+      if (pt > ct) return false;
+      if (pt === ct && p.id >= input.cursorId) return false;
+    }
+    return true;
+  });
+
+  const page = rows.slice(0, lim);
+  const items = page.map((p) => {
+    const alias = memory.circleAliases.find((a) => a.id === p.aliasId);
+    return {
+      id: p.id,
+      aliasName: alias?.aliasName ?? 'Member',
+      body: p.body,
+      createdAt: p.createdAt,
+      isMine: p.authorUserId === input.viewerId,
+    };
+  });
+
+  return {
+    items,
+    nextCursor:
+      page.length === lim
+        ? { createdAt: page[page.length - 1].createdAt, id: page[page.length - 1].id }
+        : null,
+  };
+}
+
+export async function deleteAnonymousPost(postId: string, userId: string): Promise<void> {
+  await loadLocalDb();
+  const post = memory.anonymousPosts.find((p) => p.id === postId);
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found.');
+  if (post.authorUserId !== userId) throw new AppError('FORBIDDEN', 'Only the author can delete.');
+  if (post.status === 'active') {
+    post.status = 'deleted';
+    await persist();
+  }
+}
+
+export async function blockAnonymousPostAuthor(
+  postId: string,
+  actorId: string,
+): Promise<void> {
+  await loadLocalDb();
+  const post = memory.anonymousPosts.find((p) => p.id === postId && p.status === 'active');
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found.');
+  if (post.authorUserId === actorId) {
+    throw new AppError('VALIDATION', 'You can’t block yourself.');
+  }
+  if (!(await isCircleMember(post.circleId, actorId))) {
+    throw new AppError('FORBIDDEN', 'Only members can do this.');
+  }
+  await blockUser(actorId, post.authorUserId);
+}
+
+export async function resolveAnonymousAuthor(input: {
+  postId: string;
+  moderationCaseId: string;
+  reason: string;
+  adminId: string;
+  isModerator: boolean;
+}): Promise<{ postId: string; authorUserId: string; circleId: string }> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  if (!input.reason.trim() || input.reason.trim().length < 3) {
+    throw new AppError('VALIDATION', 'Reason required.');
+  }
+  const post = memory.anonymousPosts.find((p) => p.id === input.postId);
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found.');
+  const report = memory.reports.find((r) => r.id === input.moderationCaseId);
+  if (
+    !report ||
+    report.targetType !== 'anonymous_post' ||
+    report.targetId !== input.postId
+  ) {
+    throw new AppError('FORBIDDEN', 'A linked report case is required.');
+  }
+  memory.adminAuditLogs.push({
+    id: uid(),
+    adminId: input.adminId,
+    action: 'resolve_anonymous_author',
+    targetType: 'anonymous_post',
+    targetId: input.postId,
+    reason: input.reason.trim(),
+    createdAt: now(),
+  });
+  await persist();
+  return { postId: post.id, authorUserId: post.authorUserId, circleId: post.circleId };
 }

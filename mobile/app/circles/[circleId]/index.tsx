@@ -2,6 +2,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getAnonymousCirclePreview } from '@/features/anonymous-board/anonymous-board.service';
+import type { AnonymousPostItem } from '@/features/anonymous-board/anonymous-board.types';
 import {
   getActivePost,
   getCircle,
@@ -26,6 +28,7 @@ export default function CircleHomeScreen() {
   const [forbidden, setForbidden] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [activePostId, setActivePostId] = useState<string | null>(null);
+  const [aliasPreview, setAliasPreview] = useState<AnonymousPostItem[]>([]);
 
   const { badgeFor, connection, setBlockedIds } = useCirclePresence({
     circleId,
@@ -67,6 +70,12 @@ export default function CircleHomeScreen() {
     setBlockedIds(blocked);
     const active = await getActivePost(circleId);
     setActivePostId(active?.id ?? null);
+    try {
+      const preview = await getAnonymousCirclePreview(circleId, me.id);
+      setAliasPreview(preview.items.slice(0, 3));
+    } catch {
+      setAliasPreview([]);
+    }
   }, [circleId, setBlockedIds]);
 
   useFocusEffect(
@@ -151,17 +160,34 @@ export default function CircleHomeScreen() {
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/notice`)}>
         <Text style={styles.linkText}>{en.circle.noticePoll}</Text>
       </Pressable>
+
+      <Text style={[styles.section, { marginTop: 18 }]}>{en.circle.anonymousBoard}</Text>
+      {aliasPreview.length === 0 ? (
+        <Text style={styles.previewEmpty}>{en.circle.aliasPreviewEmpty}</Text>
+      ) : (
+        <View style={styles.previewList}>
+          {aliasPreview.map((p) => (
+            <View key={p.id} style={styles.previewItem}>
+              <Text style={styles.previewAlias}>{p.aliasName}</Text>
+              <Text style={styles.previewBody} numberOfLines={2}>
+                {p.body}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <Pressable
+        style={styles.link}
+        onPress={() => router.push(`/circles/${circleId}/anonymous-board`)}
+      >
+        <Text style={styles.linkText}>{en.circle.aliasViewBoard}</Text>
+      </Pressable>
+
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/join`)}>
         <Text style={styles.linkText}>{en.circle.joinInvite}</Text>
       </Pressable>
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/settings`)}>
         <Text style={styles.linkText}>{en.circle.settings}</Text>
-      </Pressable>
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push(`/circles/${circleId}/anonymous-board`)}
-      >
-        <Text style={styles.linkText}>{en.circle.anonymousBoard}</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -212,4 +238,14 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   linkText: { color: colors.ink, fontSize: 14 },
+  previewEmpty: { color: colors.muted, fontSize: 12, marginBottom: 4 },
+  previewList: { gap: 8 },
+  previewItem: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.line,
+    paddingLeft: 10,
+    paddingVertical: 4,
+  },
+  previewAlias: { fontSize: 12, fontWeight: '600', color: colors.ink },
+  previewBody: { marginTop: 2, fontSize: 13, color: colors.muted, lineHeight: 18 },
 });
