@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toAppError } from '@/lib/errors';
-import { track } from '@/lib/logger';
+import { AnalyticsEvents, track } from '@/lib/logger';
 import { blockUser } from './block.service';
 import { submitReport } from './report.service';
 import type { ReportReason, ReportTargetType } from './moderation.types';
@@ -36,7 +36,7 @@ export function useReportContent(input: {
       if (opts.alsoBlock && input.targetUserId) {
         await blockUser(input.reporterId, input.targetUserId);
       }
-      track('report_submitted', { target_type: input.targetType, market: 'US' });
+      track(AnalyticsEvents.report_submitted, { reason_code: opts.reason, market: 'US' });
       setDone(true);
     } catch (e) {
       setError(toAppError(e).message);

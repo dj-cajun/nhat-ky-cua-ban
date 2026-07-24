@@ -1038,11 +1038,23 @@ export async function ensureDemoJoinApplicant(): Promise<Profile> {
 
 export async function switchSession(userId: string): Promise<Profile> {
   await loadLocalDb();
+  const previous = memory.sessionUserId;
   const profile = memory.profiles.find((p) => p.id === userId);
   if (!profile) throw new AppError('NOT_FOUND', 'Profile not found.');
+  // Caller should also run switchAccountIsolation(previous) for query/presence teardown.
   memory.sessionUserId = userId;
   await persist();
+  void previous;
   return profile;
+}
+
+/** Clear session pointer without wiping demo DB (logout → sign-in). */
+export async function clearSessionUser(): Promise<string | null> {
+  await loadLocalDb();
+  const previous = memory.sessionUserId;
+  memory.sessionUserId = null;
+  await persist();
+  return previous;
 }
 
 export async function countJoinArtifacts(

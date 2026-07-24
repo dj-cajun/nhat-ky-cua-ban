@@ -160,6 +160,15 @@ describe('phase-11 session isolation', () => {
     expect(await getDiaryDraft(a.id, '2026-07-24')).toBeNull();
     await clearAllDiaryDraftsForUser(a.id);
   });
+
+  it('signOut clears session profile pointer', async () => {
+    const { signOut } = await import('@/features/session/session-lifecycle');
+    const a = await signUpLocal('A');
+    expect(a.id).toBeTruthy();
+    await signOut();
+    const { getSessionProfile } = await import('@/features/local/repository');
+    expect(await getSessionProfile()).toBeNull();
+  });
 });
 
 describe('phase-11 deep link + errors + flags + retry + logger', () => {

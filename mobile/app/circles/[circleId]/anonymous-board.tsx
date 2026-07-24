@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -26,7 +25,9 @@ import { useCreateAnonymousPost } from '@/features/anonymous-board/use-create-an
 import type { AnonymousPostItem } from '@/features/anonymous-board/anonymous-board.types';
 import { getSessionProfile, isCircleMember } from '@/features/local/repository';
 import { hideContentForMe } from '@/features/moderation/moderation.mutations';
+import { AppEmptyState, AppErrorState, AppLoadingState } from '@/components/states';
 import { toAppError } from '@/lib/errors';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 import { colors } from '@/constants/theme';
 import { en } from '@/i18n/en';
 
@@ -164,12 +165,16 @@ export default function AnonymousBoardScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Pressable onPress={() => router.back()}>
+      <Pressable onPress={() => router.back()} accessibilityRole="button">
         <Text style={styles.back}>{en.aliasBoard.back}</Text>
       </Pressable>
       <Text style={styles.title}>{en.aliasBoard.title}</Text>
       <Text style={styles.sub}>{en.circle.aliasSub}</Text>
 
+      {!isFeatureEnabled('anonymous_board_enabled') ? (
+        <AppEmptyState title={en.circle.featureDisabled} />
+      ) : (
+        <>
       <View style={styles.compose}>
         <Text style={styles.composeTitle}>{en.aliasBoard.composeTitle}</Text>
         {compose.alias ? (
@@ -192,27 +197,31 @@ export default function AnonymousBoardScreen() {
         <Text style={styles.notice}>{en.aliasBoard.noticeVisibility}</Text>
         <Text style={styles.notice}>{en.aliasBoard.noticeSafety}</Text>
         {compose.error || actionError ? (
-          <Text style={styles.error}>{compose.error || actionError}</Text>
+          <AppErrorState message={compose.error || actionError} />
         ) : null}
         <Pressable
           style={[styles.postBtn, compose.pending && styles.postBtnDisabled]}
           disabled={compose.pending || !compose.body.trim()}
           onPress={() => void compose.submit()}
+          accessibilityRole="button"
+          accessibilityState={{ busy: compose.pending }}
         >
           <Text style={styles.postBtnText}>{en.aliasBoard.post}</Text>
         </Pressable>
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <AppErrorState message={error} onRetry={() => void reload()} /> : null}
       {loading && items.length === 0 ? (
-        <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />
+        <AppLoadingState />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(p) => p.id}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 40, gap: 10 }}
-          ListEmptyComponent={<Text style={styles.empty}>{en.aliasBoard.empty}</Text>}
+          ListEmptyComponent={
+            <AppEmptyState title={en.aliasBoard.empty} subtitle={en.aliasBoard.emptySub} />
+          }
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={() => void reload()} />
           }
@@ -224,6 +233,8 @@ export default function AnonymousBoardScreen() {
             ) : null
           }
         />
+      )}
+        </>
       )}
     </SafeAreaView>
   );

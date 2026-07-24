@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppEmptyState, AppErrorState, AppLoadingState } from '@/components/states';
 import { formatNoteRelativeTime } from '@/features/private-messages/private-message.validation';
 import { useReceivedMessages } from '@/features/private-messages/use-received-messages';
 import { useSentMessages } from '@/features/private-messages/use-sent-messages';
@@ -61,7 +62,9 @@ export default function MessagesScreen() {
         <Text style={styles.settingsText}>{en.messages.preferences}</Text>
       </Pressable>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <AppErrorState message={error} /> : null}
+
+      {!meId ? <AppLoadingState /> : null}
 
       <ScrollView
         refreshControl={
@@ -108,11 +111,9 @@ export default function MessagesScreen() {
             ))}
 
         {(tab === 'inbox' ? received.items : sent.items).length === 0 && !loading ? (
-          <View style={{ marginTop: 24 }}>
-            <Text style={styles.empty}>
-              {tab === 'inbox' ? en.messages.emptyInbox : en.messages.emptySent}
-            </Text>
-          </View>
+          <AppEmptyState
+            title={tab === 'inbox' ? en.messages.emptyInbox : en.messages.emptySent}
+          />
         ) : null}
 
         {tab === 'inbox' && received.nextCursor ? (

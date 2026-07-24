@@ -1,4 +1,9 @@
-import { clearLocalDb } from '@/features/local/repository';
+import {
+  clearSessionUser,
+  getSessionProfile,
+  switchSession as localSwitchSession,
+} from '@/features/local/repository';
+import type { Profile } from '@/types/domain';
 import { clearAllDiaryDraftsForUser } from '@/features/offline-drafts/diary-draft.store';
 import { circlePresenceService } from '@/features/presence/circle-presence.service';
 import { clearAllQueryCaches } from '@/lib/cache-invalidation';
@@ -21,6 +26,7 @@ export async function endSession(opts?: {
     await clearAllDiaryDraftsForUser(opts.previousUserId);
   }
   if (opts?.wipeLocalDb) {
+    const { clearLocalDb } = await import('@/features/local/repository');
     await clearLocalDb();
   }
   secureLog('info', 'session_ended', {
@@ -30,4 +36,19 @@ export async function endSession(opts?: {
 
 export async function switchAccountIsolation(previousUserId: string | null): Promise<void> {
   await endSession({ previousUserId, wipeLocalDb: false });
+}
+
+/** Logout: drop session pointer + caches/drafts, keep local demo fixtures. */
+export async function signOut(): Promise<void> {
+  const previous = await clearSessionUser();
+  await endSession({ previousUserId: previous, wipeLocalDb: false });
+}
+
+/**
+ * Demo / multi-account switch — isolate previous account before binding new session.
+ */
+export async function switchToUser(userId: string): Promise<Profile> {
+  const current = await getSessionProfile();
+  await switchAccountIsolation(current?.id ?? null);
+  return localSwitchSession(userId);
 }

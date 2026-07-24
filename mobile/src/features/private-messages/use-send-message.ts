@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toAppError } from '@/lib/errors';
-import { track } from '@/lib/logger';
+import { track, AnalyticsEvents } from '@/lib/logger';
 import {
   replyToPrivateMessage,
   sendAliasMessage,
@@ -54,7 +54,7 @@ export function useSendMessage(input: {
           });
         }
       }
-      track('private_note_sent', { mode, market: 'US' });
+      track(AnalyticsEvents.private_note_sent, { sender_mode: mode, market: 'US' });
       setBody('');
       input.onSent?.();
     } catch (e) {

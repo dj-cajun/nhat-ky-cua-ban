@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toAppError } from '@/lib/errors';
-import { track } from '@/lib/logger';
+import { AnalyticsEvents, track } from '@/lib/logger';
 import { createAnonymousPost, getOrCreateCircleAlias } from './anonymous-board.service';
 import type { CircleAlias } from './anonymous-board.types';
 
@@ -33,7 +33,7 @@ export function useCreateAnonymousPost(input: {
         body,
         clientRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       });
-      track('anonymous_post_created', { market: 'US' });
+      track(AnalyticsEvents.anonymous_post_created, { market: 'US' });
       setBody('');
       input.onCreated?.();
     } catch (e) {

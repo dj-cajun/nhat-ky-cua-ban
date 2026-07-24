@@ -10,8 +10,8 @@ import {
   getJoinProgress,
   getSessionProfile,
   listJoinRecommenderCandidates,
-  switchSession,
 } from '@/features/local/repository';
+import { switchToUser } from '@/features/session/session-lifecycle';
 import { CIRCLE_JOIN_RECOMMENDATION_COUNT, type Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
@@ -100,7 +100,7 @@ export default function CircleJoinScreen() {
 
   const demoAsYujin = async () => {
     await ensureDemoJoinApplicant();
-    await switchSession(DEMO_JOIN_IDS.yujin);
+    await switchToUser(DEMO_JOIN_IDS.yujin);
     setSelected([]);
     setRequestId(null);
     setProgress(null);

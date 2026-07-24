@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signUpLocal } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
-import { track } from '@/lib/logger';
+import { AnalyticsEvents, track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
 import { en } from '@/i18n/en';
 
@@ -25,7 +25,9 @@ export default function OnboardingScreen() {
     }
     try {
       await signUpLocal(displayName.trim());
-      track('diary_entry_saved', { onboarding: true, has_email: Boolean(email), market: 'US' });
+      track(AnalyticsEvents.onboarding_completed, {
+        market: 'US',
+      });
       router.replace('/(tabs)/universe');
     } catch (e) {
       setError(toAppError(e).message);

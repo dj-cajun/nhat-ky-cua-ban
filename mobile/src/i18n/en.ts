@@ -327,6 +327,11 @@ export const en = {
   },
 
   settings: {
+    account: 'Account',
+    back: '← Back',
+    signOut: 'Sign out',
+    featureFlags: 'BETA FLAGS',
+    featureFlagsHint: 'Kill switches for beta — server payload overrides these in production.',
     blockedUsers: 'Blocked people',
     blockedUsersSub: 'Unblock to allow new personal content again. Hidden items stay hidden.',
     unblock: 'Unblock',

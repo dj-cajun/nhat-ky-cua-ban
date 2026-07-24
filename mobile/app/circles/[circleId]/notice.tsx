@@ -10,9 +10,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  AppEmptyState,
+  AppErrorState,
+  AppForbiddenState,
+  AppLoadingState,
+} from '@/components/states';
+import {
   closeCirclePost,
   createCirclePost,
 } from '@/features/circle-posts/circle-post.service';
+import type { CirclePostSummary } from '@/features/circle-posts/circle-post.types';
 import { defaultClosesAt } from '@/features/circle-posts/circle-post.validation';
 import { useActiveCirclePost } from '@/features/circle-posts/use-active-circle-post';
 import { useCirclePostResponse } from '@/features/circle-posts/use-circle-post-response';
@@ -23,11 +30,12 @@ import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
 import { en } from '@/i18n/en';
-import type { CirclePostSummary } from '@/features/circle-posts/circle-post.types';
 
 export default function NoticeScreen() {
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [userId, setUserId] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [bootLoading, setBootLoading] = useState(true);
   const [mode, setMode] = useState<'view' | 'notice' | 'poll'>('view');
   const [title, setTitle] = useState('');
   const [opt1, setOpt1] = useState('');
@@ -56,16 +64,20 @@ export default function NoticeScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me = await getSessionProfile();
-      if (!me || !circleId) {
-        router.replace('/(auth)/sign-in');
-        return;
+      try {
+        const me = await getSessionProfile();
+        if (!me || !circleId) {
+          router.replace('/(auth)/sign-in');
+          return;
+        }
+        if (!(await isCircleMember(circleId, me.id))) {
+          if (!cancelled) setForbidden(true);
+          return;
+        }
+        if (!cancelled) setUserId(me.id);
+      } finally {
+        if (!cancelled) setBootLoading(false);
       }
-      if (!(await isCircleMember(circleId, me.id))) {
-        router.replace('/(tabs)/universe');
-        return;
-      }
-      if (!cancelled) setUserId(me.id);
     })();
     return () => {
       cancelled = true;
@@ -119,6 +131,25 @@ export default function NoticeScreen() {
     }
   };
 
+  if (bootLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <AppLoadingState />
+      </SafeAreaView>
+    );
+  }
+
+  if (forbidden) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <AppForbiddenState
+          actionLabel={en.circle.toUniverse}
+          onAction={() => router.replace('/(tabs)/universe')}
+        />
+      </SafeAreaView>
+    );
+  }
+
   const done = Boolean(liveSummary?.currentUserResponded);
   const showPollCounts =
     post?.type === 'poll' &&
@@ -129,7 +160,7 @@ export default function NoticeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button">
           <Text style={styles.back}>{en.circle.backUniverse.replace('Universe', 'Circle')}</Text>
         </Pressable>
         <Text style={styles.title}>{en.circle.noticeTitle}</Text>
@@ -148,6 +179,8 @@ export default function NoticeScreen() {
                     style={styles.btn}
                     onPress={() => void acknowledge()}
                     disabled={pending}
+                    accessibilityRole="button"
+                    accessibilityState={{ busy: pending }}
                   >
                     <Text style={styles.btnText}>{en.circle.acknowledge}</Text>
                   </Pressable>
@@ -171,6 +204,7 @@ export default function NoticeScreen() {
                         void vote(o.id);
                       }}
                       disabled={pending}
+                      accessibilityRole="button"
                       style={[
                         styles.option,
                         (selectedOption === o.id ||
@@ -211,7 +245,7 @@ export default function NoticeScreen() {
             ) : null}
           </View>
         ) : (
-          <Text style={styles.empty}>{en.circle.noActive}</Text>
+          <AppEmptyState title={en.circle.noActive} />
         )}
 
         {mode === 'view' && !post && canCreate ? (
@@ -272,7 +306,7 @@ export default function NoticeScreen() {
         )}
 
         {error || createError ? (
-          <Text style={styles.error}>{error || createError}</Text>
+          <AppErrorState message={error || createError || undefined} />
         ) : null}
       </ScrollView>
     </SafeAreaView>
@@ -281,7 +315,7 @@ export default function NoticeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, padding: 16 },
-  back: { color: colors.muted, marginBottom: 12 },
+  back: { color: colors.muted, marginBottom: 12, minHeight: 44 },
   title: { fontSize: 22, fontWeight: '600', color: colors.ink },
   sub: { marginTop: 8, marginBottom: 16, color: colors.muted, lineHeight: 20 },
   card: {
@@ -302,6 +336,8 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: 12,
     padding: 12,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   optionOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   btn: {
@@ -309,11 +345,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     borderRadius: 14,
     padding: 12,
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   btnText: { color: '#fff', fontWeight: '600' },
   done: { marginTop: 14, color: colors.orange, fontSize: 13 },
-  empty: { color: colors.soft, marginTop: 8 },
   secondary: {
     marginTop: 12,
     borderWidth: 1,
@@ -321,6 +358,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   input: {
     borderWidth: 1,
@@ -332,5 +371,4 @@ const styles = StyleSheet.create({
     color: colors.ink,
     backgroundColor: colors.card,
   },
-  error: { marginTop: 12, color: colors.warn },
 });
