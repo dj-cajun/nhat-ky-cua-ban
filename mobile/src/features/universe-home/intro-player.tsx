@@ -1,14 +1,14 @@
 import { useEventListener } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { INTRO_HANDOFF } from './handoff';
 import { getIntroVideoSource } from './intro-asset';
 import { SyntheticSunBirth } from './synthetic-sun-birth';
 
 /**
  * Full/short intro layer: bundled MP4 when present, else synthetic sun birth.
- * Crossfades into UniverseScene (3D native / 2D web fallback).
+ * Native: MP4 → crossfade into 3D. Web: synthetic (same handoff) → 2D glow universe.
  */
 export function IntroPlayer({
   width,
@@ -23,8 +23,9 @@ export function IntroPlayer({
   onNearEnd: () => void;
   onEnded: () => void;
 }) {
-  // Full mode uses the bundled MP4 on every platform when present.
-  const source = mode === 'full' ? getIntroVideoSource() : null;
+  // expo-video surface is unreliable in RN-web headless; keep handoff via synthetic there.
+  const source =
+    Platform.OS !== 'web' && mode === 'full' ? getIntroVideoSource() : null;
 
   if (source == null) {
     return (
