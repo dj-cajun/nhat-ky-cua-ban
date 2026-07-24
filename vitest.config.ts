@@ -14,6 +14,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'zmp-sdk/apis': path.resolve(__dirname, './src/shims/zmp-sdk/apis.ts'),
     },
   },
 });
