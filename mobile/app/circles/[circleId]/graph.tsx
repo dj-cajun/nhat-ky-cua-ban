@@ -32,17 +32,18 @@ import type { Circle, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { useMessages } from '@/i18n';
 
+/** Black space — only me + friends + thin lines. */
 const GRAPH = {
-  space: '#F3EEE6',
-  spaceDeep: '#E8E0D4',
-  ink: '#3A322A',
-  muted: 'rgba(58,50,42,0.55)',
-  edge: 'rgba(58,50,42,0.28)',
-  edgeHot: 'rgba(180,120,60,0.55)',
-  self: '#E8B45A',
-  selfGlow: 'rgba(240,195,106,0.35)',
-  node: '#F7F3EC',
-  nodeBorder: 'rgba(58,50,42,0.18)',
+  space: '#000000',
+  ink: 'rgba(255,255,255,0.92)',
+  muted: 'rgba(255,255,255,0.45)',
+  edge: 'rgba(255,255,255,0.28)',
+  edgeHot: 'rgba(255,220,160,0.75)',
+  self: '#F0C36A',
+  selfGlow: 'rgba(240,195,106,0.28)',
+  node: 'rgba(255,255,255,0.12)',
+  nodeBorder: 'rgba(255,255,255,0.35)',
+  nodeHot: 'rgba(255,255,255,0.22)',
 };
 
 type Friend = { id: string; name: string };
@@ -53,14 +54,9 @@ type ProjectedNode = Friend & {
   z: number;
   scale: number;
   opacity: number;
-  /** screen depth sort key */
   depth: number;
 };
 
-/**
- * Project a point on a unit sphere with slight yaw/pitch into 2D + depth.
- * Gives an Obsidian-like spatial graph without requiring GL on web.
- */
 function projectSphere(
   theta: number,
   phi: number,
@@ -69,13 +65,11 @@ function projectSphere(
   cy: number,
   yaw: number,
   pitch: number,
-): { x: number; y: number; z: number; scale: number; opacity: number; depth: number } {
-  // Spherical → cartesian
+): Omit<ProjectedNode, keyof Friend> {
   let x = Math.sin(phi) * Math.cos(theta);
   let y = Math.cos(phi);
   let z = Math.sin(phi) * Math.sin(theta);
 
-  // yaw around Y
   const cosY = Math.cos(yaw);
   const sinY = Math.sin(yaw);
   const x1 = x * cosY + z * sinY;
@@ -83,7 +77,6 @@ function projectSphere(
   x = x1;
   z = z1;
 
-  // pitch around X
   const cosP = Math.cos(pitch);
   const sinP = Math.sin(pitch);
   const y1 = y * cosP - z * sinP;
@@ -92,10 +85,10 @@ function projectSphere(
   z = z2;
 
   const perspective = 2.6;
-  const depth = (z + 1) / 2; // 0..1 front
+  const depth = (z + 1) / 2;
   const persp = perspective / (perspective - z);
   const scale = 0.72 + depth * 0.55;
-  const opacity = 0.45 + depth * 0.55;
+  const opacity = 0.5 + depth * 0.5;
 
   return {
     x: cx + x * radius * persp,
@@ -108,8 +101,8 @@ function projectSphere(
 }
 
 /**
- * Circle friends page — Obsidian-style: nodes linked by thin lines only,
- * laid out on a soft 3D sphere (perspective + slow drift).
+ * Circle graph: pure black space. Only me ↔ each friend (hub lines).
+ * No circle disk, wash, or friend–friend links.
  */
 export default function CircleGraphScreen() {
   const t = useMessages();
@@ -160,7 +153,6 @@ export default function CircleGraphScreen() {
     }, [reload]),
   );
 
-  // Slow continuous yaw for a living 3D graph (Obsidian vault feel).
   useEffect(() => {
     const id = setInterval(() => setTick((n) => n + 1), 48);
     return () => clearInterval(id);
@@ -176,13 +168,11 @@ export default function CircleGraphScreen() {
     const n = friends.length;
     if (n === 0) return [];
     return friends.map((f, i) => {
-      // Fibonacci-ish sphere distribution so links read in 3D space
       const golden = Math.PI * (3 - Math.sqrt(5));
-      const y = 1 - (i / Math.max(n - 1, 1)) * 2; // 1 → -1
+      const y = 1 - (i / Math.max(n - 1, 1)) * 2;
       const phi = Math.acos(Math.max(-1, Math.min(1, y)));
       const theta = golden * i + i * 0.35;
-      const projected = projectSphere(theta, phi, radius, cx, cy, yaw, pitch);
-      return { ...f, ...projected };
+      return { ...f, ...projectSphere(theta, phi, radius, cx, cy, yaw, pitch) };
     });
   }, [friends, radius, cx, cy, yaw, pitch]);
 
@@ -190,29 +180,6 @@ export default function CircleGraphScreen() {
     () => [...nodes].sort((a, b) => a.depth - b.depth),
     [nodes],
   );
-
-  // Line edges: only me → friend (hub), plus a few near-neighbor links for Obsidian density.
-  const neighborEdges = useMemo(() => {
-    const edges: { a: ProjectedNode; b: ProjectedNode }[] = [];
-    if (nodes.length < 2) return edges;
-    for (let i = 0; i < nodes.length; i++) {
-      const a = nodes[i]!;
-      let best: ProjectedNode | null = null;
-      let bestD = Infinity;
-      for (let j = 0; j < nodes.length; j++) {
-        if (i === j) continue;
-        const b = nodes[j]!;
-        const d =
-          (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2 * radius * radius;
-        if (d < bestD) {
-          bestD = d;
-          best = b;
-        }
-      }
-      if (best && a.id < best.id) edges.push({ a, b: best });
-    }
-    return edges;
-  }, [nodes, radius]);
 
   if (loading && !me) {
     return (
@@ -230,6 +197,7 @@ export default function CircleGraphScreen() {
           subtitle={t.states.forbiddenSub}
           actionLabel={t.diary.back}
           onAction={() => router.back()}
+          style={styles.forbidden}
         />
       </SafeAreaView>
     );
@@ -258,22 +226,7 @@ export default function CircleGraphScreen() {
       </View>
 
       <View style={styles.stage}>
-        {/* Soft depth wash — no filled disk; the graph is lines */}
-        <View
-          pointerEvents="none"
-          style={[
-            styles.depthWash,
-            {
-              left: cx - radius * 1.35,
-              top: cy - radius * 1.15,
-              width: radius * 2.7,
-              height: radius * 2.3,
-              borderRadius: radius * 1.35,
-            },
-          ]}
-        />
-
-        {/* Hub edges: me → each friend */}
+        {/* Hub only: me → each friend */}
         {nodes.map((n) => (
           <EdgeLine
             key={`hub-${n.id}`}
@@ -282,22 +235,8 @@ export default function CircleGraphScreen() {
             x2={n.x}
             y2={n.y}
             color={hotId === n.id ? GRAPH.edgeHot : GRAPH.edge}
-            thickness={hotId === n.id ? 1.6 : 1}
-            opacity={0.35 + n.depth * 0.45}
-          />
-        ))}
-
-        {/* Sparse neighbor links */}
-        {neighborEdges.map(({ a, b }) => (
-          <EdgeLine
-            key={`n-${a.id}-${b.id}`}
-            x1={a.x}
-            y1={a.y}
-            x2={b.x}
-            y2={b.y}
-            color={GRAPH.edge}
-            thickness={0.8}
-            opacity={0.18 + Math.min(a.depth, b.depth) * 0.25}
+            thickness={hotId === n.id ? 1.5 : 1}
+            opacity={0.4 + n.depth * 0.45}
           />
         ))}
 
@@ -315,7 +254,6 @@ export default function CircleGraphScreen() {
           />
         ))}
 
-        {/* A — shared center */}
         <Pressable
           onPress={() => router.push(`/diary/${me.id}`)}
           style={[styles.selfWrap, { left: cx - 28, top: cy - 28 }]}
@@ -463,6 +401,7 @@ function EdgeLine({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: GRAPH.space },
+  forbidden: { backgroundColor: GRAPH.space },
   header: {
     paddingHorizontal: 16,
     paddingBottom: 8,
@@ -481,11 +420,6 @@ const styles = StyleSheet.create({
   },
   open: { color: GRAPH.muted, fontSize: 12, fontWeight: '600' },
   stage: { flex: 1 },
-  depthWash: {
-    position: 'absolute',
-    backgroundColor: GRAPH.spaceDeep,
-    opacity: 0.55,
-  },
   selfWrap: {
     position: 'absolute',
     width: 56,
@@ -509,14 +443,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.65)',
-    shadowColor: '#C48A2A',
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
-  selfLetter: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  selfLetter: { color: '#1A1410', fontWeight: '800', fontSize: 16 },
   selfName: {
     position: 'absolute',
     top: 52,
@@ -536,15 +465,10 @@ const styles = StyleSheet.create({
     borderColor: GRAPH.nodeBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#2A241C',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   nodeOrbHot: {
-    borderColor: 'rgba(180,120,60,0.55)',
-    backgroundColor: '#FFFCF6',
+    borderColor: 'rgba(255,220,160,0.7)',
+    backgroundColor: GRAPH.nodeHot,
   },
   nodeLetter: { color: GRAPH.ink, fontWeight: '800', fontSize: 11 },
   nodeLabel: {
