@@ -1,0 +1,22 @@
+/** Pastel mini-hompy tokens — aligned with web `src/index.css` cy-* palette. */
+export const hompy = {
+  table: '#FBF6EE',
+  paper: '#FFFDF8',
+  canvas: '#FFFDF5',
+  ink: '#2A2430',
+  muted: '#5C5666',
+  soft: '#8A8494',
+  sky: '#DFF4FF',
+  skyInk: '#9EC5E8',
+  blush: '#FFE8F0',
+  blushInk: '#E8A4C4',
+  mint: '#E5F8E8',
+  mintInk: '#A8D5B0',
+  peach: '#FFF3E0',
+  peachInk: '#E8C9A0',
+  lavender: '#F0EAFF',
+  lavenderInk: '#C9B8E8',
+  lemon: '#FFFCE8',
+  lemonInk: '#E8DFA0',
+  hard: '#2F2A26',
+} as const;

@@ -231,7 +231,7 @@ interface ModerationStatusRow {
   updatedAt: string;
 }
 
-interface GuestbookRow {
+export interface GuestbookRow {
   id: string;
   ownerUserId: string;
   authorUserId: string;
@@ -1174,6 +1174,18 @@ export async function getDiary(userId: string, entryDate?: string): Promise<Diar
   await loadLocalDb();
   const date = entryDate ?? todayInTz();
   return memory.diary.find((d) => d.userId === userId && d.entryDate === date) ?? null;
+}
+
+/** Recent entries for mini-hompy week calendar (newest first). */
+export async function listRecentDiaryEntries(
+  userId: string,
+  limit = 14,
+): Promise<DiaryEntry[]> {
+  await loadLocalDb();
+  return memory.diary
+    .filter((d) => d.userId === userId)
+    .sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1))
+    .slice(0, limit);
 }
 
 export async function canViewDiary(

@@ -10,12 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  AppEmptyState,
   AppErrorState,
   AppForbiddenState,
   AppLoadingState,
   OfflineBanner,
 } from '@/components/states';
+import { DiaryHompyHome, type VisitMember } from '@/features/diary-home';
 import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
 import {
   getDiaryMusic,
@@ -31,6 +31,11 @@ import {
   getProfile,
   getSessionProfile,
   isBlockedBetween,
+  listCircleMembers,
+  listGuestbook,
+  listMyCircleSummaries,
+  listRecentDiaryEntries,
+  type GuestbookRow,
   upsertDiary,
 } from '@/features/local/repository';
 import { blockUser } from '@/features/moderation/block.service';
@@ -43,18 +48,27 @@ import { AnalyticsEvents, track } from '@/lib/logger';
 import {
   DIARY_MOODS,
   MAX_TEN_CHAR,
+  type CircleSummary,
   type DiaryEntry,
   type DiaryMood,
   type Profile,
 } from '@/types/domain';
 import { colors } from '@/constants/theme';
+import { hompy } from '@/constants/hompy-theme';
 import { useMessages, DEFAULT_TIMEZONE } from '@/i18n';
+
 export default function DiaryScreen() {
   const t = useMessages();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [me, setMe] = useState<Profile | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
+  const [recentEntries, setRecentEntries] = useState<DiaryEntry[]>([]);
+  const [guestbook, setGuestbook] = useState<GuestbookRow[]>([]);
+  const [guestbookAuthors, setGuestbookAuthors] = useState<Record<string, string>>({});
+  const [circles, setCircles] = useState<CircleSummary[]>([]);
+  const [visitMembers, setVisitMembers] = useState<VisitMember[]>([]);
+  const [canView, setCanView] = useState(true);
   const [music, setMusic] = useState<DiaryMusicCard | null>(null);
   const [editing, setEditing] = useState(false);
   const [pickingMusic, setPickingMusic] = useState(false);
@@ -82,6 +96,43 @@ export default function DiaryScreen() {
     }
   }, []);
 
+  const loadHompySide = useCallback(async (session: Profile, ownerId: string) => {
+    const myCircles = await listMyCircleSummaries(session.id);
+    setCircles(myCircles);
+    setRecentEntries(await listRecentDiaryEntries(ownerId, 21));
+
+    const seen = new Set<string>();
+    const visits: VisitMember[] = [];
+    for (const c of myCircles) {
+      try {
+        const members = await listCircleMembers(c.id, session.id);
+        for (const m of members) {
+          if (m.userId === session.id || seen.has(m.userId)) continue;
+          seen.add(m.userId);
+          const p = await getProfile(m.userId);
+          if (p) visits.push({ id: p.id, name: p.displayName });
+        }
+      } catch {
+        /* ignore forbidden roster */
+      }
+    }
+    setVisitMembers(visits.slice(0, 8));
+
+    try {
+      const gb = await listGuestbook(ownerId, session.id);
+      setGuestbook(gb.slice(0, 6));
+      const authors: Record<string, string> = {};
+      for (const g of gb.slice(0, 6)) {
+        if (authors[g.authorUserId]) continue;
+        const ap = await getProfile(g.authorUserId);
+        if (ap) authors[g.authorUserId] = ap.displayName;
+      }
+      setGuestbookAuthors(authors);
+    } catch {
+      setGuestbook([]);
+    }
+  }, []);
+
   useEffect(() => {
     void (async () => {
       try {
@@ -99,9 +150,11 @@ export default function DiaryScreen() {
         setOwner(await getProfile(userId));
         const d = await getDiary(userId);
         setEntry(d);
+        let viewable = true;
         if (d) {
           if (!(await canViewDiary(session.id, userId, d)) && session.id !== userId) {
             setBlocked(true);
+            viewable = false;
           } else {
             await loadMusic(d.id, session.id);
             track(AnalyticsEvents.diary_viewed, { market: 'US' });
@@ -110,6 +163,8 @@ export default function DiaryScreen() {
           setTen(d.tenCharText ?? '');
           setShortText(d.shortText ?? '');
         }
+        setCanView(viewable || session.id === userId);
+        await loadHompySide(session, userId);
       } catch (e) {
         const app = toAppError(e);
         if (app.code === 'OFFLINE') setOffline(true);
@@ -118,7 +173,7 @@ export default function DiaryScreen() {
         setLoading(false);
       }
     })();
-  }, [userId, loadMusic]);
+  }, [userId, loadMusic, loadHompySide]);
 
   const isMine = me?.id === userId;
   const moodMeta = DIARY_MOODS.find((m) => m.id === (entry?.mood ?? mood));
@@ -269,7 +324,7 @@ export default function DiaryScreen() {
 
   if (loading && !owner) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.hompySafe}>
         <AppLoadingState />
       </SafeAreaView>
     );
@@ -277,7 +332,7 @@ export default function DiaryScreen() {
 
   if (!owner) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.hompySafe}>
         <AppErrorState code="NOT_FOUND" />
       </SafeAreaView>
     );
@@ -285,7 +340,7 @@ export default function DiaryScreen() {
 
   if (blockedRelation || blocked) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.hompySafe}>
         <AppForbiddenState
           title={t.diary.privateBlocked}
           actionLabel={t.diary.back}
@@ -295,14 +350,76 @@ export default function DiaryScreen() {
     );
   }
 
+  // Mini-hompy home (sphere → diary). Edit form keeps the same pastel shell.
+  if (!editing && me) {
+    return (
+      <SafeAreaView style={styles.hompySafe} edges={['top', 'left', 'right']}>
+        <OfflineBanner
+          visible={offline || draftHint}
+          message={draftHint ? t.diary.draftSaved : undefined}
+        />
+        {error ? <AppErrorState message={error} /> : null}
+        <DiaryHompyHome
+          me={me}
+          owner={owner}
+          entry={entry}
+          recentEntries={recentEntries}
+          guestbook={guestbook}
+          guestbookAuthors={guestbookAuthors}
+          circles={circles}
+          visitMembers={visitMembers}
+          music={music}
+          canView={canView}
+          onEditToday={() => setEditing(true)}
+          onOpenMusic={() => void onOpenMusic()}
+        />
+        {!isMine ? (
+          <View style={styles.hompySafety}>
+            <Pressable
+              style={styles.report}
+              onPress={() =>
+                router.push({
+                  pathname: '/reports/create',
+                  params: {
+                    targetType: 'profile',
+                    targetId: userId,
+                    targetUserId: userId,
+                  },
+                })
+              }
+            >
+              <Text style={styles.reportText}>{t.reports.reportProfile}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.report}
+              onPress={() =>
+                void (async () => {
+                  await blockUser(me.id, userId);
+                  track(AnalyticsEvents.block_created, { market: 'US' });
+                  router.replace('/(tabs)/universe');
+                })()
+              }
+            >
+              <Text style={styles.reportText}>{t.reports.blockUser}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.hompySafe}>
       <OfflineBanner
         visible={offline || draftHint}
         message={draftHint ? t.diary.draftSaved : undefined}
       />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button">
+      <ScrollView contentContainerStyle={styles.editCanvas}>
+        <Pressable
+          onPress={() => setEditing(false)}
+          accessibilityRole="button"
+          style={styles.backRow}
+        >
           <Text style={styles.back}>{t.diary.back}</Text>
         </Pressable>
         <Text style={styles.title}>{owner.displayName}</Text>
@@ -359,7 +476,7 @@ export default function DiaryScreen() {
           </View>
         ) : null}
 
-        {editing && isMine ? (
+        {isMine ? (
           <View>
             <Text style={styles.label}>{t.diary.mood}</Text>
             <View style={styles.moodRow}>
@@ -416,7 +533,7 @@ export default function DiaryScreen() {
               </>
             ) : pickingMusic ? (
               <SpotifyTrackPicker
-                onSelect={(t) => void onSelectTrack(t)}
+                onSelect={(tr) => void onSelectTrack(tr)}
                 onCancel={() => setPickingMusic(false)}
               />
             ) : (
@@ -436,98 +553,6 @@ export default function DiaryScreen() {
               <Text style={styles.btnText}>{t.diary.save}</Text>
             </Pressable>
           </View>
-        ) : (
-          <View>
-            {entry?.tenCharText ? (
-              <View style={styles.card}>
-                <Text style={styles.label}>{t.diary.tenChar}</Text>
-                <Text style={styles.ten}>{entry.tenCharText}</Text>
-              </View>
-            ) : null}
-            {entry?.shortText ? (
-              <View style={styles.card}>
-                <Text style={styles.label}>{t.diary.shortText}</Text>
-                <Text style={styles.body}>{entry.shortText}</Text>
-              </View>
-            ) : null}
-            {music ? (
-              <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
-            ) : isMine ? (
-              <Text style={styles.empty}>{t.diary.emptyMusic}</Text>
-            ) : null}
-            {!entry ? (
-              <AppEmptyState
-                title={isMine ? t.diary.emptyToday : t.diary.emptyOther}
-                subtitle={isMine ? t.diary.emptyTodaySub : undefined}
-              />
-            ) : null}
-            {error ? <AppErrorState message={error} /> : null}
-          </View>
-        )}
-
-        {isMine && !editing ? (
-          <Pressable
-            style={styles.btn}
-            onPress={() => setEditing(true)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.btnText}>{t.diary.editToday}</Text>
-          </Pressable>
-        ) : null}
-
-        <>
-          <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
-            <Text>{t.diary.guestbook}</Text>
-          </Pressable>
-          <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
-            <Text>{t.diary.past}</Text>
-          </Pressable>
-          <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
-            <Text>{t.diary.album}</Text>
-          </Pressable>
-        </>
-
-        {!isMine && me ? (
-          <>
-            <Pressable
-              style={styles.link}
-              onPress={() =>
-                router.push({
-                  pathname: '/messages/compose',
-                  params: { recipientId: userId },
-                })
-              }
-            >
-              <Text>{t.diary.leaveNote}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.report}
-              onPress={() =>
-                router.push({
-                  pathname: '/reports/create',
-                  params: {
-                    targetType: 'profile',
-                    targetId: userId,
-                    targetUserId: userId,
-                  },
-                })
-              }
-            >
-              <Text style={styles.reportText}>{t.reports.reportProfile}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.report}
-              onPress={() =>
-                void (async () => {
-                  await blockUser(me.id, userId);
-                  track(AnalyticsEvents.block_created, { market: 'US' });
-                  router.replace('/(tabs)/universe');
-                })()
-              }
-            >
-              <Text style={styles.reportText}>{t.reports.blockUser}</Text>
-            </Pressable>
-          </>
         ) : null}
       </ScrollView>
     </SafeAreaView>
@@ -535,21 +560,22 @@ export default function DiaryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg, padding: 16 },
-  back: { color: colors.muted, marginBottom: 12, minHeight: 44 },
+  hompySafe: { flex: 1, backgroundColor: hompy.table },
+  hompySafety: { paddingHorizontal: 16, paddingBottom: 8 },
+  editCanvas: {
+    padding: 16,
+    paddingBottom: 40,
+    backgroundColor: hompy.canvas,
+    margin: 8,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: 'rgba(139,122,158,0.25)',
+  },
+  backRow: { minHeight: 44, justifyContent: 'center' },
+  back: { color: colors.muted },
   title: { fontSize: 24, fontWeight: '600', color: colors.ink },
   mood: { marginTop: 6, color: colors.muted, marginBottom: 16 },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: 14,
-    marginBottom: 12,
-  },
   label: { fontSize: 11, color: colors.accent, marginBottom: 6, marginTop: 8 },
-  ten: { fontSize: 18, fontWeight: '600', color: colors.ink },
-  body: { color: colors.ink, lineHeight: 20 },
   empty: { color: colors.soft, marginVertical: 16 },
   moodRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -594,7 +620,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-  report: { marginTop: 10, padding: 12, minHeight: 44, justifyContent: 'center' },
+  report: { marginTop: 4, padding: 10, minHeight: 40, justifyContent: 'center' },
   reportText: { color: colors.warn, fontSize: 13 },
   error: { color: colors.warn, marginTop: 8 },
   conflict: {

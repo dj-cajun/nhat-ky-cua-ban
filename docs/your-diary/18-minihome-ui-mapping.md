@@ -33,5 +33,6 @@
 
 ## 런타임
 
-- 기본 `/` = Your Diary (가입 → 우주 → **미니홈피 다이어리**)
+- 웹 `/` = Your Diary (가입 → 우주 → **미니홈피 다이어리** `DiaryHomePage`)
+- 모바일: 인트로 → My Universe → 구체 탭 → **`DiaryHompyHome`** (`mobile/src/features/diary-home/`) → `/diary/[userId]`
 - 학교/Zalo HompyApp은 기본 마운트하지 않음
