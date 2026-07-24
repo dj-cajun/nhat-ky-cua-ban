@@ -44,11 +44,8 @@ fi
 echo "▶ 마이그레이션 push..."
 supabase db push
 
-echo "▶ 시드 데이터 (schools)..."
-supabase db execute -f supabase/seed.sql 2>/dev/null || {
-  echo "   seed.sql은 Dashboard SQL Editor에서 실행하거나:"
-  echo "   psql \"\$(supabase db url)\" -f supabase/seed.sql"
-}
+echo "▶ Optional seed (legacy school fixtures — not required for circle product)..."
+# supabase db execute -f supabase/seed.sql
 
 REF=$(cat supabase/.temp/project-ref 2>/dev/null || supabase projects list -o json | python3 -c "import json,sys; ps=json.load(sys.stdin); print(next(p['id'] for p in ps if '$PROJECT_NAME' in p.get('name','')))")
 API_URL="https://${REF}.supabase.co"

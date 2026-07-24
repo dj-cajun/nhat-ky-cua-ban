@@ -8,7 +8,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/lib/profanity-shield.ts'],
+      include: ['src/lib/v1-store.ts'],
     },
   },
   resolve: {
