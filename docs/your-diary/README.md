@@ -3,7 +3,7 @@
 > **제품**: Your Diary (US App Store 우선) · 한국어 내부명 「너의 다이어리」  
 > **한 줄**: 세 사람이 신뢰의 문을 열고, 서로의 하루를 조용히 방문하는 폐쇄형 서클 다이어리  
 > **이 폴더**: 대화·중간 지침서를 **계속 업데이트**하는 현행 문서.  
-> **레거시**: 루트 `docs/PRD.md` · `TRD.md` 등은 **구 Zalo 미니앱(베트남 학급)** 기획 — 참고만, 제품 기준 아님.
+> **레거시**: `docs/archive/zalo-demo/` — 구 Zalo 미니앱(베트남 학급) 기획 — 참고만, 제품 기준 아님.
 
 | 문서 | 내용 |
 |------|------|
@@ -19,6 +19,7 @@
 | [10-phase-8-anonymous-board.md](./10-phase-8-anonymous-board.md) | 8단계: 가명 게시판 |
 | [11-phase-9-private-messages.md](./11-phase-9-private-messages.md) | 9단계: 실명·가명 쪽지 |
 | [12-phase-10-spotify-music.md](./12-phase-10-spotify-music.md) | 10단계: Spotify 오늘의 음악 |
+| [13-phase-10.5-legacy-cleanup.md](./13-phase-10.5-legacy-cleanup.md) | 10.5단계: 레거시 정리 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.
