@@ -68,7 +68,7 @@ npm run start:intro   # 전체 인트로 강제 (iOS/Android 시뮬레이터 권
 
 뷰포트가 9:16이 아니면 인트로 MP4는 `object-fit: cover`로 잘린다.  
 라이브 2D/3D는 먼저 **같은 cover 픽셀**(인트로 원 크기)로 맞춘 뒤,  
-`homeDiameterRatio`(뷰포트 너비 ~34%)로 **줄어드는 정착 애니**를 재생한다.
+`homeDiameterRatio`(뷰포트 너비 ~34%)로 **천천히 줄어드는** 정착 애니(~2.4s)를 재생한다.
 
 ---
 

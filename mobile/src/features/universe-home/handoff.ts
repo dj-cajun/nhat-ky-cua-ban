@@ -13,7 +13,7 @@ export const INTRO_HANDOFF = {
   /** After profile: planets stagger */
   planetsStaggerSec: 1.0,
   /** Intro-size → home-size shrink after crossfade */
-  settleDurationSec: 0.9,
+  settleDurationSec: 2.4,
   /** Short cold-start when full intro already seen */
   shortAppearSec: 0.55,
   sphere: {

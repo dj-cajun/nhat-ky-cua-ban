@@ -62,7 +62,7 @@ export function FallbackUniverse({
       sizeScale.value = animateSettle
         ? withTiming(settleScale, {
             duration: INTRO_HANDOFF.settleDurationSec * 1000,
-            easing: Easing.out(Easing.cubic),
+            easing: Easing.out(Easing.quad),
           })
         : settleScale;
     } else {
