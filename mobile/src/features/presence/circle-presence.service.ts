@@ -180,11 +180,13 @@ class CirclePresenceService {
    * @deprecated Phase 6.5 — orange comes from verified-response map, not Presence.
    * Kept as no-op so callers do not accidentally reintroduce spoofable orange.
    */
-  async trackResponded(_activePostId: string): Promise<void> {
-    /* intentional no-op */
+  async trackResponded(activePostId: string): Promise<void> {
+    void activePostId;
+    /* intentional no-op — orange from verified-response map only */
   }
 
-  async trackPresent(_activePostId?: string | null): Promise<void> {
+  async trackPresent(activePostId?: string | null): Promise<void> {
+    void activePostId;
     if (!this.circleId || !this.userId || this.connection !== 'connected') return;
     if (!isSupabaseConfigured) {
       this.setMap(normalizePresenceState(this.localSessions));

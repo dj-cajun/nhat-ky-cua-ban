@@ -27,6 +27,7 @@ export default function OnboardingScreen() {
       await signUpLocal(displayName.trim());
       track(AnalyticsEvents.onboarding_completed, {
         market: 'US',
+        has_email: Boolean(email),
       });
       router.replace('/(tabs)/universe');
     } catch (e) {

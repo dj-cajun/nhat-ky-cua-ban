@@ -36,7 +36,6 @@ export function secureLog(
 ): void {
   const safe = sanitizeAttrs(attrs);
   if (isDev) {
-    // eslint-disable-next-line no-console
     console[level === 'debug' ? 'log' : level](`[${event}]`, safe ?? {});
   }
   // Production: wire to Sentry/etc with beforeSend → sanitizeAttrs

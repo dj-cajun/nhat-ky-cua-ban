@@ -3006,7 +3006,7 @@ export async function hidePrivateMessage(messageId: string, userId: string): Pro
   if (userId !== msg.senderId && userId !== msg.recipientId) {
     throw new AppError('FORBIDDEN', "You can't hide this.");
   }
-  let st = memory.privateMessageUserStates.find(
+  const st = memory.privateMessageUserStates.find(
     (s) => s.messageId === messageId && s.userId === userId,
   );
   if (!st) {

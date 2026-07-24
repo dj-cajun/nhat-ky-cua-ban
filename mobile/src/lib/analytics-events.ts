@@ -25,6 +25,7 @@ export type SafeAnalyticsAttrs = {
   app_version?: string;
   has_music?: boolean;
   has_photo?: boolean;
+  has_email?: boolean;
   sender_mode?: 'named' | 'alias';
   reason_code?: string;
 };
