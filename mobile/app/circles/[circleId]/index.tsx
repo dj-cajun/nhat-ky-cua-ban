@@ -7,7 +7,6 @@ import {
   getCircle,
   getProfile,
   getSessionProfile,
-  hasResponded,
   isCircleMember,
   listCircleMembers,
 } from '@/features/local/repository';
@@ -26,14 +25,12 @@ export default function CircleHomeScreen() {
   const [forbidden, setForbidden] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [activePostId, setActivePostId] = useState<string | null>(null);
-  const [selfResponded, setSelfResponded] = useState(false);
 
   const { badgeFor, connection } = useCirclePresence({
     circleId,
     userId: meId,
     isMember: isMember && !forbidden,
     activePostId,
-    selfResponded,
   });
 
   const reload = useCallback(async () => {
@@ -63,11 +60,6 @@ export default function CircleHomeScreen() {
     setMembers(enriched);
     const active = await getActivePost(circleId);
     setActivePostId(active?.id ?? null);
-    if (active) {
-      setSelfResponded(await hasResponded(active.id, me.id));
-    } else {
-      setSelfResponded(false);
-    }
   }, [circleId]);
 
   useFocusEffect(
@@ -112,7 +104,7 @@ export default function CircleHomeScreen() {
       <Text style={styles.section}>{en.circle.members}</Text>
       <View style={styles.grid}>
         {members.map((m) => {
-          // Presence + current-post responded (from Presence payload after DB). No presence → no badge.
+          // Presence (here) + server-verified response map (never Presence.responded)
           const badge = badgeFor(m.userId);
           return (
             <Pressable

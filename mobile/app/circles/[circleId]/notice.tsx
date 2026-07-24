@@ -18,6 +18,7 @@ import { useActiveCirclePost } from '@/features/circle-posts/use-active-circle-p
 import { useCirclePostResponse } from '@/features/circle-posts/use-circle-post-response';
 import { getSessionProfile, isCircleMember } from '@/features/local/repository';
 import { circlePresenceService } from '@/features/presence/circle-presence.service';
+import { syncVerifiedBadges } from '@/features/presence/verified-response.service';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
@@ -77,16 +78,15 @@ export default function NoticeScreen() {
       circleId,
       userId,
       isMember: true,
-      activePostId: post?.id ?? null,
-      state: liveSummary?.currentUserResponded && post?.id ? 'responded' : 'present',
     });
-  }, [userId, circleId, post?.id, liveSummary?.currentUserResponded]);
+    void syncVerifiedBadges({ circleId, viewerId: userId });
+  }, [userId, circleId, post?.id]);
 
   const create = async (type: 'notice' | 'poll') => {
     if (!userId || !circleId) return;
     setCreateError('');
     try {
-      const created = await createCirclePost({
+      await createCirclePost({
         circleId,
         createdBy: userId,
         type,
@@ -100,7 +100,7 @@ export default function NoticeScreen() {
       setOpt1('');
       setOpt2('');
       setOpt3('');
-      await circlePresenceService.trackPresent(created.id);
+      await syncVerifiedBadges({ circleId, viewerId: userId });
       await reload();
     } catch (e) {
       setCreateError(toAppError(e).message);
@@ -112,7 +112,7 @@ export default function NoticeScreen() {
     setCreateError('');
     try {
       await closeCirclePost(post.id, userId);
-      await circlePresenceService.trackPresent(null);
+      await syncVerifiedBadges({ circleId: post.circleId, viewerId: userId });
       await reload();
     } catch (e) {
       setCreateError(toAppError(e).message);

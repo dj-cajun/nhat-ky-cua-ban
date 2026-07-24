@@ -64,6 +64,18 @@ interface NotificationEvent {
   readAt?: string;
 }
 
+interface RealtimeOutboxRow {
+  id: string;
+  eventType: string;
+  circleId: string;
+  postId?: string;
+  userId?: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+  deliveredAt?: string;
+  attemptCount: number;
+}
+
 interface Member {
   circleId: string;
   userId: string;
@@ -89,6 +101,7 @@ interface LocalDb {
   responses: ResponseRecord[];
   reports: ReportRecord[];
   notifications: NotificationEvent[];
+  realtimeOutbox: RealtimeOutboxRow[];
 }
 
 export interface CirclePostRecord {
@@ -148,6 +161,7 @@ const empty: LocalDb = {
   responses: [],
   reports: [],
   notifications: [],
+  realtimeOutbox: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -198,6 +212,7 @@ export async function loadLocalDb(): Promise<void> {
     memory.reports ??= [];
     memory.blocks ??= [];
     memory.notifications ??= [];
+    memory.realtimeOutbox ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -1196,7 +1211,69 @@ function assertPostOpen(post: CirclePostRecord | undefined): asserts post is Cir
   }
 }
 
-/** Mirror acknowledge_circle_notice — idempotent */
+async function enqueueAndPublishVerified(input: {
+  circleId: string;
+  postId: string;
+  userId: string;
+}): Promise<void> {
+  memory.realtimeOutbox.push({
+    id: uid(),
+    eventType: 'circle_response_verified',
+    circleId: input.circleId,
+    postId: input.postId,
+    userId: input.userId,
+    payload: {
+      type: 'circle_response_verified',
+      circleId: input.circleId,
+      postId: input.postId,
+      userId: input.userId,
+      responded: true,
+    },
+    createdAt: now(),
+    attemptCount: 0,
+  });
+  await persist();
+  const { emitLocalVerifiedEvent } = await import(
+    '@/features/presence/verified-response.bus'
+  );
+  emitLocalVerifiedEvent({
+    type: 'circle_response_verified',
+    circleId: input.circleId,
+    postId: input.postId,
+    userId: input.userId,
+    responded: true,
+  });
+}
+
+async function enqueueAndPublishClosed(input: {
+  circleId: string;
+  postId: string;
+}): Promise<void> {
+  memory.realtimeOutbox.push({
+    id: uid(),
+    eventType: 'circle_post_closed',
+    circleId: input.circleId,
+    postId: input.postId,
+    payload: {
+      type: 'circle_post_closed',
+      circleId: input.circleId,
+      postId: input.postId,
+    },
+    createdAt: now(),
+    attemptCount: 0,
+  });
+  await persist();
+  const { emitLocalVerifiedEvent } = await import(
+    '@/features/presence/verified-response.bus'
+  );
+  emitLocalVerifiedEvent({
+    type: 'circle_post_closed',
+    circleId: input.circleId,
+    postId: input.postId,
+  });
+}
+
+/** Mirror acknowledge_circle_notice — idempotent + outbox */
 export async function acknowledgeCircleNotice(input: {
   postId: string;
   userId: string;
@@ -1218,22 +1295,25 @@ export async function acknowledgeCircleNotice(input: {
     existing.updatedAt = now();
     existing.responseType = 'acknowledged';
     existing.optionId = undefined;
-    await persist();
-    return { responded: true, postId: input.postId };
+  } else {
+    memory.responses.push({
+      postId: input.postId,
+      userId: input.userId,
+      responseType: 'acknowledged',
+      respondedAt: now(),
+      updatedAt: now(),
+    });
   }
-
-  memory.responses.push({
+  await persist();
+  await enqueueAndPublishVerified({
+    circleId: post.circleId,
     postId: input.postId,
     userId: input.userId,
-    responseType: 'acknowledged',
-    respondedAt: now(),
-    updatedAt: now(),
   });
-  await persist();
   return { responded: true, postId: input.postId };
 }
 
-/** Mirror respond_circle_poll — changeable before close */
+/** Mirror respond_circle_poll — changeable before close + outbox */
 export async function respondCirclePoll(input: {
   postId: string;
   userId: string;
@@ -1270,6 +1350,11 @@ export async function respondCirclePoll(input: {
     });
   }
   await persist();
+  await enqueueAndPublishVerified({
+    circleId: post.circleId,
+    postId: input.postId,
+    userId: input.userId,
+  });
   return { responded: true, postId: input.postId, optionId: input.optionId };
 }
 
@@ -1304,12 +1389,48 @@ export async function hasResponded(postId: string, userId: string): Promise<bool
 }
 
 /**
- * Demo-only helper. Do not use for client badge UI — response user lists must not leak.
- * Prefer Presence responded + current post id.
+ * Demo-only. Prefer getActivePostBadgeStates for UI badges (membership-scoped).
  */
 export async function listRespondedUserIds(postId: string): Promise<string[]> {
   await loadLocalDb();
   return memory.responses.filter((r) => r.postId === postId).map((r) => r.userId);
+}
+
+/** Mirror get_active_post_badge_states — responded ids only for active post */
+export async function getActivePostBadgeStates(
+  circleId: string,
+  viewerId: string,
+): Promise<{ postId: string | null; respondedUserIds: string[] }> {
+  await loadLocalDb();
+  if (!(await isCircleMember(circleId, viewerId))) {
+    throw new AppError('FORBIDDEN', 'Only members can view badge states.');
+  }
+
+  const post =
+    memory.posts.find(
+      (p) =>
+        p.circleId === circleId &&
+        p.status === 'active' &&
+        new Date(p.closesAt).getTime() > Date.now(),
+    ) ?? null;
+
+  if (!post) {
+    return { postId: null, respondedUserIds: [] };
+  }
+
+  const activeMemberIds = new Set(
+    memory.members
+      .filter((m) => m.circleId === circleId && m.status === 'active')
+      .map((m) => m.userId),
+  );
+
+  return {
+    postId: post.id,
+    respondedUserIds: memory.responses
+      .filter((r) => r.postId === post.id && activeMemberIds.has(r.userId))
+      .map((r) => r.userId)
+      .sort(),
+  };
 }
 
 /** Mirror get_circle_post_summary — aggregates only; poll counts after respond */
@@ -1423,6 +1544,9 @@ export async function closePost(postId: string, actorId: string): Promise<void> 
   if (post.status === 'active') {
     post.status = 'closed';
     post.closedAt = now();
+    await persist();
+    await enqueueAndPublishClosed({ circleId: post.circleId, postId: post.id });
+    return;
   }
   await persist();
 }

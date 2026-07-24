@@ -2,32 +2,31 @@ import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import { circlePresenceService } from './circle-presence.service';
 import { useCirclePresenceStore } from './circle-presence.store';
-import type { CirclePresenceState, RealtimeConnectionState } from './circle-presence.types';
-import { getMemberBadgeFromMap } from './derive-member-badge';
+import type { RealtimeConnectionState } from './circle-presence.types';
+import { getMemberBadgeFromMaps } from './derive-member-badge';
 import { isPresentInMap } from './normalize-presence-state';
+import { syncVerifiedBadges } from './verified-response.service';
+import { useVerifiedResponseStore } from './verified-response.store';
 
 /**
- * Subscribe to Presence for the currently open circle only.
- * Untracks on unmount, route leave, and AppState background.
- *
- * `selfResponded` / `activePostId` come from DB (or summary RPC), not from optimistic UI.
+ * Presence + verified badge sync for the open circle.
+ * Reconnect / focus → re-fetch badge states (Broadcast may have been missed).
  */
 export function useCirclePresence(input: {
   circleId: string | undefined;
   userId: string | null;
   isMember: boolean;
   activePostId?: string | null;
-  /** True only after DB confirms this user responded to activePostId */
-  selfResponded?: boolean;
 }) {
   const bind = useCirclePresenceStore((s) => s.bind);
   const map = useCirclePresenceStore((s) => s.map);
   const connection = useCirclePresenceStore((s) => s.connection);
+  const verifiedMap = useVerifiedResponseStore((s) => s.map);
+  const storeActivePostId = useVerifiedResponseStore((s) => s.activePostId);
+  const clearVerified = useVerifiedResponseStore((s) => s.clear);
   const [ready, setReady] = useState(false);
 
-  const activePostId = input.activePostId ?? null;
-  const selfState: CirclePresenceState =
-    input.selfResponded && activePostId ? 'responded' : 'present';
+  const activePostId = input.activePostId ?? storeActivePostId ?? null;
 
   useEffect(() => bind(), [bind]);
 
@@ -36,29 +35,49 @@ export function useCirclePresence(input: {
     async function run() {
       if (!input.circleId || !input.userId) {
         await circlePresenceService.leave();
+        clearVerified();
         setReady(false);
         return;
       }
       if (!input.isMember) {
         await circlePresenceService.leave();
+        clearVerified();
         setReady(false);
         return;
       }
+
       const status = await circlePresenceService.join({
         circleId: input.circleId,
         userId: input.userId,
         isMember: input.isMember,
-        activePostId,
-        state: selfState,
       });
+
+      try {
+        await syncVerifiedBadges({
+          circleId: input.circleId,
+          viewerId: input.userId,
+        });
+      } catch {
+        /* badge sync failure must not break presence */
+      }
+
       if (!cancelled) setReady(status === 'connected');
     }
     void run();
     return () => {
       cancelled = true;
       void circlePresenceService.leave();
+      clearVerified();
     };
-  }, [input.circleId, input.userId, input.isMember, activePostId, selfState]);
+  }, [input.circleId, input.userId, input.isMember, clearVerified]);
+
+  useEffect(() => {
+    if (!input.circleId || !input.userId || !input.isMember) return;
+    void syncVerifiedBadges({
+      circleId: input.circleId,
+      viewerId: input.userId,
+    });
+  }, [input.activePostId, input.circleId, input.userId, input.isMember]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
@@ -66,24 +85,42 @@ export function useCirclePresence(input: {
       if (state === 'background' || state === 'inactive') {
         void circlePresenceService.onAppBackground();
       } else if (state === 'active' && input.isMember) {
-        void circlePresenceService.onAppForeground({
-          circleId: input.circleId,
-          userId: input.userId,
-          isMember: true,
-          activePostId,
-          state: selfState,
-        });
+        void (async () => {
+          await circlePresenceService.onAppForeground({
+            circleId: input.circleId!,
+            userId: input.userId!,
+            isMember: true,
+          });
+          await syncVerifiedBadges({
+            circleId: input.circleId!,
+            viewerId: input.userId!,
+          });
+        })();
       }
     });
     return () => sub.remove();
-  }, [input.circleId, input.userId, input.isMember, activePostId, selfState]);
+  }, [input.circleId, input.userId, input.isMember]);
 
   return {
     map,
+    verifiedMap,
     connection: connection as RealtimeConnectionState,
     ready,
+    activePostId,
     isPresent: (userId: string) => isPresentInMap(map, userId),
-    badgeFor: (userId: string) => getMemberBadgeFromMap(map, userId, activePostId),
-    trackRespondedAfterDb: (postId: string) => circlePresenceService.trackResponded(postId),
+    badgeFor: (userId: string) =>
+      getMemberBadgeFromMaps({
+        presenceMap: map,
+        verifiedMap,
+        userId,
+        activePostId,
+      }),
+    resyncBadges: async () => {
+      if (!input.circleId || !input.userId) return;
+      await syncVerifiedBadges({
+        circleId: input.circleId,
+        viewerId: input.userId,
+      });
+    },
   };
 }

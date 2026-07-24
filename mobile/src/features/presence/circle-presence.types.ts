@@ -1,13 +1,9 @@
-/** Phase 5–6 — circle Presence types */
-
-export type CirclePresenceState = 'present' | 'responded';
+/** Phase 5–6.5 — Presence is presence-only (never trust responded for badges). */
 
 export type CirclePresencePayload = {
   userId: string;
   circleId: string;
-  /** Current active post this session claims; null when quiet */
-  activePostId: string | null;
-  state: CirclePresenceState;
+  state: 'present';
   sessionId: string;
 };
 
@@ -16,9 +12,6 @@ export type CirclePresenceMap = Record<
   {
     userId: string;
     sessionCount: number;
-    /** Aggregated: responded wins over present when any session matches */
-    state: CirclePresenceState;
-    activePostId: string | null;
   }
 >;
 

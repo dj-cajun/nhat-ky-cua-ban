@@ -1,27 +1,25 @@
-import type { CirclePresenceMap } from './circle-presence.types';
+import type { VerifiedResponseMap } from './verified-response.types';
 
 export type MemberBadge = 'green' | 'orange' | null;
 
 /**
- * Badge = Presence (in the space) + response for the *current* active post.
- * No presence → no badge, even if the user responded in DB.
+ * Phase 6.5 — Presence proves "here"; verified map proves "responded".
+ * Spoofed Presence `responded` is irrelevant.
  */
-export function getMemberBadge(
-  presence:
-    | {
-        state: 'present' | 'responded';
-        activePostId: string | null;
-      }
-    | null
-    | undefined,
-  currentPostId: string | null,
-): MemberBadge {
-  if (!presence) return null;
+export function deriveMemberBadge(input: {
+  isPresent: boolean;
+  activePostId: string | null;
+  verifiedResponse?: {
+    postId: string;
+    responded: true;
+  } | null;
+}): MemberBadge {
+  if (!input.isPresent) return null;
 
   if (
-    currentPostId &&
-    presence.state === 'responded' &&
-    presence.activePostId === currentPostId
+    input.activePostId &&
+    input.verifiedResponse?.responded === true &&
+    input.verifiedResponse.postId === input.activePostId
   ) {
     return 'orange';
   }
@@ -29,19 +27,36 @@ export function getMemberBadge(
   return 'green';
 }
 
-/**
- * Multi-device: any session responded for current post → orange;
- * else any session present → green; else none.
- */
-export function getMemberBadgeFromMap(
-  map: CirclePresenceMap,
-  userId: string,
+export function getMemberBadgeFromMaps(input: {
+  presenceMap: { [userId: string]: { sessionCount: number } };
+  verifiedMap: VerifiedResponseMap;
+  userId: string;
+  activePostId: string | null;
+}): MemberBadge {
+  const sessions = input.presenceMap[input.userId]?.sessionCount ?? 0;
+  return deriveMemberBadge({
+    isPresent: sessions > 0,
+    activePostId: input.activePostId,
+    verifiedResponse: input.verifiedMap[input.userId] ?? null,
+  });
+}
+
+/** @deprecated Prefer deriveMemberBadge — kept for transition */
+export function getMemberBadge(
+  presence:
+    | {
+        state?: string;
+        activePostId?: string | null;
+      }
+    | null
+    | undefined,
   currentPostId: string | null,
+  verified?: { postId: string; responded: true } | null,
 ): MemberBadge {
-  const entry = map[userId];
-  if (!entry || entry.sessionCount < 1) return null;
-  return getMemberBadge(
-    { state: entry.state, activePostId: entry.activePostId },
-    currentPostId,
-  );
+  if (!presence) return null;
+  return deriveMemberBadge({
+    isPresent: true,
+    activePostId: currentPostId,
+    verifiedResponse: verified ?? null,
+  });
 }

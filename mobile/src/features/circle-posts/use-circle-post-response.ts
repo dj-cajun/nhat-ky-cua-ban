@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
-import { circlePresenceService } from '@/features/presence/circle-presence.service';
+import { syncVerifiedBadges } from '@/features/presence/verified-response.service';
 import {
   acknowledgeCircleNotice,
   getCirclePostSummary,
@@ -10,7 +10,8 @@ import {
 import type { CirclePost, CirclePostSummary } from './circle-post.types';
 
 /**
- * DB-first response: only after RPC success do we track Presence responded.
+ * DB-first response. Orange comes from verified-response map (outbox / RPC sync),
+ * not from Presence trackResponded.
  */
 export function useCirclePostResponse(input: {
   userId: string | null;
@@ -19,6 +20,17 @@ export function useCirclePostResponse(input: {
 }) {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+
+  const afterDbSuccess = async () => {
+    if (!input.userId || !input.post) return;
+    // Local outbox already published; resync covers reconnect / late peers
+    await syncVerifiedBadges({
+      circleId: input.post.circleId,
+      viewerId: input.userId,
+    });
+    const summary = await getCirclePostSummary(input.post.id, input.userId);
+    input.onSummary?.(summary);
+  };
 
   const acknowledge = async () => {
     if (!input.userId || !input.post || input.post.type !== 'notice') return;
@@ -32,10 +44,8 @@ export function useCirclePostResponse(input: {
       if (!result.responded) {
         throw new Error('Response was not saved.');
       }
-      await circlePresenceService.trackResponded(input.post.id);
       track('notice_responded', { type: 'notice', market: 'US' });
-      const summary = await getCirclePostSummary(input.post.id, input.userId);
-      input.onSummary?.(summary);
+      await afterDbSuccess();
     } catch (e) {
       setError(toAppError(e).message);
     } finally {
@@ -56,10 +66,8 @@ export function useCirclePostResponse(input: {
       if (!result.responded) {
         throw new Error('Response was not saved.');
       }
-      await circlePresenceService.trackResponded(input.post.id);
       track('notice_responded', { type: 'poll', market: 'US' });
-      const summary = await getCirclePostSummary(input.post.id, input.userId);
-      input.onSummary?.(summary);
+      await afterDbSuccess();
     } catch (e) {
       setError(toAppError(e).message);
     } finally {

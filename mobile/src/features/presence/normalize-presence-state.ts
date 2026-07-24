@@ -1,51 +1,50 @@
 import type { CirclePresenceMap, CirclePresencePayload } from './circle-presence.types';
 
-function isPayload(meta: unknown): meta is CirclePresencePayload {
-  if (!meta || typeof meta !== 'object') return false;
-  const m = meta as CirclePresencePayload;
-  return typeof m.userId === 'string' && (m.state === 'present' || m.state === 'responded');
+function userIdFromPresenceKey(key: string): string | null {
+  // Keys are `${userId}:${sessionNonce}` — UUID is 36 chars with hyphens
+  const m = key.match(
+    /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/,
+  );
+  return m?.[1] ?? null;
 }
 
 /**
- * Normalize Realtime presenceState() / local session bags.
- * Same user + multiple devices → one badge entry.
- * Priority: any session responded → state responded (keep that activePostId).
+ * Normalize Presence bags.
+ * - Treats any payload as present-only (ignores spoofed `responded`).
+ * - Prefers userId from presence key over payload.userId (anti userId spoof).
  */
 export function normalizePresenceState(
   raw: Record<string, unknown[] | undefined> | CirclePresencePayload[],
 ): CirclePresenceMap {
   const map: CirclePresenceMap = {};
 
-  const metas: CirclePresencePayload[] = Array.isArray(raw)
-    ? raw.filter(isPayload)
-    : Object.values(raw).flatMap((arr) => (arr ?? []).filter(isPayload));
-
-  for (const meta of metas) {
-    const userId = meta.userId;
-    const activePostId =
-      typeof meta.activePostId === 'string' || meta.activePostId === null
-        ? meta.activePostId
-        : null;
-
-    if (!map[userId]) {
-      map[userId] = {
-        userId,
-        sessionCount: 0,
-        state: 'present',
-        activePostId: null,
-      };
+  if (Array.isArray(raw)) {
+    for (const meta of raw) {
+      if (!meta || typeof meta !== 'object') continue;
+      const userId = typeof meta.userId === 'string' ? meta.userId : null;
+      if (!userId) continue;
+      if (!map[userId]) map[userId] = { userId, sessionCount: 0 };
+      map[userId].sessionCount += 1;
     }
+    return map;
+  }
 
-    map[userId].sessionCount += 1;
+  for (const [key, arr] of Object.entries(raw)) {
+    const keyUserId = userIdFromPresenceKey(key);
+    for (const meta of arr ?? []) {
+      if (!meta || typeof meta !== 'object') continue;
+      const payload = meta as { userId?: unknown };
+      const payloadUserId = typeof payload.userId === 'string' ? payload.userId : null;
 
-    if (meta.state === 'responded') {
-      map[userId].state = 'responded';
-      map[userId].activePostId = activePostId;
-    } else if (map[userId].state !== 'responded') {
-      map[userId].state = 'present';
-      if (map[userId].activePostId == null && activePostId) {
-        map[userId].activePostId = activePostId;
+      // Prefer channel key identity; drop payloads that claim a different user.
+      const userId = keyUserId ?? payloadUserId;
+      if (!userId) continue;
+      if (keyUserId && payloadUserId && keyUserId !== payloadUserId) {
+        continue;
       }
+
+      if (!map[userId]) map[userId] = { userId, sessionCount: 0 };
+      map[userId].sessionCount += 1;
     }
   }
 

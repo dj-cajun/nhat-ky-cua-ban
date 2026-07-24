@@ -3,28 +3,24 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type {
   CirclePresenceMap,
   CirclePresencePayload,
-  CirclePresenceState,
   RealtimeConnectionState,
 } from './circle-presence.types';
 import { normalizePresenceState } from './normalize-presence-state';
 import { circleTopic, parseCircleTopic } from './topic';
+import { parseVerifiedBroadcastPayload } from './verified-response.bus';
+import { useVerifiedResponseStore } from './verified-response.store';
 
 type Listener = (map: CirclePresenceMap, connection: RealtimeConnectionState) => void;
 
 /**
  * At most one open circle channel.
- * Production: private Realtime Presence.
- * Demo (no Supabase): in-memory local track only — never writes last_seen to DB.
- *
- * Phase 6: track `responded` only after DB response RPC succeeds.
+ * Phase 6.5: Presence = present only. Orange comes from verified-response map.
  */
 class CirclePresenceService {
   private channel: RealtimeChannel | null = null;
   private circleId: string | null = null;
   private userId: string | null = null;
   private sessionId: string | null = null;
-  private activePostId: string | null = null;
-  private state: CirclePresenceState = 'present';
   private connection: RealtimeConnectionState = 'idle';
   private localSessions: CirclePresencePayload[] = [];
   private listeners = new Set<Listener>();
@@ -36,6 +32,10 @@ class CirclePresenceService {
 
   getMap(): CirclePresenceMap {
     return this.map;
+  }
+
+  getChannel(): RealtimeChannel | null {
+    return this.channel;
   }
 
   subscribe(listener: Listener): () => void {
@@ -62,19 +62,34 @@ class CirclePresenceService {
     return {
       userId: this.userId!,
       circleId: this.circleId!,
-      activePostId: this.activePostId,
-      state: this.state,
+      state: 'present',
       sessionId: this.sessionId!,
     };
+  }
+
+  private bindBroadcast(channel: RealtimeChannel) {
+    channel
+      .on('broadcast', { event: 'circle_response_verified' }, ({ payload }) => {
+        const parsed = parseVerifiedBroadcastPayload(payload);
+        if (parsed?.type === 'circle_response_verified') {
+          useVerifiedResponseStore.getState().applyVerified(parsed);
+        }
+      })
+      .on('broadcast', { event: 'circle_post_closed' }, ({ payload }) => {
+        const parsed = parseVerifiedBroadcastPayload({
+          ...(payload as object),
+          type: 'circle_post_closed',
+        });
+        if (parsed?.type === 'circle_post_closed') {
+          useVerifiedResponseStore.getState().applyClosed(parsed);
+        }
+      });
   }
 
   async join(input: {
     circleId: string;
     userId: string;
     isMember: boolean;
-    activePostId?: string | null;
-    /** Only pass responded after DB save success */
-    state?: CirclePresenceState;
   }): Promise<RealtimeConnectionState> {
     if (!input.isMember) {
       await this.leave();
@@ -88,21 +103,12 @@ class CirclePresenceService {
       return 'error';
     }
 
-    const nextPostId = input.activePostId ?? null;
-    const nextState = input.state ?? 'present';
-
-    // Already on this circle with same user — refresh track if post/state changed
     if (
       this.channel &&
       this.circleId === input.circleId &&
       this.userId === input.userId &&
       this.connection === 'connected'
     ) {
-      if (this.activePostId !== nextPostId || this.state !== nextState) {
-        this.activePostId = nextPostId;
-        this.state = nextState;
-        await this.retrack();
-      }
       return 'connected';
     }
 
@@ -110,8 +116,6 @@ class CirclePresenceService {
 
     this.circleId = input.circleId;
     this.userId = input.userId;
-    this.activePostId = nextPostId;
-    this.state = nextState === 'responded' ? 'responded' : 'present';
     this.sessionId = `${input.userId}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2, 8)}`;
     this.setConnection('connecting');
 
@@ -140,6 +144,7 @@ class CirclePresenceService {
         this.setMap(normalizePresenceState(state as Record<string, CirclePresencePayload[]>));
       });
 
+    this.bindBroadcast(channel);
     this.channel = channel;
 
     return new Promise((resolve) => {
@@ -171,57 +176,64 @@ class CirclePresenceService {
     return 'connected';
   }
 
-  private async retrack(): Promise<void> {
-    if (!this.circleId || !this.userId || !this.sessionId) return;
-    const payload = this.buildPayload();
+  /**
+   * @deprecated Phase 6.5 — orange comes from verified-response map, not Presence.
+   * Kept as no-op so callers do not accidentally reintroduce spoofable orange.
+   */
+  async trackResponded(_activePostId: string): Promise<void> {
+    /* intentional no-op */
+  }
+
+  async trackPresent(_activePostId?: string | null): Promise<void> {
+    if (!this.circleId || !this.userId || this.connection !== 'connected') return;
     if (!isSupabaseConfigured) {
-      this.localSessions = this.localSessions.map((s) =>
-        s.sessionId === this.sessionId ? payload : s,
-      );
-      if (!this.localSessions.some((s) => s.sessionId === this.sessionId)) {
-        this.localSessions.push(payload);
-      }
       this.setMap(normalizePresenceState(this.localSessions));
       return;
     }
     if (this.channel) {
-      await this.channel.track(payload);
+      await this.channel.track(this.buildPayload());
     }
   }
 
-  /**
-   * Call only after acknowledge / poll RPC returns responded=true.
-   * Never call before DB save success.
-   */
-  async trackResponded(activePostId: string): Promise<void> {
-    if (!this.circleId || !this.userId || this.connection !== 'connected') return;
-    this.activePostId = activePostId;
-    this.state = 'responded';
-    await this.retrack();
-  }
-
-  /** When a new active post appears, reset local claim to present for that post */
-  async trackPresent(activePostId: string | null): Promise<void> {
-    if (!this.circleId || !this.userId || this.connection !== 'connected') return;
-    this.activePostId = activePostId;
-    this.state = 'present';
-    await this.retrack();
-  }
-
-  /** Demo helper: simulate another device/session for the same user */
-  trackLocalExtraSession(
-    userId: string,
-    opts?: { state?: CirclePresenceState; activePostId?: string | null },
-  ): void {
+  /** Demo: extra session for same user (still present-only) */
+  trackLocalExtraSession(userId: string): void {
     if (!this.circleId || isSupabaseConfigured) return;
     this.localSessions.push({
       userId,
       circleId: this.circleId,
-      activePostId: opts?.activePostId ?? null,
-      state: opts?.state ?? 'present',
+      state: 'present',
       sessionId: `${userId}:extra:${Date.now()}`,
     });
     this.setMap(normalizePresenceState(this.localSessions));
+  }
+
+  /**
+   * Demo attack helper — simulates spoofed responded payload.
+   * Must NOT create orange badges after 6.5.
+   */
+  trackLocalSpoofedResponded(userId: string, _postId: string): void {
+    if (!this.circleId || isSupabaseConfigured) return;
+    this.localSessions.push({
+      userId,
+      circleId: this.circleId,
+      state: 'present',
+      sessionId: `${userId}:spoof:${Date.now()}`,
+    });
+    // Even if attacker sent responded in raw bag, normalizer ignores it:
+    const spoofBag = {
+      [`${userId}:spoof`]: [
+        {
+          userId,
+          circleId: this.circleId,
+          state: 'responded',
+          activePostId: _postId,
+          sessionId: `${userId}:spoof`,
+        },
+      ],
+    };
+    this.setMap(
+      normalizePresenceState(spoofBag as Record<string, CirclePresencePayload[]>),
+    );
   }
 
   async leave(): Promise<void> {
@@ -232,8 +244,6 @@ class CirclePresenceService {
     this.circleId = null;
     this.userId = null;
     this.sessionId = null;
-    this.activePostId = null;
-    this.state = 'present';
 
     if (ch) {
       try {
@@ -258,8 +268,6 @@ class CirclePresenceService {
     circleId: string;
     userId: string;
     isMember: boolean;
-    activePostId?: string | null;
-    state?: CirclePresenceState;
   }): Promise<void> {
     await this.join(input);
   }

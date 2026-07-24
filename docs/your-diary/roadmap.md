@@ -7,8 +7,8 @@
 
 ## 현재 위치
 
-**6단계 공지·투표 + 주홍 배지 완료** → 다음은 **6.5 Presence 주홍 위조 방어**, 그다음 **7 신고·차단**  
-(가명보다 신고·차단이 먼저)
+**6.5단계 Presence 주홍 위조 방어 완료** → 다음은 **7 신고·차단 기반**  
+(가명·쪽지는 7 이후)
 
 ---
 
@@ -20,30 +20,29 @@
 | US 피벗 | English · Apple-first | ✅ | [03](./03-us-market.md) |
 | **4** | 3인 추천 가입 | ✅ | [04](./04-phase-4-join.md), 010 |
 | **4.5** | RLS 침투 | ✅ | [05](./05-phase-4.5-rls.md), 011 |
-| **5** | Realtime 초록 배지 | ✅ | [06](./06-phase-5-realtime-presence.md), **012**, `features/presence/` |
-| **6** | 공지·투표 + 주홍 배지 | ✅ | [07](./07-phase-6-circle-posts.md), **013**, `features/circle-posts/` |
-| **6.5** | Presence 주홍 위조 방어 | 🔜 다음 | 서버 Broadcast / DB 검증 |
-| **7** | 신고·차단 기반 | ⬜ | 가명 전 필수 |
+| **5** | Realtime 초록 배지 | ✅ | [06](./06-phase-5-realtime-presence.md), **012** |
+| **6** | 공지·투표 + 주홍 | ✅ | [07](./07-phase-6-circle-posts.md), **013** |
+| **6.5** | 주홍 위조 방어 | ✅ | [08](./08-phase-6.5-verified-response-badges.md), **014** |
+| **7** | 신고·차단 기반 | 🔜 다음 | 가명 전 필수 |
 | 8 | 가명 게시판 | ⬜ | 7 이후 |
 | 9 | 실명·가명 쪽지 | ⬜ | — |
 | 10 | Spotify / EAS | ⬜ | — |
 
 ---
 
-## 6단계 완료 체크
+## 6.5 완료 체크
 
 | 조건 | 상태 |
 |------|------|
-| 서클당 활성 공지·투표 1개 (DB unique) | ✅ |
-| create / acknowledge / respond / summary / close RPC | ✅ 013 |
-| DB 성공 후에만 주홍 | ✅ trackResponded |
-| 선택지 변경 가능 | ✅ |
-| 개인 선택·미응답 명단 비공개 | ✅ |
-| 새 게시물 시 기존 주홍 무효 (`activePostId`) | ✅ |
-| Presence 없으면 배지 없음 | ✅ |
-| 다중 기기 배지 통합 | ✅ normalize |
-| 직접 DML·responses SELECT 차단 | ✅ |
-| 013만 추가 · 기존 마이그레이션 무수정 | ✅ |
+| Presence `responded` 제거·무시 | ✅ |
+| Outbox + 서버 Broadcast만 주홍 신호 | ✅ 014 |
+| 일반 사용자 Broadcast INSERT 불가 | ✅ RLS |
+| 진입 시 `get_active_post_badge_states` | ✅ |
+| 재연결 시 RPC 재동기화 | ✅ |
+| 새 게시물 시 verified map 초기화 | ✅ |
+| 비멤버 badge state 불가 | ✅ |
+| 선택·시각 비공개 | ✅ |
+| 013 무수정 · 014만 추가 | ✅ |
 
 ---
 
@@ -59,6 +58,5 @@
 
 | 날짜 | 내용 |
 |------|------|
-| 2026-07-24 | your-diary 문서 폴더 · 4 · 4.5 |
-| 2026-07-24 | 5단계 Presence 012 + mobile feature |
-| 2026-07-24 | 6단계 공지·투표 013 + 주홍 배지 |
+| 2026-07-24 | 4 · 4.5 · 5 · 6 |
+| 2026-07-24 | 6.5 verified badges 014 + Presence present-only |
