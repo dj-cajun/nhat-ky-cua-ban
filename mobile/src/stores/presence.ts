@@ -1,3 +1,7 @@
+/**
+ * @deprecated Prefer `@/features/presence/*` (Realtime private Presence).
+ * Kept for notice-screen interim orange hints until phase 6 wires responded into Presence.
+ */
 import { create } from 'zustand';
 
 export type PresenceState = 'present' | 'responded';
@@ -18,10 +22,6 @@ interface PresenceStore {
   list: (circleId: string) => PresenceMember[];
 }
 
-/**
- * In-memory presence only (Realtime Presence in production).
- * Do not persist last_seen to DB every second.
- */
 export const usePresenceStore = create<PresenceStore>((set, get) => ({
   byCircle: {},
   enter: (circleId, userId, sessionId) => {

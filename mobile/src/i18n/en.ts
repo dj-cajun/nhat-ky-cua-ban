@@ -131,7 +131,8 @@ export const en = {
     totalResponded: (n: number) => `${n} responded`,
     noActive: 'No active notice or poll. Keep the circle quiet.',
     closePost: 'Close',
-    present: 'Here now',
+    present: 'In this circle now',
+    hereNow: 'Here in this space',
     respondedBadge: 'Responded',
     aliasTitle: 'Alias board',
     aliasSub:
