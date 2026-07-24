@@ -29,8 +29,8 @@ test.describe('v1 내 우주', () => {
     await page.getByRole('button', { name: '내 다이어리 만들기' }).click();
     await page.getByRole('button', { name: /서클 만들기/ }).click();
     await page.getByPlaceholder('예: 금요일 스터디').fill('금요일 스터디');
-    await page.getByRole('button', { name: '민서' }).click();
-    await page.getByRole('button', { name: '준호' }).click();
+    await page.getByRole('button', { name: 'Minseo' }).click();
+    await page.getByRole('button', { name: 'Junho' }).click();
     await page.getByRole('button', { name: '개척 요청 보내기' }).click();
     await expect(page.getByText('서클을 열어요')).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: '서클 열기' }).click();
@@ -46,16 +46,16 @@ test.describe('v1 내 우주', () => {
     await page.getByRole('button', { name: '내 다이어리 만들기' }).click();
     await page.getByRole('button', { name: /서클 만들기/ }).click();
     await page.getByPlaceholder('예: 금요일 스터디').fill('추천 서클');
-    await page.getByRole('button', { name: '민서' }).click();
-    await page.getByRole('button', { name: '준호' }).click();
+    await page.getByRole('button', { name: 'Minseo' }).click();
+    await page.getByRole('button', { name: 'Junho' }).click();
     await page.getByRole('button', { name: '개척 요청 보내기' }).click();
     await page.getByRole('button', { name: '서클 열기' }).click();
     await page.getByRole('button', { name: /초대 가입/ }).click();
-    await page.getByRole('button', { name: /유진으로 가입/ }).click();
+    await page.getByRole('button', { name: /Yujin으로 가입/ }).click();
     await expect(page.getByText('3명의 추천이 있어야')).toBeVisible();
     await page.getByRole('button', { name: '개척자' }).click();
-    await page.getByRole('button', { name: '민서' }).click();
-    await page.getByRole('button', { name: '서연' }).click();
+    await page.getByRole('button', { name: 'Minseo' }).click();
+    await page.getByRole('button', { name: 'Seoyeon' }).click();
     await page.getByRole('button', { name: '가입 신청', exact: true }).click();
     await expect(page.getByText(/추천 요청 중 · 0\/3/)).toBeVisible();
 
@@ -69,33 +69,33 @@ test.describe('v1 내 우주', () => {
     await page.goto('/?');
     await expect(page.getByText('관계의 지도')).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: '추천 요청함' }).click();
-    await page.getByRole('button', { name: '유진' }).click();
+    await page.getByRole('button', { name: 'Yujin' }).click();
     await page.getByRole('button', { name: '추천하기' }).click();
     await expect(page.getByText(/공개되지 않습니다/)).toBeVisible();
 
     await page.evaluate(() => {
       const profiles = JSON.parse(localStorage.getItem('v1_profiles_directory') || '[]');
-      const minseo = profiles.find((p: { displayName: string }) => p.displayName === '민서');
+      const minseo = profiles.find((p: { displayName: string }) => p.displayName === 'Minseo');
       if (minseo) localStorage.setItem('v1_profile', JSON.stringify(minseo));
     });
     await page.goto('/?');
     await page.getByRole('button', { name: '추천 요청함' }).click();
-    await page.getByRole('button', { name: '유진' }).click();
+    await page.getByRole('button', { name: 'Yujin' }).click();
     await page.getByRole('button', { name: '추천하기' }).click();
 
     await page.evaluate(() => {
       const profiles = JSON.parse(localStorage.getItem('v1_profiles_directory') || '[]');
-      const seoyeon = profiles.find((p: { displayName: string }) => p.displayName === '서연');
+      const seoyeon = profiles.find((p: { displayName: string }) => p.displayName === 'Seoyeon');
       if (seoyeon) localStorage.setItem('v1_profile', JSON.stringify(seoyeon));
     });
     await page.goto('/?');
     await page.getByRole('button', { name: '추천 요청함' }).click();
-    await page.getByRole('button', { name: '유진' }).click();
+    await page.getByRole('button', { name: 'Yujin' }).click();
     await page.getByRole('button', { name: '추천하기' }).click();
 
     await page.evaluate(() => {
       const profiles = JSON.parse(localStorage.getItem('v1_profiles_directory') || '[]');
-      const yujin = profiles.find((p: { displayName: string }) => p.displayName === '유진');
+      const yujin = profiles.find((p: { displayName: string }) => p.displayName === 'Yujin');
       if (yujin) localStorage.setItem('v1_profile', JSON.stringify(yujin));
     });
     await page.goto('/?');

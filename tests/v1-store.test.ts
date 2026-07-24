@@ -71,8 +71,8 @@ describe('v1 three-recommendation join', () => {
     const me = store.createProfile({ displayName: '개척자', authProvider: 'demo' });
     store.ensureDemoDirectory(me.id);
     const friends = store.listDirectoryProfiles(me.id);
-    const minseo = friends.find((f) => f.displayName === '민서')!;
-    const junho = friends.find((f) => f.displayName === '준호')!;
+    const minseo = friends.find((f) => f.displayName === 'Minseo')!;
+    const junho = friends.find((f) => f.displayName === 'Junho')!;
     const { invites } = store.proposeCircle({
       name: '금요 스터디',
       inviterId: me.id,

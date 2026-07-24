@@ -9,8 +9,8 @@ function openCircle() {
   const me = store.createProfile({ displayName: 'A-개척자', authProvider: 'demo' });
   store.ensureDemoDirectory(me.id);
   const friends = store.listDirectoryProfiles(me.id);
-  const minseo = friends.find((f) => f.displayName === '민서')!;
-  const junho = friends.find((f) => f.displayName === '준호')!;
+  const minseo = friends.find((f) => f.displayName === 'Minseo')!;
+  const junho = friends.find((f) => f.displayName === 'Junho')!;
   const { invites } = store.proposeCircle({
     name: '보안서클',
     inviterId: me.id,

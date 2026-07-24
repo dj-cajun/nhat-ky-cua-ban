@@ -130,7 +130,7 @@ export function CircleJoinPage() {
       )}
 
       <button type="button" onClick={becomeYujin} className="mt-6 text-xs text-[#8a8178] underline">
-        데모: 유진으로 가입 신청
+        데모: Yujin으로 가입 신청
       </button>
     </div>
   );
