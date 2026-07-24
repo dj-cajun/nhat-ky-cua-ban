@@ -3,6 +3,7 @@ export {
   INTRO_VIDEO_ASPECT,
   resolveHandoffLayout,
   resolveHandoffSphere3D,
+  resolveSettleScale,
   type HandoffLayout,
 } from './handoff-layout';
 export { getIntroVideoSource, HAS_INTRO_VIDEO } from './intro-asset';

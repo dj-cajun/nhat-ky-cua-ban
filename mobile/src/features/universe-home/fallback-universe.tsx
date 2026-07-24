@@ -12,10 +12,10 @@ import { useEffect, useMemo } from 'react';
 import { Pressable, Text, useWindowDimensions } from 'react-native';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { INTRO_HANDOFF } from './handoff';
-import { resolveHandoffLayout } from './handoff-layout';
+import { resolveHandoffLayout, resolveSettleScale } from './handoff-layout';
 
 /**
- * Low-end / GL-fail / web: same cover-matched handoff pose as intro MP4.
+ * Web / GL-fail universe: crossfade at intro size, then shrink to home size.
  */
 export function FallbackUniverse({
   profile,
@@ -24,6 +24,7 @@ export function FallbackUniverse({
   revealPlanets,
   onPressSelf,
   onPressCircle,
+  animateSettle = true,
 }: {
   profile: Profile;
   circles: CircleSummary[];
@@ -31,14 +32,19 @@ export function FallbackUniverse({
   revealPlanets: boolean;
   onPressSelf: () => void;
   onPressCircle: (id: string) => void;
+  /** When false (tab return / skip intro), land already settled. */
+  animateSettle?: boolean;
 }) {
   const { width, height } = useWindowDimensions();
   const layout = resolveHandoffLayout(width, height);
   const { diameter, left, top, cxPx, cyPx } = layout;
+  const settleScale = resolveSettleScale(width, height);
 
   const floatY = useSharedValue(0);
   const profileOp = useSharedValue(0);
   const planetOp = useSharedValue(0);
+  // 1 = intro size, settleScale = home size
+  const sizeScale = useSharedValue(revealProfile && !animateSettle ? settleScale : 1);
 
   useEffect(() => {
     floatY.value = withRepeat(
@@ -50,6 +56,19 @@ export function FallbackUniverse({
       true,
     );
   }, [floatY]);
+
+  useEffect(() => {
+    if (revealProfile) {
+      sizeScale.value = animateSettle
+        ? withTiming(settleScale, {
+            duration: INTRO_HANDOFF.settleDurationSec * 1000,
+            easing: Easing.out(Easing.cubic),
+          })
+        : settleScale;
+    } else {
+      sizeScale.value = 1;
+    }
+  }, [revealProfile, animateSettle, settleScale, sizeScale]);
 
   useEffect(() => {
     profileOp.value = withTiming(revealProfile ? 1 : 0, {
@@ -67,7 +86,7 @@ export function FallbackUniverse({
   }, [revealPlanets, planetOp]);
 
   const sphereStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatY.value }],
+    transform: [{ translateY: floatY.value }, { scale: sizeScale.value }],
   }));
 
   const profileStyle = useAnimatedStyle(() => ({
@@ -80,16 +99,20 @@ export function FallbackUniverse({
 
   const planets = useMemo(() => {
     const n = Math.max(circles.length, 1);
+    // Orbit relative to settled home size so planets sit around the final orb.
+    const homeR = (INTRO_HANDOFF.sphere.homeDiameterRatio * width) / 2;
     return circles.map((c, i) => {
       const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-      const radius = Math.min(width, height) * (0.28 + (i % 3) * 0.04);
+      const radius = homeR * (2.4 + (i % 3) * 0.35);
       return {
         ...c,
         x: cxPx + Math.cos(angle) * radius - 36,
         y: cyPx + Math.sin(angle) * radius - 36,
       };
     });
-  }, [circles, width, height, cxPx, cyPx]);
+  }, [circles, width, cxPx, cyPx]);
+
+  const hit = diameter * 1.35;
 
   return (
     <View style={[styles.root, { width, height, backgroundColor: INTRO_HANDOFF.spaceBg }]}>
@@ -101,8 +124,8 @@ export function FallbackUniverse({
           {
             left: left - diameter * 0.175,
             top: top - diameter * 0.175,
-            width: diameter * 1.35,
-            height: diameter * 1.35,
+            width: hit,
+            height: hit,
           },
           sphereStyle,
         ]}
@@ -119,9 +142,9 @@ export function FallbackUniverse({
             style={[
               styles.glow,
               {
-                width: diameter * 1.35,
-                height: diameter * 1.35,
-                borderRadius: diameter * 0.675,
+                width: hit,
+                height: hit,
+                borderRadius: hit / 2,
                 backgroundColor: INTRO_HANDOFF.sphere.glow,
               },
             ]}

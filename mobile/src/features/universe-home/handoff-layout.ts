@@ -64,25 +64,55 @@ export function resolveHandoffLayout(width: number, height: number): HandoffLayo
 }
 
 /**
- * World-space radius + Y for a perspective camera looking at the origin along -Z,
- * so the projected sphere matches `resolveHandoffLayout`.
+ * Scale factor from cover-matched intro diameter → settled home diameter.
+ * Always ≤ 1 (shrink). Same center — apply as a uniform scale.
  */
-export function resolveHandoffSphere3D(opts: {
+export function resolveSettleScale(width: number, height: number): number {
+  const intro = resolveHandoffLayout(width, height);
+  const homeDiameter = INTRO_HANDOFF.sphere.homeDiameterRatio * Math.max(width, 1);
+  if (intro.diameter <= 0) return 1;
+  return Math.min(1, homeDiameter / intro.diameter);
+}
+
+/**
+ * World-space radius + Y for a perspective camera looking at the origin along -Z,
+ * so the projected sphere matches a viewport diameter ratio.
+ */
+export function resolveSphere3D(opts: {
   viewportWidth: number;
   viewportHeight: number;
+  /** Diameter as fraction of viewport width */
+  diameterRatio: number;
+  /** Center Y as fraction of viewport height (0 = top) */
+  cy: number;
   /** Camera distance from origin on +Z */
   cameraZ: number;
   /** Vertical FOV in degrees */
   fovDeg: number;
 }): { radius: number; y: number } {
-  const layout = resolveHandoffLayout(opts.viewportWidth, opts.viewportHeight);
+  const w = Math.max(opts.viewportWidth, 1);
+  const h = Math.max(opts.viewportHeight, 1);
   const dist = Math.abs(opts.cameraZ);
   const fov = (opts.fovDeg * Math.PI) / 180;
   const visH = 2 * dist * Math.tan(fov / 2);
-  const visW = visH * (layout.width / layout.height);
-  const radius = (layout.diameterRatio * visW) / 2;
-  // NDC +Y is up; layout.cy is from top.
-  const ndcY = 1 - 2 * layout.cy;
+  const visW = visH * (w / h);
+  const radius = (opts.diameterRatio * visW) / 2;
+  const ndcY = 1 - 2 * opts.cy;
   const y = ndcY * (visH / 2);
   return { radius, y };
+}
+
+/** Intro (cover-matched) world radius + Y. */
+export function resolveHandoffSphere3D(opts: {
+  viewportWidth: number;
+  viewportHeight: number;
+  cameraZ: number;
+  fovDeg: number;
+}): { radius: number; y: number } {
+  const layout = resolveHandoffLayout(opts.viewportWidth, opts.viewportHeight);
+  return resolveSphere3D({
+    ...opts,
+    diameterRatio: layout.diameterRatio,
+    cy: layout.cy,
+  });
 }

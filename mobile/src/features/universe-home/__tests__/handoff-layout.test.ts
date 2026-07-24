@@ -4,6 +4,7 @@ import {
   INTRO_VIDEO_ASPECT,
   resolveHandoffLayout,
   resolveHandoffSphere3D,
+  resolveSettleScale,
 } from '../handoff-layout';
 
 describe('resolveHandoffLayout', () => {
@@ -56,5 +57,20 @@ describe('resolveHandoffSphere3D', () => {
     expect(projectedRatio).toBeCloseTo(layout.diameterRatio, 5);
     // Old hardcoded radius 0.85 was far too large on phones.
     expect(radius).toBeLessThan(0.55);
+  });
+});
+
+describe('resolveSettleScale', () => {
+  it('shrinks from intro cover size down to homeDiameterRatio', () => {
+    const w = 390;
+    const h = 844;
+    const intro = resolveHandoffLayout(w, h);
+    const scale = resolveSettleScale(w, h);
+    expect(scale).toBeLessThan(1);
+    expect(scale).toBeCloseTo(
+      (INTRO_HANDOFF.sphere.homeDiameterRatio * w) / intro.diameter,
+      5,
+    );
+    expect(INTRO_HANDOFF.settleDurationSec).toBeGreaterThan(0);
   });
 });

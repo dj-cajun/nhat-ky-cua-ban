@@ -10,6 +10,8 @@ export type UniverseSceneProps = {
   onPressCircle: (id: string) => void;
   /** Prefer 2D glow spheres (no GL). */
   forceFallback?: boolean;
+  /** Shrink intro → home after handoff. Off for tab-return. */
+  animateSettle?: boolean;
 };
 
 /**

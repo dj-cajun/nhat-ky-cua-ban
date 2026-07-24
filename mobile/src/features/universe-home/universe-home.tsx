@@ -163,6 +163,7 @@ export function UniverseHome({
             onPressSelf={onPressSelf}
             onPressCircle={onPressCircle}
             forceFallback={forceFallback}
+            animateSettle={mode === 'full' || mode === 'short'}
           />
         ) : null}
       </Animated.View>

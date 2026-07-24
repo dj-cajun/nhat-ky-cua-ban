@@ -1,10 +1,10 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
-import { Component, Suspense, useMemo, useRef, type ReactNode } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Group, Mesh } from 'three';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { INTRO_HANDOFF } from './handoff';
-import { resolveHandoffSphere3D } from './handoff-layout';
+import { resolveHandoffSphere3D, resolveSettleScale } from './handoff-layout';
 import { FallbackUniverse } from './fallback-universe';
 
 export type UniverseSceneProps = {
@@ -16,14 +16,15 @@ export type UniverseSceneProps = {
   onPressCircle: (id: string) => void;
   /** Force 2D glow fallback (low-end / settings). */
   forceFallback?: boolean;
+  /** Shrink from intro size → home size after handoff. Off for tab-return. */
+  animateSettle?: boolean;
 };
 
 const CAMERA_Z = 4.2;
 const CAMERA_FOV = 42;
 
 /**
- * 3D My Universe home. Sphere radius is derived from the intro cover layout
- * so crossfade lands on the same pixels as `universe-birth.mp4`.
+ * 3D My Universe: match intro cover size, then settle-shrink to home size.
  */
 export function UniverseScene3D(props: UniverseSceneProps) {
   if (props.forceFallback) {
@@ -43,7 +44,11 @@ export function UniverseScene3D(props: UniverseSceneProps) {
           <pointLight position={[-2, 1.5, 1]} intensity={0.35} color="#9BB7FF" />
           <Suspense fallback={null}>
             <StarField3D />
-            <UserSphere revealProfile={props.revealProfile} onPress={props.onPressSelf} />
+            <UserSphere
+              revealProfile={props.revealProfile}
+              animateSettle={props.animateSettle !== false}
+              onPress={props.onPressSelf}
+            />
             <CirclePlanets
               circles={props.circles}
               reveal={props.revealPlanets}
@@ -63,15 +68,23 @@ function hexToRgb(hex: string): [number, number, number] {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 function UserSphere({
   revealProfile,
+  animateSettle,
   onPress,
 }: {
   revealProfile: boolean;
+  animateSettle: boolean;
   onPress: () => void;
 }) {
   const mesh = useRef<Mesh>(null);
   const glow = useRef<Mesh>(null);
+  const badge = useRef<Mesh>(null);
+  const settleT = useRef(revealProfile && !animateSettle ? 1 : 0);
   const { size } = useThree();
   const color = useMemo(() => hexToRgb(INTRO_HANDOFF.sphere.color), []);
   const glowColor = useMemo(() => hexToRgb(INTRO_HANDOFF.sphere.glow), []);
@@ -85,17 +98,43 @@ function UserSphere({
       }),
     [size.width, size.height],
   );
+  const settleScale = useMemo(
+    () => resolveSettleScale(size.width, size.height),
+    [size.width, size.height],
+  );
 
-  useFrame(({ clock }) => {
+  useEffect(() => {
+    if (revealProfile) {
+      if (!animateSettle) settleT.current = 1;
+    } else {
+      settleT.current = 0;
+    }
+  }, [revealProfile, animateSettle]);
+
+  useFrame(({ clock }, dt) => {
     const t = clock.getElapsedTime();
+    if (revealProfile && animateSettle && settleT.current < 1) {
+      settleT.current = Math.min(
+        1,
+        settleT.current + dt / Math.max(INTRO_HANDOFF.settleDurationSec, 0.05),
+      );
+    }
+    const s = 1 + (settleScale - 1) * easeOutCubic(settleT.current);
+    const bob = Math.sin(t * 0.7) * 0.04 * s;
+
     if (mesh.current) {
-      mesh.current.position.y = y + Math.sin(t * 0.7) * 0.04;
+      mesh.current.position.y = y + bob;
       mesh.current.rotation.y = t * 0.12;
+      mesh.current.scale.setScalar(s);
     }
     if (glow.current) {
-      const s = 1.08 + Math.sin(t * 1.4) * 0.03;
-      glow.current.scale.setScalar(s);
-      glow.current.position.y = y;
+      const pulse = 1.08 + Math.sin(t * 1.4) * 0.03;
+      glow.current.position.y = y + bob;
+      glow.current.scale.setScalar(pulse * s);
+    }
+    if (badge.current) {
+      badge.current.position.set(0, y + bob, radius * s * 0.92);
+      badge.current.scale.setScalar(s);
     }
   });
 
@@ -129,7 +168,7 @@ function UserSphere({
         />
       </mesh>
       {revealProfile ? (
-        <mesh position={[0, y, radius * 0.92]}>
+        <mesh ref={badge} position={[0, y, radius * 0.92]}>
           <circleGeometry args={[radius * 0.42, 32]} />
           <meshBasicMaterial color="#1a140e" transparent opacity={0.55} />
         </mesh>
@@ -149,7 +188,7 @@ function CirclePlanets({
 }) {
   const group = useRef<Group>(null);
   const { size } = useThree();
-  const { radius: selfR, y: selfY } = useMemo(
+  const { radius: introR, y: selfY } = useMemo(
     () =>
       resolveHandoffSphere3D({
         viewportWidth: size.width,
@@ -159,6 +198,11 @@ function CirclePlanets({
       }),
     [size.width, size.height],
   );
+  const settleScale = useMemo(
+    () => resolveSettleScale(size.width, size.height),
+    [size.width, size.height],
+  );
+  const selfR = introR * settleScale;
   const n = Math.max(circles.length, 1);
 
   useFrame(({ clock }) => {
@@ -169,18 +213,18 @@ function CirclePlanets({
 
   if (!reveal || circles.length === 0) return null;
 
-  const orbit = Math.max(selfR * 2.35, 1.15);
+  const orbit = Math.max(selfR * 2.45, 0.85);
 
   return (
     <group ref={group} position={[0, selfY, 0]}>
       {circles.map((c, i) => {
         const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-        const o = orbit + (i % 3) * selfR * 0.22;
+        const o = orbit + (i % 3) * selfR * 0.28;
         const x = Math.cos(angle) * o;
         const z = Math.sin(angle) * o;
         const y = Math.sin(i * 1.7) * selfR * 0.35;
         const rgb = hexToRgb(c.color || '#7C9A8E');
-        const pr = Math.max(selfR * 0.32, 0.12);
+        const pr = Math.max(selfR * 0.34, 0.1);
         return (
           <mesh
             key={c.id}

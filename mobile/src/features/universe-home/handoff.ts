@@ -1,7 +1,6 @@
 /**
  * Must match the final frame of `assets/intro/universe-birth.mp4` (9:16).
- * Live 2D/3D size uses `resolveHandoffLayout` so `object-fit: cover` viewports
- * still land on the same pixels as the video.
+ * Live 2D/3D starts at the cover-matched intro size, then settles smaller.
  */
 export const INTRO_HANDOFF = {
   /** Expected full intro length (seconds) */
@@ -13,6 +12,8 @@ export const INTRO_HANDOFF = {
   profileFadeSec: 0.8,
   /** After profile: planets stagger */
   planetsStaggerSec: 1.0,
+  /** Intro-size → home-size shrink after crossfade */
+  settleDurationSec: 0.9,
   /** Short cold-start when full intro already seen */
   shortAppearSec: 0.55,
   sphere: {
@@ -21,6 +22,11 @@ export const INTRO_HANDOFF = {
     cy: 0.48,
     /** Diameter as fraction of **video** width (not necessarily viewport width) */
     diameterRatio: 0.42,
+    /**
+     * Settled home diameter as fraction of **viewport** width.
+     * Smaller than the cover-matched intro orb → shrink effect after handoff.
+     */
+    homeDiameterRatio: 0.34,
     color: '#F0C36A',
     glow: '#FFE6A8',
     core: '#FFF6D6',
