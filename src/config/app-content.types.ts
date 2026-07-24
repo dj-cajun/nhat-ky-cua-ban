@@ -14,7 +14,7 @@ export interface AffiliateItemConfig {
   emoji: string;
   price: string;
   url: string;
-  platform: 'shopee' | 'lazada' | 'tiktok' | 'agoda';
+  platform: 'shopee' | 'lazada' | 'tiktok' | 'agoda' | 'other';
 }
 
 export interface ClassmateSeed {

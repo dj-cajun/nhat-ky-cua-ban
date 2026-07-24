@@ -8,28 +8,28 @@ import * as localDb from '@/lib/local-db';
 describe('dotori-economy', () => {
   beforeEach(async () => {
     localStorage.clear();
-    await localDb.initLocalDb('test', 'Nguyễn Test', 'THPT Marie Curie', 'Lớp 11A', '{}');
+    await localDb.initLocalDb('test', 'Maya Test', 'Close circle', 'Weekend crew', '{}');
     localDb.updateProfile({ dotoriBalance: 10 });
   });
 
   it('spends dotori for surname letter', () => {
-    const result = buySurnameLetter('cm-1', 'Trần');
+    const result = buySurnameLetter('cm-1', 'Sam');
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.letter).toBe('T');
+      expect(result.letter).toBe('S');
       expect(getBalance()).toBe(8);
     }
   });
 
   it('rejects insufficient balance', () => {
     localDb.updateProfile({ dotoriBalance: 1 });
-    const result = buySurnameLetter('cm-1', 'Trần');
+    const result = buySurnameLetter('cm-1', 'Sam');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('insufficient');
   });
 
   it('unlocks hint shield', () => {
-    const result = buyHintUnlock('cm-1', 'Trần');
+    const result = buyHintUnlock('cm-1', 'Sam');
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.text).toBeTruthy();
   });

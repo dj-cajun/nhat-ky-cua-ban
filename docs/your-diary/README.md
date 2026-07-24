@@ -11,11 +11,11 @@
 `npm run dev` → **`/`** 는 원래 **5층 홈피**다.
 
 StatusBar · ProfileCard · Calendar · PhotoAlbum · SwipeCardStack  
-(파스텔·손그림 스킨)
+시드: US 서클 데모 (`presets/us-circle.ts`) · UI: English / 한국어
 
 서클 v1 데모만 보려면 `/?v1=1`.
 
-> Phase 10.5에서 홈피가 “레거시”로 잘못 삭제됐다가 복구했다. 삭제하지 말 것.
+> Phase 10.5에서 홈피가 “레거시”로 잘못 삭제됐다가 복구했다. 베트남 학급 시드는 제거하고 Your Diary 기회(영·한 폐쇄 서클)로 맞춘다.
 
 ---
 

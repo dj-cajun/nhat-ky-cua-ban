@@ -275,7 +275,7 @@ export function simulateFoundingJoin(classKey: string): ClassFoundingRecord | nu
   }
 
   const fakeId = `demo-${touched.members.length + 1}`;
-  const fakeName = `Bạn ${String.fromCharCode(64 + touched.members.length)}`;
+  const fakeName = `Friend ${String.fromCharCode(64 + touched.members.length)}`;
   const result = joinFoundingByToken(touched.inviteToken, fakeId, fakeName);
   return result.ok ? result.record : null;
 }

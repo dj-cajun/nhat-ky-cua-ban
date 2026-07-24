@@ -64,7 +64,7 @@ export function useVoteNotifications(): void {
 
       const vnHour = parseInt(
         new Intl.DateTimeFormat('en-US', {
-          timeZone: 'Asia/Ho_Chi_Minh',
+          timeZone: 'America/New_York',
           hour: 'numeric',
           hour12: false,
         }).format(new Date()),

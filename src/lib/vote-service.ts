@@ -31,7 +31,7 @@ export const HINT_SHIELD_OPTIONS: { value: HintShield; label: string }[] = [
 export function isVoteHourVN(): boolean {
   const now = new Date();
   const vnHour = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh',
+    timeZone: 'America/New_York',
     hour: 'numeric',
     hour12: false,
   }).format(now);
@@ -42,7 +42,7 @@ export function isVoteHourVN(): boolean {
 export function isNotificationHourVN(): boolean {
   const now = new Date();
   const vnHour = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh',
+    timeZone: 'America/New_York',
     hour: 'numeric',
     hour12: false,
   }).format(now);
@@ -50,5 +50,5 @@ export function isNotificationHourVN(): boolean {
 }
 
 export function todayDateStr(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }

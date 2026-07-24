@@ -8,8 +8,8 @@ const baseProfile: UserProfile = {
   id: 'user-1',
   realName: 'User Name',
   surname: 'User',
-  schoolName: 'THPT Marie Curie',
-  className: 'Lớp 11A',
+  schoolName: 'Close circle',
+  className: 'Weekend crew',
   statusMessage: 'hi',
   dotoriBalance: 0,
   visitCountToday: 0,
@@ -19,7 +19,7 @@ const baseProfile: UserProfile = {
 describe('profile-name', () => {
   it('detects Zalo localhost placeholder', () => {
     expect(isPlaceholderZaloName('User Name')).toBe(true);
-    expect(isPlaceholderZaloName('Nguyễn Minh Anh')).toBe(false);
+    expect(isPlaceholderZaloName('Maya')).toBe(false);
   });
 
   it('falls back to demo name when profile has placeholder', () => {

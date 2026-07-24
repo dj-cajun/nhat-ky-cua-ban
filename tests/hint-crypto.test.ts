@@ -28,14 +28,14 @@ describe('hint-crypto', () => {
   });
 
   it('seals hint data without storing raw values', async () => {
-    const sealed = await sealHintData(sampleHint, 'Nguyễn');
+    const sealed = await sealHintData(sampleHint, 'Sam');
     expect(sealed).not.toContain('female');
     expect(sealed).not.toContain('170-175');
 
     const parsed = parseHintSeal(sealed);
     expect(parsed?.v).toBe(1);
     expect(parsed?.shields.height).toContain('170');
-    expect(parsed?.shields.surname).toBe('Surname: Nguyễn');
+    expect(parsed?.shields.surname).toBe('Surname: Sam');
   });
 
   it('verifies hashed hint fields', async () => {
@@ -45,8 +45,8 @@ describe('hint-crypto', () => {
   });
 
   it('formats hint shield labels', () => {
-    expect(formatHintShield('surname', sampleHint, 'Nguyễn')).toBe('Surname: Nguyễn');
-    expect(formatHintShield('height', sampleHint, 'Nguyễn')).toContain('170');
-    expect(formatHintShield('commute', sampleHint, 'Nguyễn')).toContain('Motorbike');
+    expect(formatHintShield('surname', sampleHint, 'Sam')).toBe('Surname: Sam');
+    expect(formatHintShield('height', sampleHint, 'Sam')).toContain('170');
+    expect(formatHintShield('commute', sampleHint, 'Sam')).toContain('Motorbike');
   });
 });

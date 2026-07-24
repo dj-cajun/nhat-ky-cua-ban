@@ -238,10 +238,10 @@ export function getVisitors(): Visitor[] {
 }
 
 export function getTodayVisitors(): Visitor[] {
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   return getVisitors().filter((v) => {
     const visitedDay = new Date(v.visitedAt).toLocaleDateString('en-CA', {
-      timeZone: 'Asia/Ho_Chi_Minh',
+      timeZone: 'America/New_York',
     });
     return visitedDay === today;
   });

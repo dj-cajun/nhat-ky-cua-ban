@@ -8,17 +8,12 @@ import { DEFAULT_STATUS_MESSAGE } from '@/config/app-content';
 import { isPlaceholderZaloName } from '@/lib/zalo-auth';
 
 const SCHOOL_MAP: Record<string, string> = {
-  'THPT Marie Curie': 'Ho Chi Minh',
-  'THPT Lê Hồng Phong': 'Ho Chi Minh',
-  'THPT Nguyễn Thị Minh Khai': 'Ho Chi Minh',
-  'THPT Trần Phú': 'Ho Chi Minh',
-  'THPT Phổ Thông Năng Khiếu': 'Ho Chi Minh',
-  'THPT Bùi Thị Xuân': 'Ho Chi Minh',
-  'THPT Gia Định': 'Ho Chi Minh',
-  'THPT Lương Thế Vinh': 'Ho Chi Minh',
-  // 구버전 호환
-  'Marie Curie': 'Ho Chi Minh',
-  'Lê Hồng Phong': 'Ho Chi Minh',
+  'Close circle': 'New York',
+  'College friends': 'New York',
+  'Work friends': 'New York',
+  'Roommates': 'New York',
+  'Study group': 'New York',
+  'Weekend crew': 'New York',
 };
 
 /** Supabase ↔ localStorage 동기화 */
@@ -359,7 +354,7 @@ async function ensureClass(schoolName: string, className: string): Promise<strin
   if (!supabase) return null;
 
   try {
-    const city = SCHOOL_MAP[schoolName] ?? 'Ho Chi Minh';
+    const city = SCHOOL_MAP[schoolName] ?? 'New York';
 
     let schoolId: string | undefined;
     const { data: existingSchool } = await supabase

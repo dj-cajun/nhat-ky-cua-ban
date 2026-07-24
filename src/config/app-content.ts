@@ -1,14 +1,13 @@
 /**
  * ============================================================
- *  앱 콘텐츠 진입점
+ *  App content entry
  *
- *  지역 교체: 아래 import 한 줄만 변경
- *    import * as preset from './presets/hochiminh';
- *    import * as preset from './presets/hanoi';   (추후)
+ *  Region swap: change the import below only
+ *    import * as preset from './presets/us-circle';
  * ============================================================
  */
 
-import * as preset from './presets/hochiminh';
+import * as preset from './presets/us-circle';
 
 export type {
   LoggedInUserConfig,
@@ -17,7 +16,6 @@ export type {
   SeedPost,
 } from './app-content.types';
 
-// ─── 프리셋에서 re-export (교체 시 이 파일의 import만 수정) ───
 export const REGION_ID = preset.REGION_ID;
 export const REGION_LABEL = preset.REGION_LABEL;
 export const REGION = preset.REGION;

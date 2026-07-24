@@ -1,4 +1,4 @@
-const VN_TZ = 'Asia/Ho_Chi_Minh';
+const VN_TZ = 'America/New_York';
 
 export interface VNDate {
   year: number;
