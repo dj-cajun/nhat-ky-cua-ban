@@ -108,9 +108,11 @@ export default function MessagesScreen() {
             ))}
 
         {(tab === 'inbox' ? received.items : sent.items).length === 0 && !loading ? (
-          <Text style={styles.empty}>
-            {tab === 'inbox' ? en.messages.emptyInbox : en.messages.emptySent}
-          </Text>
+          <View style={{ marginTop: 24 }}>
+            <Text style={styles.empty}>
+              {tab === 'inbox' ? en.messages.emptyInbox : en.messages.emptySent}
+            </Text>
+          </View>
         ) : null}
 
         {tab === 'inbox' && received.nextCursor ? (

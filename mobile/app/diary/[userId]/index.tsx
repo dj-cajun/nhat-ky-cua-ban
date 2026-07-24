@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -9,6 +9,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  AppEmptyState,
+  AppErrorState,
+  AppForbiddenState,
+  AppLoadingState,
+  OfflineBanner,
+} from '@/components/states';
 import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
 import {
   getDiaryMusic,
@@ -27,8 +34,12 @@ import {
   upsertDiary,
 } from '@/features/local/repository';
 import { blockUser } from '@/features/moderation/block.service';
+import { applyConflictChoice } from '@/features/offline-drafts/diary-draft-sync';
+import { saveDiaryDraft, type DiaryDraft } from '@/features/offline-drafts/diary-draft.store';
+import { invalidateAfterSpotifyChange } from '@/lib/cache-invalidation';
 import { toAppError } from '@/lib/errors';
-import { track } from '@/lib/logger';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+import { AnalyticsEvents, track } from '@/lib/logger';
 import {
   DIARY_MOODS,
   MAX_TEN_CHAR,
@@ -37,7 +48,7 @@ import {
   type Profile,
 } from '@/types/domain';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { DEFAULT_TIMEZONE, en } from '@/i18n/en';
 
 export default function DiaryScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -53,6 +64,15 @@ export default function DiaryScreen() {
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false);
   const [blockedRelation, setBlockedRelation] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const [draftHint, setDraftHint] = useState(false);
+  const [conflict, setConflict] = useState<{
+    server: DiaryEntry;
+    draft: DiaryDraft;
+  } | null>(null);
+  const saveLock = useRef(false);
 
   const loadMusic = useCallback(async (entryId: string, viewerId: string) => {
     try {
@@ -64,29 +84,38 @@ export default function DiaryScreen() {
 
   useEffect(() => {
     void (async () => {
-      const session = await getSessionProfile();
-      if (!session || !userId) {
-        router.replace('/(auth)/sign-in');
-        return;
-      }
-      setMe(session);
-      if (await isBlockedBetween(session.id, userId)) {
-        setBlockedRelation(true);
-        setOwner(await getProfile(userId));
-        return;
-      }
-      setOwner(await getProfile(userId));
-      const d = await getDiary(userId);
-      setEntry(d);
-      if (d) {
-        if (!(await canViewDiary(session.id, userId, d)) && session.id !== userId) {
-          setBlocked(true);
-        } else {
-          await loadMusic(d.id, session.id);
+      try {
+        const session = await getSessionProfile();
+        if (!session || !userId) {
+          router.replace('/(auth)/sign-in');
+          return;
         }
-        setMood(d.mood ?? undefined);
-        setTen(d.tenCharText ?? '');
-        setShortText(d.shortText ?? '');
+        setMe(session);
+        if (await isBlockedBetween(session.id, userId)) {
+          setBlockedRelation(true);
+          setOwner(await getProfile(userId));
+          return;
+        }
+        setOwner(await getProfile(userId));
+        const d = await getDiary(userId);
+        setEntry(d);
+        if (d) {
+          if (!(await canViewDiary(session.id, userId, d)) && session.id !== userId) {
+            setBlocked(true);
+          } else {
+            await loadMusic(d.id, session.id);
+            track(AnalyticsEvents.diary_viewed, { market: 'US' });
+          }
+          setMood(d.mood ?? undefined);
+          setTen(d.tenCharText ?? '');
+          setShortText(d.shortText ?? '');
+        }
+      } catch (e) {
+        const app = toAppError(e);
+        if (app.code === 'OFFLINE') setOffline(true);
+        setError(app.message);
+      } finally {
+        setLoading(false);
       }
     })();
   }, [userId, loadMusic]);
@@ -94,8 +123,30 @@ export default function DiaryScreen() {
   const isMine = me?.id === userId;
   const moodMeta = DIARY_MOODS.find((m) => m.id === (entry?.mood ?? mood));
 
+  const persistLocalDraft = async () => {
+    if (!me || !isMine) return;
+    const entryDate = entry?.entryDate ?? new Date().toISOString().slice(0, 10);
+    await saveDiaryDraft({
+      userId: me.id,
+      entryDate,
+      timezone: entry?.timezone ?? DEFAULT_TIMEZONE,
+      mood,
+      tenCharText: ten.trim() || undefined,
+      shortText: shortText.trim() || undefined,
+      visibilityMode: entry?.visibilityMode ?? 'private',
+      status: 'draft',
+      updatedAt: new Date().toISOString(),
+      serverUpdatedAt: entry?.updatedAt,
+    });
+    setDraftHint(true);
+  };
+
   const save = async () => {
-    if (!me) return;
+    if (!me || saveLock.current) return;
+    saveLock.current = true;
+    setSaving(true);
+    setError('');
+    setConflict(null);
     try {
       const saved = await upsertDiary({
         userId: me.id,
@@ -103,23 +154,57 @@ export default function DiaryScreen() {
         tenCharText: ten.trim() || undefined,
         shortText: shortText.trim() || undefined,
         visibilityMode: 'private',
+        expectedUpdatedAt: entry?.updatedAt,
       });
       setEntry(saved);
       setEditing(false);
       setPickingMusic(false);
+      setDraftHint(false);
       await loadMusic(saved.id, me.id);
-      track('diary_entry_saved', {
-        entry_has_photo: false,
-        entry_has_music: Boolean(music),
+      track(AnalyticsEvents.diary_saved, {
+        has_photo: false,
+        has_music: Boolean(music),
         market: 'US',
       });
     } catch (e) {
-      setError(toAppError(e).message);
+      const app = toAppError(e);
+      if (app.code === 'OFFLINE') {
+        setOffline(true);
+        await persistLocalDraft();
+        setError(en.errors.offline);
+      } else if (app.code === 'CONFLICT') {
+        await persistLocalDraft();
+        const server = await getDiary(me.id);
+        if (server) {
+          setConflict({
+            server,
+            draft: {
+              userId: me.id,
+              entryDate: server.entryDate,
+              timezone: server.timezone,
+              mood,
+              tenCharText: ten.trim() || undefined,
+              shortText: shortText.trim() || undefined,
+              visibilityMode: 'private',
+              status: 'failed',
+              updatedAt: new Date().toISOString(),
+              serverUpdatedAt: entry?.updatedAt,
+            },
+          });
+        }
+        setError(en.diary.conflictTitle);
+      } else {
+        await persistLocalDraft();
+        setError(app.message);
+      }
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
     }
   };
 
   const onSelectTrack = async (trackResult: { id: string }) => {
-    if (!me) return;
+    if (!me || !isFeatureEnabled('spotify_search_enabled')) return;
     setError('');
     try {
       let diary = entry;
@@ -140,9 +225,19 @@ export default function DiaryScreen() {
       });
       setMusic(saved);
       setPickingMusic(false);
-      track('diary_music_saved', { market: 'US' });
+      await invalidateAfterSpotifyChange({
+        ownerUserId: me.id,
+        entryId: diary.id,
+        entryDate: diary.entryDate,
+      });
+      track(AnalyticsEvents.spotify_track_saved, { market: 'US' });
     } catch (e) {
-      setError(toAppError(e).message || en.diaryMusic.saveFailed);
+      const app = toAppError(e);
+      setError(
+        app.code === 'EXTERNAL_SERVICE_FAILED'
+          ? en.diaryMusic.serviceDown
+          : app.message || en.diaryMusic.saveFailed,
+      );
     }
   };
 
@@ -151,6 +246,11 @@ export default function DiaryScreen() {
     try {
       await removeDiaryMusic(entry.id, me.id);
       setMusic(null);
+      await invalidateAfterSpotifyChange({
+        ownerUserId: me.id,
+        entryId: entry.id,
+        entryDate: entry.entryDate,
+      });
       track('diary_music_removed', { market: 'US' });
     } catch (e) {
       setError(toAppError(e).message);
@@ -167,30 +267,99 @@ export default function DiaryScreen() {
     }
   };
 
-  if (!owner) return null;
+  if (loading && !owner) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <AppLoadingState />
+      </SafeAreaView>
+    );
+  }
+
+  if (!owner) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <AppErrorState code="NOT_FOUND" />
+      </SafeAreaView>
+    );
+  }
+
+  if (blockedRelation || blocked) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <AppForbiddenState
+          title={en.diary.privateBlocked}
+          actionLabel={en.diary.back}
+          onAction={() => router.back()}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
+      <OfflineBanner
+        visible={offline || draftHint}
+        message={draftHint ? en.diary.draftSaved : undefined}
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button">
           <Text style={styles.back}>{en.diary.back}</Text>
         </Pressable>
-        <Text style={styles.title}>
-          {blockedRelation ? '—' : owner.displayName}
-        </Text>
+        <Text style={styles.title}>{owner.displayName}</Text>
         <Text style={styles.mood}>
-          {blockedRelation
-            ? ''
-            : moodMeta
-              ? `${moodMeta.emoji} ${moodMeta.label}`
-              : en.diary.noMood}
+          {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : en.diary.noMood}
         </Text>
 
-        {blockedRelation ? (
-          <Text style={styles.empty}>{en.diary.blockedRelation}</Text>
-        ) : blocked ? (
-          <Text style={styles.empty}>{en.diary.privateBlocked}</Text>
-        ) : editing && isMine ? (
+        {conflict ? (
+          <View style={styles.conflict}>
+            <Text style={styles.conflictTitle}>{en.diary.conflictTitle}</Text>
+            <Pressable
+              style={styles.link}
+              onPress={() =>
+                void (async () => {
+                  const kept = await applyConflictChoice({
+                    choice: 'keep_server',
+                    userId: me!.id,
+                    entryDate: conflict.server.entryDate,
+                    server: conflict.server,
+                    draft: conflict.draft,
+                  });
+                  if (kept) {
+                    setEntry(kept);
+                    setMood(kept.mood ?? undefined);
+                    setTen(kept.tenCharText ?? '');
+                    setShortText(kept.shortText ?? '');
+                  }
+                  setConflict(null);
+                  setEditing(false);
+                })()
+              }
+            >
+              <Text>{en.diary.conflictServer}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.link}
+              onPress={() =>
+                void (async () => {
+                  const overwritten = await applyConflictChoice({
+                    choice: 'overwrite_with_local',
+                    userId: me!.id,
+                    entryDate: conflict.server.entryDate,
+                    server: conflict.server,
+                    draft: conflict.draft,
+                  });
+                  if (overwritten) setEntry(overwritten);
+                  setConflict(null);
+                  setEditing(false);
+                })()
+              }
+            >
+              <Text>{en.diary.conflictOverwrite}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {editing && isMine ? (
           <View>
             <Text style={styles.label}>{en.diary.mood}</Text>
             <View style={styles.moodRow}>
@@ -199,6 +368,8 @@ export default function DiaryScreen() {
                   key={m.id}
                   onPress={() => setMood(m.id)}
                   style={[styles.chip, mood === m.id && styles.chipOn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={m.label}
                 >
                   <Text style={{ fontSize: 12 }}>{m.emoji}</Text>
                 </Pressable>
@@ -209,7 +380,10 @@ export default function DiaryScreen() {
             </Text>
             <TextInput
               value={ten}
-              onChangeText={setTen}
+              onChangeText={(v) => {
+                setTen(v);
+                void persistLocalDraft();
+              }}
               maxLength={MAX_TEN_CHAR}
               style={styles.input}
               placeholderTextColor={colors.soft}
@@ -217,7 +391,10 @@ export default function DiaryScreen() {
             <Text style={styles.label}>{en.diary.shortText}</Text>
             <TextInput
               value={shortText}
-              onChangeText={setShortText}
+              onChangeText={(v) => {
+                setShortText(v);
+                void persistLocalDraft();
+              }}
               maxLength={280}
               multiline
               style={[styles.input, { minHeight: 100 }]}
@@ -225,7 +402,9 @@ export default function DiaryScreen() {
             />
 
             <Text style={styles.label}>{en.diary.musicSection}</Text>
-            {music && !pickingMusic ? (
+            {!isFeatureEnabled('spotify_search_enabled') ? (
+              <Text style={styles.empty}>{en.circle.featureDisabled}</Text>
+            ) : music && !pickingMusic ? (
               <>
                 <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
                 <Pressable style={styles.link} onPress={() => setPickingMusic(true)}>
@@ -247,7 +426,13 @@ export default function DiaryScreen() {
             )}
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Pressable style={styles.btn} onPress={() => void save()}>
+            <Pressable
+              style={[styles.btn, saving && { opacity: 0.6 }]}
+              onPress={() => void save()}
+              disabled={saving}
+              accessibilityRole="button"
+              accessibilityState={{ busy: saving }}
+            >
               <Text style={styles.btnText}>{en.diary.save}</Text>
             </Pressable>
           </View>
@@ -267,33 +452,42 @@ export default function DiaryScreen() {
             ) : null}
             {music ? (
               <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
+            ) : isMine ? (
+              <Text style={styles.empty}>{en.diary.emptyMusic}</Text>
             ) : null}
-            {!entry ? <Text style={styles.empty}>{en.diary.emptyToday}</Text> : null}
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {!entry ? (
+              <AppEmptyState
+                title={isMine ? en.diary.emptyToday : en.diary.emptyOther}
+                subtitle={isMine ? en.diary.emptyTodaySub : undefined}
+              />
+            ) : null}
+            {error ? <AppErrorState message={error} /> : null}
           </View>
         )}
 
-        {isMine && !editing && !blockedRelation ? (
-          <Pressable style={styles.btn} onPress={() => setEditing(true)}>
+        {isMine && !editing ? (
+          <Pressable
+            style={styles.btn}
+            onPress={() => setEditing(true)}
+            accessibilityRole="button"
+          >
             <Text style={styles.btnText}>{en.diary.editToday}</Text>
           </Pressable>
         ) : null}
 
-        {!blockedRelation ? (
-          <>
-            <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
-              <Text>{en.diary.guestbook}</Text>
-            </Pressable>
-            <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
-              <Text>{en.diary.past}</Text>
-            </Pressable>
-            <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
-              <Text>{en.diary.album}</Text>
-            </Pressable>
-          </>
-        ) : null}
+        <>
+          <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
+            <Text>{en.diary.guestbook}</Text>
+          </Pressable>
+          <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
+            <Text>{en.diary.past}</Text>
+          </Pressable>
+          <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
+            <Text>{en.diary.album}</Text>
+          </Pressable>
+        </>
 
-        {!isMine && me && !blockedRelation ? (
+        {!isMine && me ? (
           <>
             <Pressable
               style={styles.link}
@@ -326,6 +520,7 @@ export default function DiaryScreen() {
               onPress={() =>
                 void (async () => {
                   await blockUser(me.id, userId);
+                  track(AnalyticsEvents.block_created, { market: 'US' });
                   router.replace('/(tabs)/universe');
                 })()
               }
@@ -341,7 +536,7 @@ export default function DiaryScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, padding: 16 },
-  back: { color: colors.muted, marginBottom: 12 },
+  back: { color: colors.muted, marginBottom: 12, minHeight: 44 },
   title: { fontSize: 24, fontWeight: '600', color: colors.ink },
   mood: { marginTop: 6, color: colors.muted, marginBottom: 16 },
   card: {
@@ -363,6 +558,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.card,
   },
   chipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
@@ -380,7 +579,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderRadius: 12,
     paddingVertical: 12,
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   btnText: { color: '#fff', fontWeight: '600' },
   link: {
@@ -390,8 +591,19 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     backgroundColor: colors.card,
     padding: 14,
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  report: { marginTop: 10, padding: 12 },
+  report: { marginTop: 10, padding: 12, minHeight: 44, justifyContent: 'center' },
   reportText: { color: colors.warn, fontSize: 13 },
   error: { color: colors.warn, marginTop: 8 },
+  conflict: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.warn,
+    backgroundColor: colors.card,
+  },
+  conflictTitle: { color: colors.warn, fontWeight: '600', marginBottom: 4 },
 });

@@ -1078,11 +1078,27 @@ export async function upsertDiary(input: {
   circleIds?: string[];
   timezone?: string;
   clientRequestId?: string;
+  /** If set and server row differs, throw CONFLICT (no silent overwrite). */
+  expectedUpdatedAt?: string;
+  /** Explicit user choice after conflict UI. */
+  forceOverwrite?: boolean;
 }): Promise<DiaryEntry> {
   await loadLocalDb();
   const timezone = input.timezone ?? DEFAULT_TIMEZONE;
   const entryDate = todayInTz(timezone);
   const existing = memory.diary.find((d) => d.userId === input.userId && d.entryDate === entryDate);
+
+  if (
+    existing &&
+    input.expectedUpdatedAt &&
+    !input.forceOverwrite &&
+    existing.updatedAt !== input.expectedUpdatedAt
+  ) {
+    throw new AppError(
+      'CONFLICT',
+      'This entry was updated on another device. Choose which version to keep.',
+    );
+  }
 
   const entry: DiaryEntry = existing
     ? {
@@ -1958,6 +1974,102 @@ export async function isContentHiddenForMe(
 export async function listMyReports(reporterId: string): Promise<ReportRecord[]> {
   await loadLocalDb();
   return memory.reports.filter((r) => r.reporterId === reporterId);
+}
+
+/** Ops console — moderator only (local demo uses isModerator flag). */
+export async function listAllReportsForOps(input: {
+  adminId: string;
+  isModerator: boolean;
+}): Promise<ReportRecord[]> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  return [...memory.reports].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function getReportForOps(input: {
+  reportId: string;
+  adminId: string;
+  isModerator: boolean;
+}): Promise<ReportRecord> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  const row = memory.reports.find((r) => r.id === input.reportId);
+  if (!row) throw new AppError('NOT_FOUND', 'Report not found.');
+  return row;
+}
+
+export async function adminHideContent(input: {
+  adminId: string;
+  isModerator: boolean;
+  targetType: string;
+  targetId: string;
+  reason: string;
+}): Promise<void> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  if (!input.reason.trim()) throw new AppError('VALIDATION', 'Reason required.');
+
+  if (input.targetType === 'anonymous_post') {
+    const post = memory.anonymousPosts.find((p) => p.id === input.targetId);
+    if (post) post.status = 'removed';
+  } else if (input.targetType === 'message') {
+    const msg = memory.privateMessages.find((m) => m.id === input.targetId);
+    if (msg) msg.status = 'removed';
+  } else if (input.targetType === 'guestbook_entry') {
+    const g = memory.guestbook.find((x) => x.id === input.targetId);
+    if (g) g.hidden = true;
+  }
+
+  memory.adminAuditLogs.push({
+    id: uid(),
+    adminId: input.adminId,
+    action: 'admin_hide_content',
+    targetType: input.targetType,
+    targetId: input.targetId,
+    reason: input.reason.trim(),
+    createdAt: now(),
+  });
+  await persist();
+}
+
+export async function adminSetAccountStatus(input: {
+  adminId: string;
+  isModerator: boolean;
+  userId: string;
+  accountStatus: 'active' | 'restricted' | 'suspended';
+  reason: string;
+}): Promise<void> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  if (!input.reason.trim()) throw new AppError('VALIDATION', 'Reason required.');
+  await setUserModerationStatus({
+    userId: input.userId,
+    accountStatus: input.accountStatus,
+    reasonCode: input.reason.trim(),
+  });
+  memory.adminAuditLogs.push({
+    id: uid(),
+    adminId: input.adminId,
+    action: `admin_set_status_${input.accountStatus}`,
+    targetType: 'user',
+    targetId: input.userId,
+    reason: input.reason.trim(),
+    createdAt: now(),
+  });
+  await persist();
+}
+
+export async function listAdminAuditLogs(input: {
+  adminId: string;
+  isModerator: boolean;
+  limit?: number;
+}): Promise<typeof memory.adminAuditLogs> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  const lim = input.limit ?? 50;
+  return [...memory.adminAuditLogs]
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(0, lim);
 }
 
 export async function createPhotoSignedUrlToken(

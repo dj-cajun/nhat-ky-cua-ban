@@ -49,6 +49,8 @@ export const en = {
     createCircle: 'Create a circle (with 2 friends)',
     wroteToday: (n: number) => `${n} wrote today`,
     notice: 'Notice',
+    emptyTitle: 'No open circles yet.',
+    emptySub: 'When three people gather, your first circle opens.',
   },
 
   notifications: {
@@ -62,7 +64,14 @@ export const en = {
     noMood: 'No mood set today',
     tenChar: '10-character note',
     shortText: 'Short entry',
-    emptyToday: 'Nothing written for today yet.',
+    emptyToday: 'Today is still blank.',
+    emptyTodaySub: 'A mood or one short line is enough.',
+    emptyOther: 'A quiet day so far.',
+    emptyMusic: 'No music for today yet.',
+    draftSaved: 'Saved on this device',
+    conflictTitle: 'This entry was edited on another device.',
+    conflictServer: 'View server entry',
+    conflictOverwrite: 'Overwrite with mine',
     editToday: 'Edit today',
     editOrView: 'Edit today / open full diary',
     mood: 'Mood',
@@ -95,8 +104,11 @@ export const en = {
     backToSearch: 'Back to search',
     cancel: 'Cancel',
     noResults: 'No tracks found.',
+    emptyToday: 'No music for today yet.',
     openFailed: "Couldn't open this track in Spotify.",
     saveFailed: "Couldn't update today’s music. Your previous track is unchanged.",
+    serviceDown:
+      "Spotify isn’t reachable right now. You can still save the rest of your diary.",
   },
 
   moods: {
@@ -161,12 +173,14 @@ export const en = {
     present: 'In this circle now',
     hereNow: 'Here in this space',
     respondedBadge: 'Responded',
+    realtimeDegraded: 'Live status can’t be shown right now.',
     aliasTitle: 'Alias board',
     aliasSub:
       'Short thoughts under a circle-only alias. Other members see the alias — not your name.',
     aliasPreviewEmpty: 'No alias posts yet.',
     aliasViewBoard: 'View board',
     joinInvite: 'Join with recommendations',
+    featureDisabled: 'This feature is temporarily unavailable.',
   },
 
   aliasBoard: {
@@ -175,7 +189,8 @@ export const en = {
     currentAlias: (name: string) => `Your alias: ${name}`,
     placeholder: 'Share a short thought…',
     post: 'Post',
-    empty: 'No posts yet. Leave the first one.',
+    empty: 'No stories here yet.',
+    emptySub: 'You don’t have to leave the first one.',
     loadMore: 'Load more',
     mine: 'Yours',
     delete: 'Delete',
@@ -243,9 +258,10 @@ export const en = {
     aliasEnabled: 'Receive alias notes',
     aliasOffHint:
       'Turning alias notes off blocks new ones. Existing notes stay in your inbox.',
-    emptyInbox: 'No notes yet.',
+    emptyInbox: 'No notes have arrived yet.',
     emptySent: 'You haven’t sent a note yet.',
     loadMore: 'Load more',
+    featureDisabled: 'Alias notes are temporarily unavailable.',
     newBadge: 'New',
     to: (name: string) => `To ${name}`,
     asAlias: 'as alias',
@@ -334,11 +350,44 @@ export const en = {
 
   errors: {
     network: 'Check your network connection.',
+    offline: 'You’re offline. Your draft is kept on this device.',
     auth: 'Please sign in.',
-    forbidden: "You don't have permission for this.",
+    sessionExpired: 'Your session expired. Please sign in again.',
+    forbidden: "You can’t view this.",
+    notFound: 'This content is no longer available.',
+    validation: 'Please check what you entered.',
     conflictDiary: 'You already have an entry for this date. Edit the existing one?',
-    rateLimited: 'Please try again in a moment.',
+    rateLimited: 'Take a short break, then try again.',
+    uploadFailed: 'Upload didn’t finish. Try again when you’re ready.',
+    realtimeFailed: 'Live status can’t be shown right now.',
+    externalService: 'Spotify isn’t reachable right now. You can still save the rest of your diary.',
     unknown: 'Something went wrong. Please try again.',
     alreadyHandled: 'This request was already handled.',
+  },
+
+  states: {
+    loading: 'Loading…',
+    retry: 'Try again',
+    errorTitle: 'Something went wrong',
+    forbiddenTitle: "You can’t open this",
+    forbiddenSub: 'Only people with access can view this space.',
+    offlineBanner: 'You’re offline. Drafts stay on this device.',
+  },
+
+  a11y: {
+    badgeGreen: (name: string) => `${name}, in this circle now`,
+    badgeOrange: (name: string) => `${name}, in this circle and responded to the notice`,
+  },
+
+  ops: {
+    title: 'Reports',
+    sub: 'Review snapshots, hide content, and check audit actions. No direct DB edits.',
+    empty: 'No reports yet.',
+    hideContent: 'Hide content',
+    restrictUser: 'Restrict user',
+    suspendUser: 'Suspend user',
+    reinstate: 'Reinstate',
+    audit: 'Audit log',
+    back: '← Back',
   },
 } as const;

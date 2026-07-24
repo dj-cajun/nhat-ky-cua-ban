@@ -4,9 +4,11 @@ import {
   listBlocks,
   unblockUser as localUnblock,
 } from '@/features/local/repository';
+import { invalidateAfterBlock } from '@/lib/cache-invalidation';
 
 export async function blockUser(actorId: string, targetUserId: string): Promise<void> {
-  return localBlock(actorId, targetUserId);
+  await localBlock(actorId, targetUserId);
+  await invalidateAfterBlock({ actorId, targetUserId });
 }
 
 export async function unblockUser(actorId: string, targetUserId: string): Promise<void> {

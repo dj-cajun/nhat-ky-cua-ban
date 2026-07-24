@@ -5,23 +5,38 @@
 
 export type AppErrorCode =
   | 'AUTH_REQUIRED'
+  | 'SESSION_EXPIRED'
   | 'FORBIDDEN'
   | 'NOT_FOUND'
-  | 'VALIDATION'
   | 'CONFLICT'
+  | 'VALIDATION'
   | 'RATE_LIMITED'
-  | 'NETWORK'
+  | 'OFFLINE'
+  | 'UPLOAD_FAILED'
+  | 'REALTIME_FAILED'
+  | 'EXTERNAL_SERVICE_FAILED'
   | 'UNKNOWN';
 
 export class AppError extends Error {
   constructor(
     public code: AppErrorCode,
     message: string,
+    public retryable = false,
   ) {
     super(message);
     this.name = 'AppError';
   }
 }
+
+/** Screen view-model states — every primary screen should handle these. */
+export type ScreenState =
+  | 'idle'
+  | 'loading'
+  | 'success'
+  | 'empty'
+  | 'error'
+  | 'forbidden'
+  | 'offline';
 
 export type CircleStatus = 'draft' | 'pending_accept' | 'open' | 'archived';
 export type MemberStatus = 'active' | 'left' | 'removed';

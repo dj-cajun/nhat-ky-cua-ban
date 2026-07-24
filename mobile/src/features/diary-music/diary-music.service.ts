@@ -56,13 +56,13 @@ export async function searchSpotifyTracks(input: {
     if (String(error.message).includes('429')) {
       throw new AppError('RATE_LIMITED', 'Please try searching again in a moment.');
     }
-    throw new AppError('NETWORK', "Music search isn't available right now.");
+    throw new AppError('EXTERNAL_SERVICE_FAILED', "Music search isn't available right now.");
   }
   if (data?.code === 'RATE_LIMITED') {
     throw new AppError('RATE_LIMITED', 'Please try searching again in a moment.');
   }
   if (data?.code) {
-    throw new AppError('NETWORK', "Music search isn't available right now.");
+    throw new AppError('EXTERNAL_SERVICE_FAILED', "Music search isn't available right now.");
   }
   return (data?.items ?? []) as SpotifyTrackSearchResult[];
 }
@@ -88,7 +88,7 @@ export async function resolveSpotifyTrack(
     throw new AppError('RATE_LIMITED', 'Please try again in a moment.');
   }
   if (!data?.track) {
-    throw new AppError('NETWORK', "Music lookup isn't available right now.");
+    throw new AppError('EXTERNAL_SERVICE_FAILED', "Music lookup isn't available right now.");
   }
   return data.track as SpotifyTrackSearchResult;
 }
@@ -168,6 +168,6 @@ export async function openSpotifyTrack(track: {
   try {
     await Linking.openURL(track.externalUrl);
   } catch {
-    throw new AppError('NETWORK', "Couldn't open this track in Spotify.");
+    throw new AppError('EXTERNAL_SERVICE_FAILED', "Couldn't open this track in Spotify.");
   }
 }
