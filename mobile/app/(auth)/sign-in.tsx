@@ -7,7 +7,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { signUpLocal } from '@/features/local/repository';
+import { ensureDemoOpenCircle, signUpLocal } from '@/features/local/repository';
 import { requestIntroReplay, resetUniverseVisitSession } from '@/features/universe-home';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
@@ -66,8 +66,9 @@ export default function SignInScreen() {
         style={[styles.btn, styles.demo]}
         onPress={async () => {
           try {
-            await signUpLocal('Alex');
-            // Local/demo: always land on My Universe with the full intro.
+            const me = await signUpLocal('Alex');
+            // Seed an open circle so intro → planets → circle/diary are all wired.
+            await ensureDemoOpenCircle(me.id);
             resetUniverseVisitSession();
             await requestIntroReplay();
             track('circle_creation_started', { via: 'demo_shortcut', market: 'US' });

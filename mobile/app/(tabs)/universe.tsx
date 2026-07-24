@@ -12,8 +12,8 @@ import {
   listMyCircleSummaries,
 } from '@/features/local/repository';
 import { UniverseHome } from '@/features/universe-home';
+import { INTRO_HANDOFF } from '@/features/universe-home/handoff';
 import type { CircleSummary, Profile } from '@/types/domain';
-import { colors } from '@/constants/theme';
 import { toAppError } from '@/lib/errors';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { track, AnalyticsEvents } from '@/lib/logger';
@@ -64,7 +64,7 @@ export default function UniverseScreen() {
   const canCreate = isFeatureEnabled('circle_creation_enabled');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <OfflineBanner visible={offline} />
       {error ? <AppErrorState message={error} onRetry={() => void reload()} /> : null}
       <UniverseHome
@@ -83,5 +83,5 @@ export default function UniverseScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: INTRO_HANDOFF.spaceBg },
 });

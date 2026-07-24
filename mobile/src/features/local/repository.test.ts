@@ -21,6 +21,7 @@ import {
   decideRecommendation,
   demoAcceptAll,
   DEMO_JOIN_IDS,
+  ensureDemoOpenCircle,
   ensureDemoJoinApplicant,
   getJoinProgress,
   getCirclePostSummary,
@@ -88,6 +89,14 @@ describe('open_circle_from_draft rules', () => {
     ]);
     const circle = await demoAcceptAll(draftId);
     expect(circle.status).toBe('open');
+  });
+
+  it('ensureDemoOpenCircle seeds a circle for intro → planets', async () => {
+    const me = await signUpLocal('Alex');
+    const first = await ensureDemoOpenCircle(me.id);
+    expect(first.length).toBeGreaterThanOrEqual(1);
+    const again = await ensureDemoOpenCircle(me.id);
+    expect(again.map((c) => c.id)).toEqual(first.map((c) => c.id));
   });
 });
 

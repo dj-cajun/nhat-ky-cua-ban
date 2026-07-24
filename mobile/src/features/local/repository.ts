@@ -560,6 +560,28 @@ export async function demoAcceptAll(draftId: string): Promise<Circle> {
   return opened;
 }
 
+/**
+ * Local demo path: ensure the user has at least one open circle (planets after intro).
+ * Idempotent — skips if they already belong to an open circle.
+ */
+export async function ensureDemoOpenCircle(userId: string): Promise<CircleSummary[]> {
+  await loadLocalDb();
+  const existing = await listMyCircleSummaries(userId);
+  if (existing.length > 0) return existing;
+
+  ensureDemoFriends(userId);
+  const friendA = '00000000-0000-4000-8000-0000000000a1'; // Minseo
+  const friendB = '00000000-0000-4000-8000-0000000000b2'; // Junho
+  const { draftId } = await proposeCircleDraft(userId, 'Brooklyn Friends', [friendA, friendB]);
+  const circle = await demoAcceptAll(draftId);
+  // Give the demo circle a second companion planet feel via design tweak only if needed
+  await updateCircleDesign(circle.id, userId, {
+    color: CIRCLE_COLORS[2] ?? CIRCLE_COLORS[0],
+    symbol: CIRCLE_SYMBOLS[2] ?? CIRCLE_SYMBOLS[0],
+  });
+  return listMyCircleSummaries(userId);
+}
+
 export async function updateCircleDesign(
   circleId: string,
   actorId: string,

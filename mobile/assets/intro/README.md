@@ -2,24 +2,28 @@
 
 **`universe-birth.mp4`** — vertical 9:16 cinematic birth → gold identity orb.
 
-## Preview the video now (browser)
-
-```bash
-cd mobile
-npm run preview:intro
-```
-
-Open **http://localhost:8765** — autoplays the 9:16 intro (Replay button on page).
-
-## Preview in the app (full intro every cold start)
+## Full app path (intro → universe → circle / diary)
 
 ```bash
 cd mobile
 npm install --legacy-peer-deps
-npm run start:intro
+npm run start:intro          # iOS/Android simulator
+# or: npm run web:intro      # browser (universe uses 2D glow fallback)
 ```
 
-Then **Try the demo** → My Universe. Settings → “Replay My Universe intro” also works.
+1. Tap **Try the demo** (seeds Brooklyn Friends + forces full intro)
+2. My Universe plays `universe-birth.mp4` → crossfade into sphere/planets
+3. Tap center sphere → diary · tap planet → circle (2D from there)
+
+Settings → **Replay My Universe intro** also works.
+
+## Video-only browser check
+
+```bash
+npm run preview:intro
+```
+
+Open **http://localhost:8765**.
 
 ## Regenerate
 

@@ -33,15 +33,19 @@
 
 레포에 기본 `universe-birth.mp4`가 포함되어 있다. 교체하려면 같은 경로에 덮어쓰고 sync한다.
 
-### 로컬에서 인트로부터 보기
+### 로컬에서 인트로 → 우주 → 서클까지
 
 ```bash
 cd mobile
 npm install --legacy-peer-deps
-npm run start:intro   # 전체 인트로 강제
+npm run start:intro   # 전체 인트로 강제 (iOS/Android 시뮬레이터 권장)
 ```
 
-앱에서 **Try the demo** → My Universe. 데모 진입·`start:intro`는 전체 인트로를 재생한다.
+1. **Try the demo** → 데모 서클(Brooklyn Friends) 시드 + 전체 인트로 예약  
+2. My Universe: `universe-birth.mp4` → 크로스페이드 → 구체/행성  
+3. 중앙 구체 → 내 다이어리 · 행성 → 서클 상세 (이후 2D)
+
+웹만 볼 때: `npm run web:intro` (인트로는 MP4, 우주는 2D glow fallback).
 
 ---
 

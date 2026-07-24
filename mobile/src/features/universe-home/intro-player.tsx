@@ -8,7 +8,7 @@ import { SyntheticSunBirth } from './synthetic-sun-birth';
 
 /**
  * Full/short intro layer: bundled MP4 when present, else synthetic sun birth.
- * Calls onNearEnd at crossfadeStart (or short midpoint), onEnded when finished.
+ * Crossfades into UniverseScene (3D native / 2D web fallback).
  */
 export function IntroPlayer({
   width,
@@ -23,6 +23,7 @@ export function IntroPlayer({
   onNearEnd: () => void;
   onEnded: () => void;
 }) {
+  // Full mode uses the bundled MP4 on every platform when present.
   const source = mode === 'full' ? getIntroVideoSource() : null;
 
   if (source == null) {
