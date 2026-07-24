@@ -20,7 +20,11 @@ import {
   resolveIntroMode,
 } from '../intro-policy';
 import { INTRO_HANDOFF } from '../handoff';
-import { consumeUniverseVisitKind, resetUniverseVisitSession } from '../session-visit';
+import {
+  isUniverseTabReturn,
+  markUniverseTabBlurred,
+  resetUniverseVisitSession,
+} from '../session-visit';
 
 describe('INTRO_HANDOFF', () => {
   it('locks sphere ratios for video handoff', () => {
@@ -58,13 +62,13 @@ describe('resolveIntroMode', () => {
     await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
   });
 
-  it('EXPO_PUBLIC_FORCE_UNIVERSE_INTRO forces full on cold start', async () => {
+  it('EXPO_PUBLIC_FORCE_UNIVERSE_INTRO forces full even on tab return', async () => {
     await markIntroSeen();
     const prev = process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO;
     process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO = '1';
     try {
       await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('full');
-      await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
+      await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('full');
     } finally {
       if (prev === undefined) delete process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO;
       else process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO = prev;
@@ -72,14 +76,15 @@ describe('resolveIntroMode', () => {
   });
 });
 
-describe('consumeUniverseVisitKind', () => {
+describe('session visit blur flag', () => {
   beforeEach(() => {
     resetUniverseVisitSession();
   });
 
-  it('first visit is cold, later is tab-return', () => {
-    expect(consumeUniverseVisitKind()).toBe('cold');
-    expect(consumeUniverseVisitKind()).toBe('tab-return');
-    expect(consumeUniverseVisitKind()).toBe('tab-return');
+  it('stays cold until a real blur is marked', () => {
+    expect(isUniverseTabReturn()).toBe(false);
+    expect(isUniverseTabReturn()).toBe(false);
+    markUniverseTabBlurred();
+    expect(isUniverseTabReturn()).toBe(true);
   });
 });

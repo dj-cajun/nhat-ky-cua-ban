@@ -24,8 +24,8 @@ export async function resolveIntroMode(opts: {
     /* ignore */
   }
 
-  // Dev/local: every cold open plays the full bundled intro (or synthetic).
-  if (isIntroForceEnv() && !opts.isTabReturn) {
+  // Dev/local (`npm run start:intro`): always full intro.
+  if (isIntroForceEnv()) {
     return 'full';
   }
 
@@ -51,6 +51,15 @@ export async function markIntroSeen(): Promise<void> {
 export async function requestIntroReplay(): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY_FORCE, '1');
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Clear “seen” so the next resolve can treat it as first-run full intro. */
+export async function clearIntroSeen(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(KEY_SEEN);
   } catch {
     /* ignore */
   }

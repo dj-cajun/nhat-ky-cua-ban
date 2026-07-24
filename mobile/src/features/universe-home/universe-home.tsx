@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from 'expo-router';
+import { useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -21,10 +22,11 @@ import { useMessages } from '@/i18n';
 import { INTRO_HANDOFF, type IntroMode } from './handoff';
 import { IntroPlayer } from './intro-player';
 import { markIntroSeen, resolveIntroMode } from './intro-policy';
-import { consumeUniverseVisitKind } from './session-visit';
+import {
+  isUniverseTabReturn,
+  markUniverseTabBlurred,
+} from './session-visit';
 import { UniverseScene3D } from './universe-scene';
-
-const KEY_FORCE = 'your-diary-universe-intro-force-once';
 
 type Props = {
   profile: Profile;
@@ -33,12 +35,12 @@ type Props = {
   onPressSelf: () => void;
   onPressCircle: (id: string) => void;
   onCreateCircle: () => void;
-  /** Prefer 2D glow spheres (no GL). */
   forceFallback?: boolean;
+  onIntroPlayingChange?: (playing: boolean) => void;
 };
 
 /**
- * Intro (video or synthetic) → crossfade → 3D (or 2D fallback) universe home.
+ * Fullscreen intro Modal (MP4) → crossfade → universe home.
  */
 export function UniverseHome({
   profile,
@@ -48,8 +50,10 @@ export function UniverseHome({
   onPressCircle,
   onCreateCircle,
   forceFallback,
+  onIntroPlayingChange,
 }: Props) {
   const t = useMessages();
+  const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
   const [mode, setMode] = useState<IntroMode | null>(null);
   const [revealProfile, setRevealProfile] = useState(false);
@@ -59,6 +63,21 @@ export function UniverseHome({
 
   const introOp = useSharedValue(1);
   const sceneOp = useSharedValue(0);
+
+  const showIntro = mode === 'full' || mode === 'short';
+  const introPlaying = Boolean(showIntro && !introDone);
+
+  useEffect(() => {
+    onIntroPlayingChange?.(introPlaying);
+  }, [introPlaying, onIntroPlayingChange]);
+
+  // Real tab blur only (not Strict Mode remount)
+  useEffect(() => {
+    const unsub = navigation.addListener('blur', () => {
+      markUniverseTabBlurred();
+    });
+    return unsub;
+  }, [navigation]);
 
   const applyMode = useCallback(
     (resolved: IntroMode) => {
@@ -81,11 +100,13 @@ export function UniverseHome({
     [introOp, sceneOp],
   );
 
+  // Resolve once on mount — tab-return only after a real blur
   useEffect(() => {
     let cancelled = false;
-    const visit = consumeUniverseVisitKind();
     void (async () => {
-      const resolved = await resolveIntroMode({ isTabReturn: visit === 'tab-return' });
+      const resolved = await resolveIntroMode({
+        isTabReturn: isUniverseTabReturn(),
+      });
       if (cancelled) return;
       applyMode(resolved);
     })();
@@ -93,26 +114,6 @@ export function UniverseHome({
       cancelled = true;
     };
   }, [applyMode]);
-
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      void (async () => {
-        try {
-          const force = await AsyncStorage.getItem(KEY_FORCE);
-          if (force !== '1' || cancelled) return;
-          const resolved = await resolveIntroMode({ isTabReturn: false });
-          if (cancelled) return;
-          applyMode(resolved);
-        } catch {
-          /* ignore */
-        }
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }, [applyMode]),
-  );
 
   const startCrossfade = useCallback(() => {
     introOp.value = withTiming(0, {
@@ -128,12 +129,14 @@ export function UniverseHome({
   const finishIntro = useCallback(() => {
     setIntroDone(true);
     void markIntroSeen();
+    introOp.value = 0;
+    sceneOp.value = 1;
     setTimeout(() => setRevealProfile(true), 80);
     setTimeout(
       () => setRevealPlanets(true),
       INTRO_HANDOFF.profileFadeSec * 1000 + 120,
     );
-  }, []);
+  }, [introOp, sceneOp]);
 
   const introStyle = useAnimatedStyle(() => ({
     opacity: introOp.value,
@@ -143,7 +146,8 @@ export function UniverseHome({
     opacity: sceneOp.value,
   }));
 
-  const showIntro = mode === 'full' || mode === 'short';
+  const modalW = Math.max(width, 1);
+  const modalH = Math.max(height, 1);
 
   return (
     <View style={[styles.root, { backgroundColor: INTRO_HANDOFF.spaceBg }]}>
@@ -161,80 +165,110 @@ export function UniverseHome({
         ) : null}
       </Animated.View>
 
-      {showIntro && !introDone ? (
-        <Animated.View style={[StyleSheet.absoluteFill, introStyle]} pointerEvents="none">
-          <IntroPlayer
-            key={introKey}
-            width={width}
-            height={height}
-            mode={mode}
-            onNearEnd={startCrossfade}
-            onEnded={finishIntro}
-          />
-        </Animated.View>
-      ) : null}
-
-      <SafeAreaView style={styles.chrome} pointerEvents="box-none">
-        <View style={styles.header} pointerEvents="box-none">
-          <View>
-            <Text style={styles.brand}>{t.universe.brand}</Text>
-            <Text style={styles.title}>{t.universe.title}</Text>
-          </View>
-          <Pressable
-            style={styles.avatar}
-            onPress={onPressSelf}
-            accessibilityRole="button"
-            accessibilityLabel={profile.displayName}
-          >
-            <Text style={styles.avatarText}>{profile.displayName.slice(0, 1)}</Text>
-          </Pressable>
-        </View>
-
-        {circles.length === 0 && introDone ? (
-          <View style={styles.emptyWrap} pointerEvents="box-none">
-            <Text style={styles.emptyTitle}>{t.universe.emptyTitle}</Text>
-            <Text style={styles.emptySub}>{t.universe.emptySub}</Text>
-            {canCreate ? (
-              <Pressable
-                style={styles.create}
-                onPress={onCreateCircle}
-                accessibilityRole="button"
-                accessibilityLabel={t.universe.createCircle}
-              >
-                <Text style={styles.createText}>{t.universe.createCircle}</Text>
-              </Pressable>
+      <Modal
+        visible={introPlaying}
+        animationType="none"
+        transparent={false}
+        statusBarTranslucent
+        presentationStyle="fullScreen"
+        supportedOrientations={['portrait']}
+      >
+        <View
+          style={[
+            styles.modalRoot,
+            { width: modalW, height: modalH, backgroundColor: INTRO_HANDOFF.spaceBg },
+          ]}
+        >
+          <Animated.View style={[StyleSheet.absoluteFill, sceneStyle]} pointerEvents="none">
+            <UniverseScene3D
+              profile={profile}
+              circles={circles}
+              revealProfile={false}
+              revealPlanets={false}
+              onPressSelf={() => {}}
+              onPressCircle={() => {}}
+              forceFallback={forceFallback}
+            />
+          </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, introStyle]}>
+            {mode === 'full' || mode === 'short' ? (
+              <IntroPlayer
+                key={introKey}
+                width={modalW}
+                height={modalH}
+                mode={mode}
+                onNearEnd={startCrossfade}
+                onEnded={finishIntro}
+              />
             ) : null}
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {!introPlaying ? (
+        <SafeAreaView style={styles.chrome} pointerEvents="box-none">
+          <View style={styles.header} pointerEvents="box-none">
+            <View>
+              <Text style={styles.brand}>{t.universe.brand}</Text>
+              <Text style={styles.title}>{t.universe.title}</Text>
+            </View>
+            <Pressable
+              style={styles.avatar}
+              onPress={onPressSelf}
+              accessibilityRole="button"
+              accessibilityLabel={profile.displayName}
+            >
+              <Text style={styles.avatarText}>{profile.displayName.slice(0, 1)}</Text>
+            </Pressable>
           </View>
-        ) : null}
 
-        {circles.length > 0 && canCreate && introDone ? (
-          <Pressable
-            style={styles.createFab}
-            onPress={onCreateCircle}
-            accessibilityRole="button"
-            accessibilityLabel={t.universe.createCircle}
-          >
-            <Text style={styles.createText}>{t.universe.createCircle}</Text>
-          </Pressable>
-        ) : null}
+          {circles.length === 0 && introDone ? (
+            <View style={styles.emptyWrap} pointerEvents="box-none">
+              <Text style={styles.emptyTitle}>{t.universe.emptyTitle}</Text>
+              <Text style={styles.emptySub}>{t.universe.emptySub}</Text>
+              {canCreate ? (
+                <Pressable
+                  style={styles.create}
+                  onPress={onCreateCircle}
+                  accessibilityRole="button"
+                  accessibilityLabel={t.universe.createCircle}
+                >
+                  <Text style={styles.createText}>{t.universe.createCircle}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
 
-        {revealProfile ? (
-          <Pressable
-            style={styles.nameChip}
-            onPress={onPressSelf}
-            accessibilityRole="button"
-            accessibilityLabel={profile.displayName}
-          >
-            <Text style={styles.nameChipText}>{profile.displayName}</Text>
-          </Pressable>
-        ) : null}
-      </SafeAreaView>
+          {circles.length > 0 && canCreate && introDone ? (
+            <Pressable
+              style={styles.createFab}
+              onPress={onCreateCircle}
+              accessibilityRole="button"
+              accessibilityLabel={t.universe.createCircle}
+            >
+              <Text style={styles.createText}>{t.universe.createCircle}</Text>
+            </Pressable>
+          ) : null}
+
+          {revealProfile ? (
+            <Pressable
+              style={styles.nameChip}
+              onPress={onPressSelf}
+              accessibilityRole="button"
+              accessibilityLabel={profile.displayName}
+            >
+              <Text style={styles.nameChipText}>{profile.displayName}</Text>
+            </Pressable>
+          ) : null}
+        </SafeAreaView>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  modalRoot: { flex: 1, overflow: 'hidden' },
   chrome: { ...StyleSheet.absoluteFill, padding: 16, justifyContent: 'space-between' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { color: 'rgba(255,230,168,0.85)', fontSize: 12, letterSpacing: 0.6 },
