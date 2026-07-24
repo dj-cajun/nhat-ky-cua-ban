@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { resolveSpotifyTrack, searchSpotifyTracks } from './diary-music.service';
@@ -21,6 +21,7 @@ type Props = {
 };
 
 export function SpotifyTrackPicker({ onSelect, onCancel }: Props) {
+  const t = useMessages();
   const [query, setQuery] = useState('');
   const [link, setLink] = useState('');
   const [results, setResults] = useState<SpotifyTrackSearchResult[]>([]);
@@ -70,7 +71,7 @@ export function SpotifyTrackPicker({ onSelect, onCancel }: Props) {
   if (preview) {
     return (
       <View style={styles.wrap}>
-        <Text style={styles.title}>{en.diaryMusic.confirmTitle}</Text>
+        <Text style={styles.title}>{t.diaryMusic.confirmTitle}</Text>
         <Text style={styles.previewTrack}>{preview.trackName}</Text>
         <Text style={styles.previewArtist}>{preview.artistNames.join(', ')}</Text>
         <Pressable
@@ -80,10 +81,10 @@ export function SpotifyTrackPicker({ onSelect, onCancel }: Props) {
             onSelect(preview);
           }}
         >
-          <Text style={styles.btnText}>{en.diaryMusic.confirm}</Text>
+          <Text style={styles.btnText}>{t.diaryMusic.confirm}</Text>
         </Pressable>
         <Pressable onPress={() => setPreview(null)}>
-          <Text style={styles.cancel}>{en.diaryMusic.backToSearch}</Text>
+          <Text style={styles.cancel}>{t.diaryMusic.backToSearch}</Text>
         </Pressable>
       </View>
     );
@@ -91,27 +92,27 @@ export function SpotifyTrackPicker({ onSelect, onCancel }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{en.diaryMusic.pickerTitle}</Text>
+      <Text style={styles.title}>{t.diaryMusic.pickerTitle}</Text>
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder={en.diaryMusic.searchPlaceholder}
+        placeholder={t.diaryMusic.searchPlaceholder}
         placeholderTextColor={colors.soft}
         style={styles.input}
         autoCorrect={false}
       />
-      <Text style={styles.or}>{en.diaryMusic.orPaste}</Text>
+      <Text style={styles.or}>{t.diaryMusic.orPaste}</Text>
       <TextInput
         value={link}
         onChangeText={setLink}
-        placeholder={en.diaryMusic.linkPlaceholder}
+        placeholder={t.diaryMusic.linkPlaceholder}
         placeholderTextColor={colors.soft}
         style={styles.input}
         autoCapitalize="none"
         autoCorrect={false}
       />
       <Pressable style={styles.secondary} onPress={() => void resolveLink()} disabled={!link.trim()}>
-        <Text style={styles.secondaryText}>{en.diaryMusic.resolveLink}</Text>
+        <Text style={styles.secondaryText}>{t.diaryMusic.resolveLink}</Text>
       </Pressable>
 
       {pending ? <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} /> : null}
@@ -135,14 +136,14 @@ export function SpotifyTrackPicker({ onSelect, onCancel }: Props) {
         )}
         ListEmptyComponent={
           query.trim().length >= 2 && !pending ? (
-            <Text style={styles.empty}>{en.diaryMusic.noResults}</Text>
+            <Text style={styles.empty}>{t.diaryMusic.noResults}</Text>
           ) : null
         }
       />
 
       {onCancel ? (
         <Pressable onPress={onCancel}>
-          <Text style={styles.cancel}>{en.diaryMusic.cancel}</Text>
+          <Text style={styles.cancel}>{t.diaryMusic.cancel}</Text>
         </Pressable>
       ) : null}
     </View>

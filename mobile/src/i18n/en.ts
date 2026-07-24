@@ -395,4 +395,12 @@ export const en = {
     audit: 'Audit log',
     back: '← Back',
   },
+
+  language: {
+    label: 'Language',
+    en: 'English',
+    ko: '한국어',
+  },
 } as const;
+
+export type Messages = typeof en;

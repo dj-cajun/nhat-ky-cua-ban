@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 type Props = {
   title?: string;
   subtitle?: string;
@@ -11,16 +10,19 @@ type Props = {
 };
 
 export function AppForbiddenState({
-  title = en.states.forbiddenTitle,
-  subtitle = en.states.forbiddenSub,
+  title,
+  subtitle,
   actionLabel,
   onAction,
   style,
 }: Props) {
+  const t = useMessages();
+  const resolvedTitle = title ?? t.states.forbiddenTitle;
+  const resolvedSubtitle = subtitle ?? t.states.forbiddenSub;
   return (
     <View style={[styles.wrap, style]} accessibilityRole="alert">
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.sub}>{subtitle}</Text>
+      <Text style={styles.title}>{resolvedTitle}</Text>
+      <Text style={styles.sub}>{resolvedSubtitle}</Text>
       {actionLabel && onAction ? (
         <Pressable
           style={styles.btn}

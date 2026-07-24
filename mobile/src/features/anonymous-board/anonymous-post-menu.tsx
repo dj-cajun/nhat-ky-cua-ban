@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 type Props = {
   isMine: boolean;
   onDelete?: () => void;
@@ -17,27 +16,28 @@ export function AnonymousPostMenu({
   onHide,
   onBlockAuthor,
 }: Props) {
+  const t = useMessages();
   return (
     <View style={styles.wrap}>
       {isMine ? (
         <>
           <Pressable onPress={onDelete}>
-            <Text style={styles.item}>{en.aliasBoard.delete}</Text>
+            <Text style={styles.item}>{t.aliasBoard.delete}</Text>
           </Pressable>
           <Pressable onPress={onReport}>
-            <Text style={styles.item}>{en.aliasBoard.report}</Text>
+            <Text style={styles.item}>{t.aliasBoard.report}</Text>
           </Pressable>
         </>
       ) : (
         <>
           <Pressable onPress={onReport}>
-            <Text style={styles.item}>{en.aliasBoard.report}</Text>
+            <Text style={styles.item}>{t.aliasBoard.report}</Text>
           </Pressable>
           <Pressable onPress={onHide}>
-            <Text style={styles.item}>{en.aliasBoard.hide}</Text>
+            <Text style={styles.item}>{t.aliasBoard.hide}</Text>
           </Pressable>
           <Pressable onPress={onBlockAuthor}>
-            <Text style={styles.itemWarn}>{en.aliasBoard.blockAuthor}</Text>
+            <Text style={styles.itemWarn}>{t.aliasBoard.blockAuthor}</Text>
           </Pressable>
         </>
       )}

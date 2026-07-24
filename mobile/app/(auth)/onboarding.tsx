@@ -6,9 +6,9 @@ import { signUpLocal } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { AnalyticsEvents, track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function OnboardingScreen() {
+  const t = useMessages();
   const { email } = useLocalSearchParams<{ email?: string }>();
   const [displayName, setDisplayName] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -16,11 +16,11 @@ export default function OnboardingScreen() {
 
   const finish = async () => {
     if (!agreed) {
-      setError(en.onboarding.termsRequired);
+      setError(t.onboarding.termsRequired);
       return;
     }
     if (!displayName.trim()) {
-      setError(en.onboarding.nameRequired);
+      setError(t.onboarding.nameRequired);
       return;
     }
     try {
@@ -37,28 +37,28 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.onboarding.title}</Text>
-      <Text style={styles.sub}>{en.onboarding.sub}</Text>
+      <Text style={styles.title}>{t.onboarding.title}</Text>
+      <Text style={styles.sub}>{t.onboarding.sub}</Text>
 
-      <Text style={styles.label}>{en.onboarding.displayName}</Text>
+      <Text style={styles.label}>{t.onboarding.displayName}</Text>
       <TextInput
         value={displayName}
         onChangeText={setDisplayName}
         maxLength={24}
         style={styles.input}
-        placeholder={en.onboarding.placeholder}
+        placeholder={t.onboarding.placeholder}
         placeholderTextColor={colors.soft}
       />
 
       <View style={styles.row}>
         <Switch value={agreed} onValueChange={setAgreed} />
-        <Text style={styles.terms}>{en.onboarding.terms}</Text>
+        <Text style={styles.terms}>{t.onboarding.terms}</Text>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.btn} onPress={() => void finish()}>
-        <Text style={styles.btnText}>{en.onboarding.createDiary}</Text>
+        <Text style={styles.btnText}>{t.onboarding.createDiary}</Text>
       </Pressable>
     </SafeAreaView>
   );

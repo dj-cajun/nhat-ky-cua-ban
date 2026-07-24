@@ -8,11 +8,11 @@ import { useReceivedMessages } from '@/features/private-messages/use-received-me
 import { useSentMessages } from '@/features/private-messages/use-sent-messages';
 import { getSessionProfile } from '@/features/local/repository';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 type Tab = 'inbox' | 'sent';
 
 export default function MessagesScreen() {
+  const t = useMessages();
   const [meId, setMeId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('inbox');
   const received = useReceivedMessages(meId);
@@ -36,8 +36,8 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.messages.title}</Text>
-      <Text style={styles.sub}>{en.messages.sub}</Text>
+      <Text style={styles.title}>{t.messages.title}</Text>
+      <Text style={styles.sub}>{t.messages.sub}</Text>
 
       <View style={styles.tabs}>
         <Pressable
@@ -45,7 +45,7 @@ export default function MessagesScreen() {
           onPress={() => setTab('inbox')}
         >
           <Text style={tab === 'inbox' ? styles.tabTextOn : styles.tabText}>
-            {en.messages.inbox}
+            {t.messages.inbox}
           </Text>
         </Pressable>
         <Pressable
@@ -53,13 +53,13 @@ export default function MessagesScreen() {
           onPress={() => setTab('sent')}
         >
           <Text style={tab === 'sent' ? styles.tabTextOn : styles.tabText}>
-            {en.messages.sent}
+            {t.messages.sent}
           </Text>
         </Pressable>
       </View>
 
       <Pressable style={styles.settings} onPress={() => router.push('/messages/preferences')}>
-        <Text style={styles.settingsText}>{en.messages.preferences}</Text>
+        <Text style={styles.settingsText}>{t.messages.preferences}</Text>
       </Pressable>
 
       {error ? <AppErrorState message={error} /> : null}
@@ -83,7 +83,7 @@ export default function MessagesScreen() {
               >
                 <Text style={styles.from}>
                   {item.senderDisplay}
-                  {!item.isOpened ? ` · ${en.messages.newBadge}` : ''}
+                  {!item.isOpened ? ` · ${t.messages.newBadge}` : ''}
                 </Text>
                 <Text style={styles.circle}>{item.circle.name}</Text>
                 <Text style={styles.body} numberOfLines={3}>
@@ -99,8 +99,8 @@ export default function MessagesScreen() {
                 onPress={() => router.push(`/messages/${item.id}?folder=sent`)}
               >
                 <Text style={styles.from}>
-                  {en.messages.to(item.recipientDisplay)}
-                  {item.senderMode === 'alias' ? ` · ${en.messages.asAlias}` : ''}
+                  {t.messages.to(item.recipientDisplay)}
+                  {item.senderMode === 'alias' ? ` · ${t.messages.asAlias}` : ''}
                 </Text>
                 <Text style={styles.circle}>{item.circle.name}</Text>
                 <Text style={styles.body} numberOfLines={3}>
@@ -112,18 +112,18 @@ export default function MessagesScreen() {
 
         {(tab === 'inbox' ? received.items : sent.items).length === 0 && !loading ? (
           <AppEmptyState
-            title={tab === 'inbox' ? en.messages.emptyInbox : en.messages.emptySent}
+            title={tab === 'inbox' ? t.messages.emptyInbox : t.messages.emptySent}
           />
         ) : null}
 
         {tab === 'inbox' && received.nextCursor ? (
           <Pressable style={styles.more} onPress={() => void received.loadMore()}>
-            <Text style={styles.moreText}>{en.messages.loadMore}</Text>
+            <Text style={styles.moreText}>{t.messages.loadMore}</Text>
           </Pressable>
         ) : null}
         {tab === 'sent' && sent.nextCursor ? (
           <Pressable style={styles.more} onPress={() => void sent.loadMore()}>
-            <Text style={styles.moreText}>{en.messages.loadMore}</Text>
+            <Text style={styles.moreText}>{t.messages.loadMore}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

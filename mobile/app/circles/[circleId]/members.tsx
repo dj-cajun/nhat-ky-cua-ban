@@ -1,13 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function CircleMembersScreen() {
+  const t = useMessages();
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.circle.members}</Text>
-      <Text style={styles.sub}>{en.circle.membersSub}</Text>
+      <Text style={styles.title}>{t.circle.members}</Text>
+      <Text style={styles.sub}>{t.circle.membersSub}</Text>
     </SafeAreaView>
   );
 }

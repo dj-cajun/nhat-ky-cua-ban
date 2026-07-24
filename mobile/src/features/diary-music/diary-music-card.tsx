@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import type { DiaryMusicCard } from './diary-music.types';
 import { isAllowedSpotifyArtworkUrl } from './spotify-url-parser';
 
@@ -12,6 +12,7 @@ type Props = {
 
 /** Spotify design: square cover, no overlay icons/filters, small corner radius. */
 export function DiaryMusicCardView({ music, onOpen, compact }: Props) {
+  const t = useMessages();
   const art =
     music.artworkUrl && isAllowedSpotifyArtworkUrl(music.artworkUrl)
       ? music.artworkUrl
@@ -20,7 +21,7 @@ export function DiaryMusicCardView({ music, onOpen, compact }: Props) {
 
   return (
     <Pressable style={styles.wrap} onPress={onOpen} accessibilityRole="button">
-      <Text style={styles.label}>{en.diaryMusic.today}</Text>
+      <Text style={styles.label}>{t.diaryMusic.today}</Text>
       <View style={styles.row}>
         {art ? (
           <Image
@@ -40,8 +41,8 @@ export function DiaryMusicCardView({ music, onOpen, compact }: Props) {
           <Text style={styles.artist} numberOfLines={1}>
             {music.artistNames.join(', ')}
           </Text>
-          <Text style={styles.spotify}>{en.diaryMusic.spotify}</Text>
-          <Text style={styles.listen}>{en.diaryMusic.listenOnSpotify}</Text>
+          <Text style={styles.spotify}>{t.diaryMusic.spotify}</Text>
+          <Text style={styles.listen}>{t.diaryMusic.listenOnSpotify}</Text>
         </View>
       </View>
     </Pressable>

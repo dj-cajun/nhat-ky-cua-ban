@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 type Props = {
   onPress: () => void;
   label?: string;
@@ -11,10 +10,12 @@ type Props = {
 
 export function RetryButton({
   onPress,
-  label = en.states.retry,
+  label,
   pending = false,
   disabled = false,
 }: Props) {
+  const t = useMessages();
+  const resolvedLabel = label ?? t.states.retry;
   const busy = pending || disabled;
   return (
     <Pressable
@@ -22,13 +23,13 @@ export function RetryButton({
       onPress={onPress}
       disabled={busy}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={resolvedLabel}
       accessibilityState={{ busy: pending, disabled: busy }}
     >
       {pending ? (
         <ActivityIndicator color={colors.ink} />
       ) : (
-        <Text style={styles.text}>{label}</Text>
+        <Text style={styles.text}>{resolvedLabel}</Text>
       )}
     </Pressable>
   );

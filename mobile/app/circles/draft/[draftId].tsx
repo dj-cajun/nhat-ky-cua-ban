@@ -2,15 +2,15 @@ import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function CircleDraftScreen() {
+  const t = useMessages();
   const { draftId } = useLocalSearchParams<{ draftId: string }>();
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.circle.draftTitle}</Text>
+      <Text style={styles.title}>{t.circle.draftTitle}</Text>
       <Text style={styles.sub}>draftId: {draftId}</Text>
-      <Text style={styles.sub}>{en.circle.draftSub}</Text>
+      <Text style={styles.sub}>{t.circle.draftSub}</Text>
     </SafeAreaView>
   );
 }

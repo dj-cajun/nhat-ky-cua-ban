@@ -23,11 +23,12 @@ import {
 import { useCirclePresence } from '@/features/presence/use-circle-presence';
 import type { Circle, Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 
 export default function CircleHomeScreen() {
+  const t = useMessages();
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [meId, setMeId] = useState<string | null>(null);
   const [circle, setCircle] = useState<Circle | null>(null);
@@ -114,9 +115,9 @@ export default function CircleHomeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <AppForbiddenState
-          title={en.circle.forbiddenTitle}
-          subtitle={en.circle.forbiddenSub}
-          actionLabel={en.circle.toUniverse}
+          title={t.circle.forbiddenTitle}
+          subtitle={t.circle.forbiddenSub}
+          actionLabel={t.circle.toUniverse}
           onAction={() => router.replace('/(tabs)/universe')}
         />
       </SafeAreaView>
@@ -153,9 +154,9 @@ export default function CircleHomeScreen() {
       <Pressable
         onPress={() => router.replace('/(tabs)/universe')}
         accessibilityRole="button"
-        accessibilityLabel={en.circle.backUniverse}
+        accessibilityLabel={t.circle.backUniverse}
       >
-        <Text style={styles.back}>{en.circle.backUniverse}</Text>
+        <Text style={styles.back}>{t.circle.backUniverse}</Text>
       </Pressable>
       <View style={styles.header}>
         <View style={[styles.badge, { backgroundColor: circle.color }]}>
@@ -164,19 +165,19 @@ export default function CircleHomeScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{circle.name}</Text>
           <Text style={styles.sub}>
-            {en.circle.memberCount(members.length)}
-            {activePostId ? ` · ${en.universe.notice}` : ''}
-            {connection === 'connected' ? ` · ${en.circle.hereNow}` : ''}
+            {t.circle.memberCount(members.length)}
+            {activePostId ? ` · ${t.universe.notice}` : ''}
+            {connection === 'connected' ? ` · ${t.circle.hereNow}` : ''}
           </Text>
           {connectionDegraded ? (
-            <Text style={styles.degraded}>{en.circle.realtimeDegraded}</Text>
+            <Text style={styles.degraded}>{t.circle.realtimeDegraded}</Text>
           ) : null}
         </View>
       </View>
 
       {error ? <AppErrorState message={error} onRetry={() => void reload()} /> : null}
 
-      <Text style={styles.section}>{en.circle.members}</Text>
+      <Text style={styles.section}>{t.circle.members}</Text>
       <View style={styles.grid}>
         {members.map((m) => {
           const badge = badgeFor(m.userId);
@@ -195,7 +196,7 @@ export default function CircleHomeScreen() {
               <Text style={styles.memberName} numberOfLines={1}>
                 {name}
               </Text>
-              {m.isPioneer ? <Text style={styles.pioneer}>{en.circle.pioneer}</Text> : null}
+              {m.isPioneer ? <Text style={styles.pioneer}>{t.circle.pioneer}</Text> : null}
               <View style={styles.badgeSlot}>
                 <MemberPresenceBadge
                   badge={badge}
@@ -212,16 +213,16 @@ export default function CircleHomeScreen() {
         style={styles.link}
         onPress={() => router.push(`/circles/${circleId}/notice`)}
         accessibilityRole="button"
-        accessibilityLabel={en.circle.noticePoll}
+        accessibilityLabel={t.circle.noticePoll}
       >
-        <Text style={styles.linkText}>{en.circle.noticePoll}</Text>
+        <Text style={styles.linkText}>{t.circle.noticePoll}</Text>
       </Pressable>
 
-      <Text style={[styles.section, { marginTop: 18 }]}>{en.circle.anonymousBoard}</Text>
+      <Text style={[styles.section, { marginTop: 18 }]}>{t.circle.anonymousBoard}</Text>
       {!isFeatureEnabled('anonymous_board_enabled') ? (
-        <Text style={styles.previewEmpty}>{en.circle.featureDisabled}</Text>
+        <Text style={styles.previewEmpty}>{t.circle.featureDisabled}</Text>
       ) : aliasPreview.length === 0 ? (
-        <AppEmptyState title={en.aliasBoard.empty} subtitle={en.aliasBoard.emptySub} />
+        <AppEmptyState title={t.aliasBoard.empty} subtitle={t.aliasBoard.emptySub} />
       ) : (
         <View style={styles.previewList}>
           {aliasPreview.map((p) => (
@@ -239,9 +240,9 @@ export default function CircleHomeScreen() {
           style={styles.link}
           onPress={() => router.push(`/circles/${circleId}/anonymous-board`)}
           accessibilityRole="button"
-          accessibilityLabel={en.circle.aliasViewBoard}
+          accessibilityLabel={t.circle.aliasViewBoard}
         >
-          <Text style={styles.linkText}>{en.circle.aliasViewBoard}</Text>
+          <Text style={styles.linkText}>{t.circle.aliasViewBoard}</Text>
         </Pressable>
       ) : null}
 
@@ -250,14 +251,14 @@ export default function CircleHomeScreen() {
         onPress={() => router.push(`/circles/${circleId}/join`)}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.circle.joinInvite}</Text>
+        <Text style={styles.linkText}>{t.circle.joinInvite}</Text>
       </Pressable>
       <Pressable
         style={styles.link}
         onPress={() => router.push(`/circles/${circleId}/settings`)}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.circle.settings}</Text>
+        <Text style={styles.linkText}>{t.circle.settings}</Text>
       </Pressable>
     </SafeAreaView>
   );

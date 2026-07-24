@@ -7,9 +7,9 @@ import {
   listMyJoinRecommendations,
 } from '@/features/local/repository';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function RecommendationsInboxScreen() {
+  const t = useMessages();
   const [items, setItems] = useState<Awaited<ReturnType<typeof listMyJoinRecommendations>>>([]);
 
   useFocusEffect(
@@ -29,11 +29,11 @@ export default function RecommendationsInboxScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>{en.recommendations.back}</Text>
+          <Text style={styles.back}>{t.recommendations.back}</Text>
         </Pressable>
-        <Text style={styles.title}>{en.recommendations.title}</Text>
+        <Text style={styles.title}>{t.recommendations.title}</Text>
         {items.length === 0 ? (
-          <Text style={styles.empty}>{en.recommendations.empty}</Text>
+          <Text style={styles.empty}>{t.recommendations.empty}</Text>
         ) : (
           items.map((item) => (
             <Pressable
@@ -42,7 +42,7 @@ export default function RecommendationsInboxScreen() {
               onPress={() => router.push(`/recommendations/${item.recommendationId}`)}
             >
               <Text style={styles.name}>{item.applicantDisplayName}</Text>
-              <Text style={styles.meta}>{en.recommendations.forCircle(item.circleName)}</Text>
+              <Text style={styles.meta}>{t.recommendations.forCircle(item.circleName)}</Text>
             </Pressable>
           ))
         )}

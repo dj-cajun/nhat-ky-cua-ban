@@ -6,10 +6,11 @@ import { AppEmptyState, AppErrorState, AppLoadingState } from '@/components/stat
 import { getDiary, getSessionProfile } from '@/features/local/repository';
 import { DIARY_MOODS, type DiaryEntry, type Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
 export default function MyDiaryTab() {
+  const t = useMessages();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,35 +52,35 @@ export default function MyDiaryTab() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.brand}>{en.diary.brand}</Text>
+      <Text style={styles.brand}>{t.diary.brand}</Text>
       <Text style={styles.title}>{profile.displayName}</Text>
-      <Text style={styles.mood}>{mood ? `${mood.emoji} ${mood.label}` : en.diary.noMood}</Text>
+      <Text style={styles.mood}>{mood ? `${mood.emoji} ${mood.label}` : t.diary.noMood}</Text>
 
       {error ? <AppErrorState message={error} onRetry={() => void reload()} /> : null}
 
       {entry?.tenCharText ? (
         <View style={styles.card}>
-          <Text style={styles.label}>{en.diary.tenChar}</Text>
+          <Text style={styles.label}>{t.diary.tenChar}</Text>
           <Text style={styles.ten}>{entry.tenCharText}</Text>
         </View>
       ) : null}
       {entry?.shortText ? (
         <View style={styles.card}>
-          <Text style={styles.label}>{en.diary.shortText}</Text>
+          <Text style={styles.label}>{t.diary.shortText}</Text>
           <Text style={styles.body}>{entry.shortText}</Text>
         </View>
       ) : null}
       {!entry && !error ? (
-        <AppEmptyState title={en.diary.emptyToday} subtitle={en.diary.emptyTodaySub} />
+        <AppEmptyState title={t.diary.emptyToday} subtitle={t.diary.emptyTodaySub} />
       ) : null}
 
       <Pressable
         style={styles.btn}
         onPress={() => router.push(`/diary/${profile.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={en.diary.editOrView}
+        accessibilityLabel={t.diary.editOrView}
       >
-        <Text style={styles.btnText}>{en.diary.editOrView}</Text>
+        <Text style={styles.btnText}>{t.diary.editOrView}</Text>
       </Pressable>
     </SafeAreaView>
   );

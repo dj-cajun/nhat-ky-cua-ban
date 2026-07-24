@@ -15,9 +15,9 @@ import { useSendMessage } from '@/features/private-messages/use-send-message';
 import { NOTE_BODY_MAX } from '@/features/private-messages/private-message.validation';
 import { getProfile, getSessionProfile } from '@/features/local/repository';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function ComposeNoteScreen() {
+  const t = useMessages();
   const {
     recipientId,
     circleId: circleParam,
@@ -86,23 +86,23 @@ export default function ComposeNoteScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>{en.messages.back}</Text>
+          <Text style={styles.back}>{t.messages.back}</Text>
         </Pressable>
         <Text style={styles.title}>
           {isReply
-            ? en.messages.replyTitle(recipientName || 'them')
-            : en.messages.composeTitle(recipientName || 'them')}
+            ? t.messages.replyTitle(recipientName || 'them')
+            : t.messages.composeTitle(recipientName || 'them')}
         </Text>
-        <Text style={styles.sub}>{en.messages.composeSub}</Text>
+        <Text style={styles.sub}>{t.messages.composeSub}</Text>
 
-        <Text style={styles.label}>{en.messages.howToSend}</Text>
+        <Text style={styles.label}>{t.messages.howToSend}</Text>
         <View style={styles.modeRow}>
           <Pressable
             style={[styles.mode, compose.mode === 'named' && styles.modeOn]}
             onPress={() => compose.setMode('named')}
           >
             <Text style={compose.mode === 'named' ? styles.modeTextOn : styles.modeText}>
-              {en.messages.sendNamed}
+              {t.messages.sendNamed}
             </Text>
           </Pressable>
           <Pressable
@@ -110,14 +110,14 @@ export default function ComposeNoteScreen() {
             onPress={() => compose.setMode('alias')}
           >
             <Text style={compose.mode === 'alias' ? styles.modeTextOn : styles.modeText}>
-              {en.messages.sendAlias}
+              {t.messages.sendAlias}
             </Text>
           </Pressable>
         </View>
 
         {!isReply && !circleParam && circles.length > 1 ? (
           <>
-            <Text style={styles.label}>{en.messages.pickCircle}</Text>
+            <Text style={styles.label}>{t.messages.pickCircle}</Text>
             <View style={{ gap: 8 }}>
               {circles.map((c) => (
                 <Pressable
@@ -133,14 +133,14 @@ export default function ComposeNoteScreen() {
         ) : null}
 
         {!isReply && circles.length === 0 ? (
-          <Text style={styles.error}>{en.messages.noSharedCircle}</Text>
+          <Text style={styles.error}>{t.messages.noSharedCircle}</Text>
         ) : null}
 
-        <Text style={styles.label}>{en.messages.noteLabel}</Text>
+        <Text style={styles.label}>{t.messages.noteLabel}</Text>
         <TextInput
           value={compose.body}
           onChangeText={compose.setBody}
-          placeholder={en.messages.notePlaceholder}
+          placeholder={t.messages.notePlaceholder}
           placeholderTextColor={colors.soft}
           multiline
           maxLength={NOTE_BODY_MAX}
@@ -149,7 +149,7 @@ export default function ComposeNoteScreen() {
         <Text style={styles.char}>
           {compose.body.trim().length}/{NOTE_BODY_MAX}
         </Text>
-        <Text style={styles.notice}>{en.messages.safetyNotice}</Text>
+        <Text style={styles.notice}>{t.messages.safetyNotice}</Text>
         {compose.error ? <Text style={styles.error}>{compose.error}</Text> : null}
 
         <Pressable
@@ -157,16 +157,16 @@ export default function ComposeNoteScreen() {
           disabled={compose.pending || !canSend}
           onPress={() => {
             if (compose.mode === 'alias') {
-              Alert.alert(en.messages.sendAlias, en.messages.aliasConfirm, [
-                { text: en.messages.cancel, style: 'cancel' },
-                { text: en.messages.send, onPress: () => void compose.submit() },
+              Alert.alert(t.messages.sendAlias, t.messages.aliasConfirm, [
+                { text: t.messages.cancel, style: 'cancel' },
+                { text: t.messages.send, onPress: () => void compose.submit() },
               ]);
             } else {
               void compose.submit();
             }
           }}
         >
-          <Text style={styles.sendText}>{en.messages.send}</Text>
+          <Text style={styles.sendText}>{t.messages.send}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

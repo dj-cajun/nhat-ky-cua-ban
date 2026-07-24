@@ -2,15 +2,15 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function SignUpScreen() {
+  const t = useMessages();
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.auth.signUpTitle}</Text>
-      <Text style={styles.sub}>{en.auth.signUpSub}</Text>
+      <Text style={styles.title}>{t.auth.signUpTitle}</Text>
+      <Text style={styles.sub}>{t.auth.signUpSub}</Text>
       <Pressable style={styles.btn} onPress={() => router.replace('/(auth)/sign-in')}>
-        <Text style={styles.btnText}>{en.auth.backToSignIn}</Text>
+        <Text style={styles.btnText}>{t.auth.backToSignIn}</Text>
       </Pressable>
     </SafeAreaView>
   );

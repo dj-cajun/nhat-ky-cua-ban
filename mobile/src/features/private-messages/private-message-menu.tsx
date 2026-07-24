@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 type Props = {
   onReport: () => void;
   onHide: () => void;
@@ -10,21 +9,22 @@ type Props = {
 };
 
 export function PrivateMessageMenu({ onReport, onHide, onBlockSender, onReply }: Props) {
+  const t = useMessages();
   return (
     <View style={styles.wrap}>
       {onReply ? (
         <Pressable onPress={onReply}>
-          <Text style={styles.item}>{en.messages.reply}</Text>
+          <Text style={styles.item}>{t.messages.reply}</Text>
         </Pressable>
       ) : null}
       <Pressable onPress={onReport}>
-        <Text style={styles.item}>{en.messages.report}</Text>
+        <Text style={styles.item}>{t.messages.report}</Text>
       </Pressable>
       <Pressable onPress={onHide}>
-        <Text style={styles.item}>{en.messages.hide}</Text>
+        <Text style={styles.item}>{t.messages.hide}</Text>
       </Pressable>
       <Pressable onPress={onBlockSender}>
-        <Text style={styles.itemWarn}>{en.messages.blockSender}</Text>
+        <Text style={styles.itemWarn}>{t.messages.blockSender}</Text>
       </Pressable>
     </View>
   );

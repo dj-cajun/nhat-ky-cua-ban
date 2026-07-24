@@ -6,8 +6,7 @@ import { getSessionProfile } from '@/features/local/repository';
 import { useReportContent } from '@/features/moderation/use-report-content';
 import type { ReportReason, ReportTargetType } from '@/features/moderation/moderation.types';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 const REASONS: ReportReason[] = [
   'harassment',
   'threat',
@@ -21,6 +20,7 @@ const REASONS: ReportReason[] = [
 ];
 
 export default function CreateReportScreen() {
+  const t = useMessages();
   const params = useLocalSearchParams<{
     targetType?: string;
     targetId?: string;
@@ -60,19 +60,19 @@ export default function CreateReportScreen() {
       <Pressable onPress={() => router.back()}>
         <Text style={styles.back}>← Back</Text>
       </Pressable>
-      <Text style={styles.title}>{en.reports.title}</Text>
-      <Text style={styles.sub}>{en.reports.sub}</Text>
+      <Text style={styles.title}>{t.reports.title}</Text>
+      <Text style={styles.sub}>{t.reports.sub}</Text>
 
       {done ? (
         <Text style={styles.done}>
-          {en.reports.submitted}
+          {t.reports.submitted}
           {'\n'}
-          {hideForMe ? en.reports.hiddenForYou : ''}
-          {alsoBlock ? `\n${en.reports.blocked}` : ''}
+          {hideForMe ? t.reports.hiddenForYou : ''}
+          {alsoBlock ? `\n${t.reports.blocked}` : ''}
         </Text>
       ) : (
         <>
-          <Text style={styles.label}>{en.reports.reason}</Text>
+          <Text style={styles.label}>{t.reports.reason}</Text>
           <View style={{ gap: 8 }}>
             {REASONS.map((id) => (
               <Pressable
@@ -81,17 +81,17 @@ export default function CreateReportScreen() {
                 style={[styles.reason, reason === id && styles.reasonOn]}
               >
                 <Text style={{ color: reason === id ? '#fff' : colors.ink }}>
-                  {en.reports.reasons[id]}
+                  {t.reports.reasons[id]}
                 </Text>
               </Pressable>
             ))}
           </View>
 
-          <Text style={styles.label}>{en.reports.details}</Text>
+          <Text style={styles.label}>{t.reports.details}</Text>
           <TextInput
             value={details}
             onChangeText={setDetails}
-            placeholder={en.reports.detailsPlaceholder}
+            placeholder={t.reports.detailsPlaceholder}
             placeholderTextColor={colors.soft}
             multiline
             style={styles.input}
@@ -99,18 +99,18 @@ export default function CreateReportScreen() {
 
           <Pressable style={styles.check} onPress={() => setHideForMe((v) => !v)}>
             <Text style={{ color: colors.ink }}>
-              {hideForMe ? '☑' : '☐'} {en.reports.hideForMe}
+              {hideForMe ? '☑' : '☐'} {t.reports.hideForMe}
             </Text>
           </Pressable>
 
           {params.targetUserId ? (
             <Pressable style={styles.check} onPress={() => setAlsoBlock((v) => !v)}>
               <Text style={{ color: colors.ink }}>
-                {alsoBlock ? '☑' : '☐'} {en.reports.blockUser}
+                {alsoBlock ? '☑' : '☐'} {t.reports.blockUser}
               </Text>
             </Pressable>
           ) : null}
-          {alsoBlock ? <Text style={styles.hint}>{en.reports.blockConfirm}</Text> : null}
+          {alsoBlock ? <Text style={styles.hint}>{t.reports.blockConfirm}</Text> : null}
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -126,7 +126,7 @@ export default function CreateReportScreen() {
               })
             }
           >
-            <Text style={styles.btnText}>{en.reports.submit}</Text>
+            <Text style={styles.btnText}>{t.reports.submit}</Text>
           </Pressable>
         </>
       )}

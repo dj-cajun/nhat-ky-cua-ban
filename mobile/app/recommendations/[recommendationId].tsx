@@ -10,9 +10,9 @@ import {
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function RecommendationDetailScreen() {
+  const t = useMessages();
   const { recommendationId } = useLocalSearchParams<{ recommendationId: string }>();
   const [item, setItem] = useState<Awaited<ReturnType<typeof getRecommendationForViewer>>>(null);
   const [error, setError] = useState('');
@@ -50,8 +50,8 @@ export default function RecommendationDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.title}>{en.recommendations.title}</Text>
-        <Text style={styles.sub}>{en.errors.forbidden}</Text>
+        <Text style={styles.title}>{t.recommendations.title}</Text>
+        <Text style={styles.sub}>{t.errors.forbidden}</Text>
       </SafeAreaView>
     );
   }
@@ -61,22 +61,22 @@ export default function RecommendationDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>{en.recommendations.back}</Text>
+        <Text style={styles.back}>{t.recommendations.back}</Text>
       </Pressable>
       <Text style={styles.title}>{item.applicantDisplayName}</Text>
-      <Text style={styles.meta}>{en.recommendations.forCircle(item.circleName)}</Text>
-      <Text style={styles.prompt}>{en.recommendations.prompt}</Text>
+      <Text style={styles.meta}>{t.recommendations.forCircle(item.circleName)}</Text>
+      <Text style={styles.prompt}>{t.recommendations.prompt}</Text>
 
       {pending ? (
         <View style={{ gap: 10, marginTop: 20 }}>
           <Pressable style={styles.btn} onPress={() => void respond('recommended')}>
-            <Text style={styles.btnText}>{en.recommendations.recommend}</Text>
+            <Text style={styles.btnText}>{t.recommendations.recommend}</Text>
           </Pressable>
           <Pressable style={styles.secondary} onPress={() => void respond('unknown')}>
-            <Text>{en.recommendations.unknown}</Text>
+            <Text>{t.recommendations.unknown}</Text>
           </Pressable>
           <Pressable style={styles.secondary} onPress={() => router.back()}>
-            <Text>{en.recommendations.later}</Text>
+            <Text>{t.recommendations.later}</Text>
           </Pressable>
         </View>
       ) : (

@@ -13,9 +13,9 @@ import {
 } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function NotificationsScreen() {
+  const t = useMessages();
   const [pendingRecs, setPendingRecs] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,8 +57,8 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.notifications.title}</Text>
-      <Text style={styles.sub}>{en.notifications.sub}</Text>
+      <Text style={styles.title}>{t.notifications.title}</Text>
+      <Text style={styles.sub}>{t.notifications.sub}</Text>
 
       {error ? <AppErrorState message={error} onRetry={() => void reload()} /> : null}
 
@@ -66,10 +66,10 @@ export default function NotificationsScreen() {
         style={styles.link}
         onPress={goRecommendations}
         accessibilityRole="button"
-        accessibilityLabel={en.recommendations.title}
+        accessibilityLabel={t.recommendations.title}
       >
         <Text style={styles.linkText}>
-          {en.recommendations.title}
+          {t.recommendations.title}
           {pendingRecs > 0 ? ` (${pendingRecs})` : ''}
         </Text>
       </Pressable>
@@ -78,9 +78,9 @@ export default function NotificationsScreen() {
         style={styles.link}
         onPress={() => router.push('/messages')}
         accessibilityRole="button"
-        accessibilityLabel={en.messages.title}
+        accessibilityLabel={t.messages.title}
       >
-        <Text style={styles.linkText}>{en.messages.title}</Text>
+        <Text style={styles.linkText}>{t.messages.title}</Text>
       </Pressable>
 
       <Pressable
@@ -88,20 +88,20 @@ export default function NotificationsScreen() {
         onPress={() => router.push('/circles/create')}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.universe.createCircle}</Text>
+        <Text style={styles.linkText}>{t.universe.createCircle}</Text>
       </Pressable>
 
       <Pressable
         style={styles.link}
         onPress={() => router.push('/settings/account')}
         accessibilityRole="button"
-        accessibilityLabel={en.settings.account}
+        accessibilityLabel={t.settings.account}
       >
-        <Text style={styles.linkText}>{en.settings.account}</Text>
+        <Text style={styles.linkText}>{t.settings.account}</Text>
       </Pressable>
 
       {pendingRecs === 0 && !error ? (
-        <AppEmptyState title={en.notifications.empty} style={{ marginTop: 24 }} />
+        <AppEmptyState title={t.notifications.empty} style={{ marginTop: 24 }} />
       ) : null}
     </SafeAreaView>
   );

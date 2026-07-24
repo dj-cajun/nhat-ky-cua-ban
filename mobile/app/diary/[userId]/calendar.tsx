@@ -1,13 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function DiaryCalendarScreen() {
+  const t = useMessages();
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.calendar.title}</Text>
-      <Text style={styles.sub}>{en.calendar.sub}</Text>
+      <Text style={styles.title}>{t.calendar.title}</Text>
+      <Text style={styles.sub}>{t.calendar.sub}</Text>
     </SafeAreaView>
   );
 }

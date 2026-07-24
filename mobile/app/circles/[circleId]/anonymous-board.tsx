@@ -29,9 +29,9 @@ import { AppEmptyState, AppErrorState, AppLoadingState } from '@/components/stat
 import { toAppError } from '@/lib/errors';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function AnonymousBoardScreen() {
+  const t = useMessages();
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [userId, setUserId] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -111,10 +111,10 @@ export default function AnonymousBoardScreen() {
 
   const onBlockAuthor = (post: AnonymousPostItem) => {
     if (!userId) return;
-    Alert.alert(en.aliasBoard.blockConfirmTitle, en.aliasBoard.blockConfirmBody, [
-      { text: en.aliasBoard.cancel, style: 'cancel' },
+    Alert.alert(t.aliasBoard.blockConfirmTitle, t.aliasBoard.blockConfirmBody, [
+      { text: t.aliasBoard.cancel, style: 'cancel' },
       {
-        text: en.aliasBoard.blockConfirm,
+        text: t.aliasBoard.blockConfirm,
         style: 'destructive',
         onPress: () => {
           void (async () => {
@@ -137,16 +137,16 @@ export default function AnonymousBoardScreen() {
       <View style={styles.postHeader}>
         <Text style={styles.alias}>
           {item.aliasName}
-          {item.isMine ? ` · ${en.aliasBoard.mine}` : ''}
+          {item.isMine ? ` · ${t.aliasBoard.mine}` : ''}
         </Text>
         <View style={styles.postMeta}>
           <Text style={styles.time}>{formatAnonymousRelativeTime(item.createdAt)}</Text>
           <Pressable
             hitSlop={8}
             onPress={() => setMenuFor((id) => (id === item.id ? null : item.id))}
-            accessibilityLabel={en.aliasBoard.menu}
+            accessibilityLabel={t.aliasBoard.menu}
           >
-            <Text style={styles.menuBtn}>{en.aliasBoard.menu}</Text>
+            <Text style={styles.menuBtn}>{t.aliasBoard.menu}</Text>
           </Pressable>
         </View>
       </View>
@@ -166,36 +166,36 @@ export default function AnonymousBoardScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()} accessibilityRole="button">
-        <Text style={styles.back}>{en.aliasBoard.back}</Text>
+        <Text style={styles.back}>{t.aliasBoard.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.aliasBoard.title}</Text>
-      <Text style={styles.sub}>{en.circle.aliasSub}</Text>
+      <Text style={styles.title}>{t.aliasBoard.title}</Text>
+      <Text style={styles.sub}>{t.circle.aliasSub}</Text>
 
       {!isFeatureEnabled('anonymous_board_enabled') ? (
-        <AppEmptyState title={en.circle.featureDisabled} />
+        <AppEmptyState title={t.circle.featureDisabled} />
       ) : (
         <>
       <View style={styles.compose}>
-        <Text style={styles.composeTitle}>{en.aliasBoard.composeTitle}</Text>
+        <Text style={styles.composeTitle}>{t.aliasBoard.composeTitle}</Text>
         {compose.alias ? (
           <Text style={styles.currentAlias}>
-            {en.aliasBoard.currentAlias(compose.alias.aliasName)}
+            {t.aliasBoard.currentAlias(compose.alias.aliasName)}
           </Text>
         ) : null}
         <TextInput
           value={compose.body}
           onChangeText={compose.setBody}
-          placeholder={en.aliasBoard.placeholder}
+          placeholder={t.aliasBoard.placeholder}
           placeholderTextColor={colors.soft}
           multiline
           maxLength={ANON_BODY_MAX}
           style={styles.input}
         />
         <Text style={styles.charCount}>
-          {en.aliasBoard.charCount(compose.body.trim().length, ANON_BODY_MAX)}
+          {t.aliasBoard.charCount(compose.body.trim().length, ANON_BODY_MAX)}
         </Text>
-        <Text style={styles.notice}>{en.aliasBoard.noticeVisibility}</Text>
-        <Text style={styles.notice}>{en.aliasBoard.noticeSafety}</Text>
+        <Text style={styles.notice}>{t.aliasBoard.noticeVisibility}</Text>
+        <Text style={styles.notice}>{t.aliasBoard.noticeSafety}</Text>
         {compose.error || actionError ? (
           <AppErrorState message={compose.error || actionError} />
         ) : null}
@@ -206,7 +206,7 @@ export default function AnonymousBoardScreen() {
           accessibilityRole="button"
           accessibilityState={{ busy: compose.pending }}
         >
-          <Text style={styles.postBtnText}>{en.aliasBoard.post}</Text>
+          <Text style={styles.postBtnText}>{t.aliasBoard.post}</Text>
         </Pressable>
       </View>
 
@@ -220,7 +220,7 @@ export default function AnonymousBoardScreen() {
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 40, gap: 10 }}
           ListEmptyComponent={
-            <AppEmptyState title={en.aliasBoard.empty} subtitle={en.aliasBoard.emptySub} />
+            <AppEmptyState title={t.aliasBoard.empty} subtitle={t.aliasBoard.emptySub} />
           }
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={() => void reload()} />
@@ -228,7 +228,7 @@ export default function AnonymousBoardScreen() {
           ListFooterComponent={
             nextCursor ? (
               <Pressable style={styles.more} onPress={() => void loadMore()}>
-                <Text style={styles.moreText}>{en.aliasBoard.loadMore}</Text>
+                <Text style={styles.moreText}>{t.aliasBoard.loadMore}</Text>
               </Pressable>
             ) : null
           }

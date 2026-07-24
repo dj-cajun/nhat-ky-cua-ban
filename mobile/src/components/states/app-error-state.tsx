@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import type { AppErrorCode } from '@/types/domain';
 import { messageForCode } from '@/lib/errors';
 
@@ -18,22 +18,24 @@ export function AppErrorState({
   title,
   message,
   onRetry,
-  retryLabel = en.states.retry,
+  retryLabel,
   style,
 }: Props) {
+  const t = useMessages();
+  const resolvedRetryLabel = retryLabel ?? t.states.retry;
   const body = message ?? messageForCode(code);
   return (
     <View style={[styles.wrap, style]} accessibilityRole="alert">
-      <Text style={styles.title}>{title ?? en.states.errorTitle}</Text>
+      <Text style={styles.title}>{title ?? t.states.errorTitle}</Text>
       <Text style={styles.body}>{body}</Text>
       {onRetry ? (
         <Pressable
           style={styles.btn}
           onPress={onRetry}
           accessibilityRole="button"
-          accessibilityLabel={retryLabel}
+          accessibilityLabel={resolvedRetryLabel}
         >
-          <Text style={styles.btnText}>{retryLabel}</Text>
+          <Text style={styles.btnText}>{resolvedRetryLabel}</Text>
         </Pressable>
       ) : null}
     </View>

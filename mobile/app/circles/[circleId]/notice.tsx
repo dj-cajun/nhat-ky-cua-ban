@@ -29,9 +29,9 @@ import { syncVerifiedBadges } from '@/features/presence/verified-response.servic
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function NoticeScreen() {
+  const t = useMessages();
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [userId, setUserId] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -143,7 +143,7 @@ export default function NoticeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <AppForbiddenState
-          actionLabel={en.circle.toUniverse}
+          actionLabel={t.circle.toUniverse}
           onAction={() => router.replace('/(tabs)/universe')}
         />
       </SafeAreaView>
@@ -161,10 +161,10 @@ export default function NoticeScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button">
-          <Text style={styles.back}>{en.circle.backUniverse.replace('Universe', 'Circle')}</Text>
+          <Text style={styles.back}>{t.circle.backUniverse.replace('Universe', 'Circle')}</Text>
         </Pressable>
-        <Text style={styles.title}>{en.circle.noticeTitle}</Text>
-        <Text style={styles.sub}>{en.circle.noticeSub}</Text>
+        <Text style={styles.title}>{t.circle.noticeTitle}</Text>
+        <Text style={styles.sub}>{t.circle.noticeSub}</Text>
 
         {post ? (
           <View style={styles.card}>
@@ -182,14 +182,14 @@ export default function NoticeScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ busy: pending }}
                   >
-                    <Text style={styles.btnText}>{en.circle.acknowledge}</Text>
+                    <Text style={styles.btnText}>{t.circle.acknowledge}</Text>
                   </Pressable>
                 ) : (
-                  <Text style={styles.done}>{en.circle.acknowledged}</Text>
+                  <Text style={styles.done}>{t.circle.acknowledged}</Text>
                 )}
                 {liveSummary?.totalResponded != null ? (
                   <Text style={styles.meta}>
-                    {en.circle.totalResponded(liveSummary.totalResponded)}
+                    {t.circle.totalResponded(liveSummary.totalResponded)}
                   </Text>
                 ) : null}
               </>
@@ -229,10 +229,10 @@ export default function NoticeScreen() {
                     </Pressable>
                   ))}
                 </View>
-                {done ? <Text style={styles.done}>{en.circle.voted}</Text> : null}
+                {done ? <Text style={styles.done}>{t.circle.voted}</Text> : null}
                 {showPollCounts ? (
                   <Text style={styles.meta}>
-                    {en.circle.totalResponded(liveSummary!.totalResponded!)}
+                    {t.circle.totalResponded(liveSummary!.totalResponded!)}
                   </Text>
                 ) : null}
               </>
@@ -240,21 +240,21 @@ export default function NoticeScreen() {
 
             {canCreate ? (
               <Pressable style={styles.secondary} onPress={() => void close()}>
-                <Text>{en.circle.closePost}</Text>
+                <Text>{t.circle.closePost}</Text>
               </Pressable>
             ) : null}
           </View>
         ) : (
-          <AppEmptyState title={en.circle.noActive} />
+          <AppEmptyState title={t.circle.noActive} />
         )}
 
         {mode === 'view' && !post && canCreate ? (
           <View style={{ marginTop: 16, gap: 8 }}>
             <Pressable style={styles.secondary} onPress={() => setMode('notice')}>
-              <Text>{en.circle.noticeCreate}</Text>
+              <Text>{t.circle.noticeCreate}</Text>
             </Pressable>
             <Pressable style={styles.secondary} onPress={() => setMode('poll')}>
-              <Text>{en.circle.pollCreate}</Text>
+              <Text>{t.circle.pollCreate}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -262,12 +262,12 @@ export default function NoticeScreen() {
         {(mode === 'notice' || mode === 'poll') && (
           <View style={styles.card}>
             <Text style={styles.label}>
-              {mode === 'notice' ? en.circle.noticeCreate : en.circle.pollQuestion}
+              {mode === 'notice' ? t.circle.noticeCreate : t.circle.pollQuestion}
             </Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
-              placeholder={en.circle.noticePlaceholder}
+              placeholder={t.circle.noticePlaceholder}
               placeholderTextColor={colors.soft}
               style={styles.input}
             />
@@ -276,21 +276,21 @@ export default function NoticeScreen() {
                 <TextInput
                   value={opt1}
                   onChangeText={setOpt1}
-                  placeholder={en.circle.optionN(1)}
+                  placeholder={t.circle.optionN(1)}
                   placeholderTextColor={colors.soft}
                   style={styles.input}
                 />
                 <TextInput
                   value={opt2}
                   onChangeText={setOpt2}
-                  placeholder={en.circle.optionN(2)}
+                  placeholder={t.circle.optionN(2)}
                   placeholderTextColor={colors.soft}
                   style={styles.input}
                 />
                 <TextInput
                   value={opt3}
                   onChangeText={setOpt3}
-                  placeholder={en.circle.optionN(3)}
+                  placeholder={t.circle.optionN(3)}
                   placeholderTextColor={colors.soft}
                   style={styles.input}
                 />

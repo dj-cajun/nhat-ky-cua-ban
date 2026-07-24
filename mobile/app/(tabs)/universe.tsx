@@ -14,12 +14,13 @@ import {
 } from '@/features/local/repository';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { track, AnalyticsEvents } from '@/lib/logger';
 
 export default function UniverseScreen() {
+  const t = useMessages();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [circles, setCircles] = useState<CircleSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,8 +70,8 @@ export default function UniverseScreen() {
       <OfflineBanner visible={offline} />
       <View style={styles.header}>
         <View>
-          <Text style={styles.brand}>{en.universe.brand}</Text>
-          <Text style={styles.title}>{en.universe.title}</Text>
+          <Text style={styles.brand}>{t.universe.brand}</Text>
+          <Text style={styles.title}>{t.universe.title}</Text>
         </View>
         <Pressable
           style={styles.avatar}
@@ -97,9 +98,9 @@ export default function UniverseScreen() {
 
         {circles.length === 0 && !error ? (
           <AppEmptyState
-            title={en.universe.emptyTitle}
-            subtitle={en.universe.emptySub}
-            actionLabel={canCreate ? en.universe.createCircle : undefined}
+            title={t.universe.emptyTitle}
+            subtitle={t.universe.emptySub}
+            actionLabel={canCreate ? t.universe.createCircle : undefined}
             onAction={
               canCreate
                 ? () => {
@@ -126,8 +127,8 @@ export default function UniverseScreen() {
                 <Text style={styles.circleName} numberOfLines={1}>
                   {c.name}
                 </Text>
-                <Text style={styles.meta}>{en.universe.wroteToday(c.wroteTodayCount)}</Text>
-                {c.hasActiveNotice ? <Text style={styles.meta}>{en.universe.notice}</Text> : null}
+                <Text style={styles.meta}>{t.universe.wroteToday(c.wroteTodayCount)}</Text>
+                {c.hasActiveNotice ? <Text style={styles.meta}>{t.universe.notice}</Text> : null}
               </Pressable>
             ))}
           </View>
@@ -139,9 +140,9 @@ export default function UniverseScreen() {
           style={styles.create}
           onPress={() => router.push('/circles/create')}
           accessibilityRole="button"
-          accessibilityLabel={en.universe.createCircle}
+          accessibilityLabel={t.universe.createCircle}
         >
-          <Text style={styles.createText}>{en.universe.createCircle}</Text>
+          <Text style={styles.createText}>{t.universe.createCircle}</Text>
         </Pressable>
       ) : null}
     </SafeAreaView>

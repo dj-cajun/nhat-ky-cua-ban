@@ -16,9 +16,9 @@ import { CIRCLE_JOIN_RECOMMENDATION_COUNT, type Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function CircleJoinScreen() {
+  const t = useMessages();
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [me, setMe] = useState<Profile | null>(null);
   const [preview, setPreview] = useState<Awaited<ReturnType<typeof getCircleInvitePreview>>>(null);
@@ -110,8 +110,8 @@ export default function CircleJoinScreen() {
   if (!preview) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.title}>{en.join.title}</Text>
-        <Text style={styles.sub}>{en.errors.unknown}</Text>
+        <Text style={styles.title}>{t.join.title}</Text>
+        <Text style={styles.sub}>{t.errors.unknown}</Text>
       </SafeAreaView>
     );
   }
@@ -120,7 +120,7 @@ export default function CircleJoinScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>{en.join.back}</Text>
+          <Text style={styles.back}>{t.join.back}</Text>
         </Pressable>
 
         <View style={styles.header}>
@@ -136,16 +136,16 @@ export default function CircleJoinScreen() {
           </View>
         </View>
 
-        <Text style={styles.need}>{en.join.needThree}</Text>
-        <Text style={styles.hint}>{en.join.membersHidden}</Text>
+        <Text style={styles.need}>{t.join.needThree}</Text>
+        <Text style={styles.hint}>{t.join.membersHidden}</Text>
 
         {preview.isMember || progress?.status === 'approved' ? (
           <Pressable style={styles.btn} onPress={() => router.replace(`/circles/${circleId}`)}>
-            <Text style={styles.btnText}>{en.join.done}</Text>
+            <Text style={styles.btnText}>{t.join.done}</Text>
           </Pressable>
         ) : (
           <>
-            <Text style={styles.label}>{en.join.pickThree(selected.length)}</Text>
+            <Text style={styles.label}>{t.join.pickThree(selected.length)}</Text>
             <View style={styles.list}>
               {candidates.map((c) => {
                 const on = selected.includes(c.id);
@@ -171,13 +171,13 @@ export default function CircleJoinScreen() {
               disabled={selected.length !== CIRCLE_JOIN_RECOMMENDATION_COUNT}
               onPress={() => void submit()}
             >
-              <Text style={styles.btnText}>{en.join.submit}</Text>
+              <Text style={styles.btnText}>{t.join.submit}</Text>
             </Pressable>
           </>
         )}
 
         <Pressable style={styles.demo} onPress={() => void demoAsYujin()}>
-          <Text style={styles.demoText}>{en.join.demoAsYujin}</Text>
+          <Text style={styles.demoText}>{t.join.demoAsYujin}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

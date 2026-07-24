@@ -5,9 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getProfile, getSessionProfile } from '@/features/local/repository';
 import { listBlockedUserIds, unblockUser } from '@/features/moderation/block.service';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function BlockedUsersScreen() {
+  const t = useMessages();
   const [meId, setMeId] = useState<string | null>(null);
   const [rows, setRows] = useState<{ id: string; name: string }[]>([]);
 
@@ -45,17 +45,17 @@ export default function BlockedUsersScreen() {
       <Pressable onPress={() => router.back()}>
         <Text style={styles.back}>← Back</Text>
       </Pressable>
-      <Text style={styles.title}>{en.settings.blockedUsers}</Text>
-      <Text style={styles.sub}>{en.settings.blockedUsersSub}</Text>
+      <Text style={styles.title}>{t.settings.blockedUsers}</Text>
+      <Text style={styles.sub}>{t.settings.blockedUsersSub}</Text>
 
       {rows.length === 0 ? (
-        <Text style={styles.empty}>{en.settings.emptyBlocks}</Text>
+        <Text style={styles.empty}>{t.settings.emptyBlocks}</Text>
       ) : (
         rows.map((r) => (
           <View key={r.id} style={styles.row}>
             <Text style={styles.name}>{r.name}</Text>
             <Pressable onPress={() => void unblock(r.id)}>
-              <Text style={styles.unblock}>{en.settings.unblock}</Text>
+              <Text style={styles.unblock}>{t.settings.unblock}</Text>
             </Pressable>
           </View>
         ))

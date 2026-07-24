@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { resolveDeepLink, type DeepLinkTarget } from '@/lib/deep-link';
-import { en } from '@/i18n/en';
-
+import { getMessages } from '@/i18n';
 export type OpenDeepLinkResult =
   | { ok: true }
   | { ok: false; message: string };
@@ -16,10 +15,10 @@ export async function openDeepLink(target: DeepLinkTarget): Promise<OpenDeepLink
       ok: false,
       message:
         result.code === 'AUTH_REQUIRED'
-          ? en.errors.auth
+          ? getMessages().errors.auth
           : result.code === 'FORBIDDEN'
-            ? en.errors.forbidden
-            : en.errors.notFound,
+            ? getMessages().errors.forbidden
+            : getMessages().errors.notFound,
     };
   }
   router.push(result.href as `/circles/${string}`);

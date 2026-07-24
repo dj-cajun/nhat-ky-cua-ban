@@ -11,7 +11,7 @@ import {
   AppLoadingState,
 } from '@/components/states';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
 /**
@@ -19,6 +19,7 @@ import { toAppError } from '@/lib/errors';
  * Production must gate with is_app_moderator server-side.
  */
 export default function OpsReportsScreen() {
+  const t = useMessages();
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState('');
@@ -97,7 +98,7 @@ export default function OpsReportsScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <AppForbiddenState
-          actionLabel={en.circle.toUniverse}
+          actionLabel={t.circle.toUniverse}
           onAction={() => router.replace('/(tabs)/universe')}
         />
       </SafeAreaView>
@@ -107,15 +108,15 @@ export default function OpsReportsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()} accessibilityRole="button">
-        <Text style={styles.back}>{en.ops.back}</Text>
+        <Text style={styles.back}>{t.ops.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.ops.title}</Text>
-      <Text style={styles.sub}>{en.ops.sub}</Text>
+      <Text style={styles.title}>{t.ops.title}</Text>
+      <Text style={styles.sub}>{t.ops.sub}</Text>
 
       {loading ? <AppLoadingState /> : null}
       {error ? <AppErrorState message={error} onRetry={() => void reload()} /> : null}
       {!loading && !error && rows.length === 0 ? (
-        <AppEmptyState title={en.ops.empty} />
+        <AppEmptyState title={t.ops.empty} />
       ) : null}
 
       <ScrollView>
@@ -130,9 +131,9 @@ export default function OpsReportsScreen() {
               style={styles.action}
               onPress={() => void hide(r.targetType, r.targetId)}
               accessibilityRole="button"
-              accessibilityLabel={en.ops.hideContent}
+              accessibilityLabel={t.ops.hideContent}
             >
-              <Text style={styles.actionText}>{en.ops.hideContent}</Text>
+              <Text style={styles.actionText}>{t.ops.hideContent}</Text>
             </Pressable>
           </View>
         ))}

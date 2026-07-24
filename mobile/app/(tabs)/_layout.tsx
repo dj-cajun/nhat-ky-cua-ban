@@ -1,8 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
     <Text style={{ fontSize: 11, color: focused ? colors.ink : colors.soft, fontWeight: focused ? '700' : '500' }}>
@@ -12,6 +11,7 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  const t = useMessages();
   return (
     <Tabs
       screenOptions={{
@@ -26,24 +26,24 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="universe"
         options={{
-          title: en.tabs.universe,
-          tabBarLabel: ({ focused }) => <TabLabel label={en.tabs.universe} focused={focused} />,
+          title: t.tabs.universe,
+          tabBarLabel: ({ focused }) => <TabLabel label={t.tabs.universe} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: en.tabs.notifications,
+          title: t.tabs.notifications,
           tabBarLabel: ({ focused }) => (
-            <TabLabel label={en.tabs.notifications} focused={focused} />
+            <TabLabel label={t.tabs.notifications} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="my-diary"
         options={{
-          title: en.tabs.diary,
-          tabBarLabel: ({ focused }) => <TabLabel label={en.tabs.diary} focused={focused} />,
+          title: t.tabs.diary,
+          tabBarLabel: ({ focused }) => <TabLabel label={t.tabs.diary} focused={focused} />,
         }}
       />
     </Tabs>

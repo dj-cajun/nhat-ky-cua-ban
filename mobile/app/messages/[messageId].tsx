@@ -13,9 +13,9 @@ import type { ReceivedMessageItem } from '@/features/private-messages/private-me
 import { getSessionProfile } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function MessageDetailScreen() {
+  const t = useMessages();
   const { messageId, folder } = useLocalSearchParams<{
     messageId: string;
     folder?: string;
@@ -73,10 +73,10 @@ export default function MessageDetailScreen() {
 
   const onBlock = () => {
     if (!meId || !messageId) return;
-    Alert.alert(en.messages.blockConfirmTitle, en.messages.blockConfirmBody, [
-      { text: en.messages.cancel, style: 'cancel' },
+    Alert.alert(t.messages.blockConfirmTitle, t.messages.blockConfirmBody, [
+      { text: t.messages.cancel, style: 'cancel' },
       {
-        text: en.messages.blockConfirm,
+        text: t.messages.blockConfirm,
         style: 'destructive',
         onPress: () => {
           void (async () => {
@@ -95,14 +95,14 @@ export default function MessageDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>{en.messages.back}</Text>
+        <Text style={styles.back}>{t.messages.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.messages.detail}</Text>
+      <Text style={styles.title}>{t.messages.detail}</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {item ? (
         <View style={styles.card}>
           <Text style={styles.from}>
-            {isSent ? en.messages.to(item.senderDisplay) : item.senderDisplay}
+            {isSent ? t.messages.to(item.senderDisplay) : item.senderDisplay}
           </Text>
           <Text style={styles.circle}>{item.circle.name}</Text>
           <Text style={styles.body}>{item.body}</Text>
@@ -111,7 +111,7 @@ export default function MessageDetailScreen() {
           {!isSent ? (
             <>
               <Pressable style={styles.menuBtn} onPress={() => setMenuOpen((v) => !v)}>
-                <Text style={styles.menuBtnText}>{en.messages.menu}</Text>
+                <Text style={styles.menuBtnText}>{t.messages.menu}</Text>
               </Pressable>
               {menuOpen ? (
                 <PrivateMessageMenu

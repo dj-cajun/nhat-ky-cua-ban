@@ -9,9 +9,9 @@ import {
 import { getSessionProfile } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function MessagePreferencesScreen() {
+  const t = useMessages();
   const [meId, setMeId] = useState<string | null>(null);
   const [named, setNamed] = useState(true);
   const [alias, setAlias] = useState(true);
@@ -46,13 +46,13 @@ export default function MessagePreferencesScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>{en.messages.back}</Text>
+        <Text style={styles.back}>{t.messages.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.messages.preferences}</Text>
-      <Text style={styles.sub}>{en.messages.preferencesSub}</Text>
+      <Text style={styles.title}>{t.messages.preferences}</Text>
+      <Text style={styles.sub}>{t.messages.preferencesSub}</Text>
 
       <View style={styles.row}>
-        <Text style={styles.label}>{en.messages.namedEnabled}</Text>
+        <Text style={styles.label}>{t.messages.namedEnabled}</Text>
         <Switch
           value={named}
           onValueChange={(v) => void save(v, alias)}
@@ -60,14 +60,14 @@ export default function MessagePreferencesScreen() {
         />
       </View>
       <View style={styles.row}>
-        <Text style={styles.label}>{en.messages.aliasEnabled}</Text>
+        <Text style={styles.label}>{t.messages.aliasEnabled}</Text>
         <Switch
           value={alias}
           onValueChange={(v) => void save(named, v)}
           trackColor={{ true: colors.accent }}
         />
       </View>
-      <Text style={styles.hint}>{en.messages.aliasOffHint}</Text>
+      <Text style={styles.hint}>{t.messages.aliasOffHint}</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </SafeAreaView>
   );

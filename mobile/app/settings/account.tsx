@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppLoadingState } from '@/components/states';
 import { getSessionProfile } from '@/features/local/repository';
@@ -9,7 +9,7 @@ import { signOut } from '@/features/session/session-lifecycle';
 import { getFeatureFlags, setFeatureFlag, type FeatureFlagName } from '@/lib/feature-flags';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
+import { useLocale, useMessages, type Locale } from '@/i18n';
 
 const FLAG_LABELS: { key: FeatureFlagName; label: string }[] = [
   { key: 'anonymous_board_enabled', label: 'Alias board' },
@@ -19,7 +19,40 @@ const FLAG_LABELS: { key: FeatureFlagName; label: string }[] = [
   { key: 'circle_creation_enabled', label: 'Circle creation' },
 ];
 
+function LanguageSwitcher() {
+  const [locale, setLocale] = useLocale();
+  const t = useMessages();
+  const options: { id: Locale; label: string }[] = [
+    { id: 'en', label: t.language.en },
+    { id: 'ko', label: t.language.ko },
+  ];
+
+  return (
+    <View style={styles.langRow} accessibilityRole="radiogroup" accessibilityLabel={t.language.label}>
+      <Text style={styles.langLabel}>{t.language.label}</Text>
+      <View style={styles.langBtns}>
+        {options.map((opt) => {
+          const active = locale === opt.id;
+          return (
+            <Pressable
+              key={opt.id}
+              style={[styles.langBtn, active && styles.langBtnActive]}
+              onPress={() => setLocale(opt.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={opt.label}
+            >
+              <Text style={[styles.langBtnText, active && styles.langBtnTextActive]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export default function AccountSettingsScreen() {
+  const t = useMessages();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [flags, setFlags] = useState(getFeatureFlags());
   const [error, setError] = useState('');
@@ -68,17 +101,19 @@ export default function AccountSettingsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()} accessibilityRole="button">
-        <Text style={styles.back}>{en.settings.back}</Text>
+        <Text style={styles.back}>{t.settings.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.settings.account}</Text>
+      <Text style={styles.title}>{t.settings.account}</Text>
       <Text style={styles.sub}>{profile.displayName}</Text>
+
+      <LanguageSwitcher />
 
       <Pressable
         style={styles.link}
         onPress={() => router.push('/settings/blocked-users')}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.settings.blockedUsers}</Text>
+        <Text style={styles.linkText}>{t.settings.blockedUsers}</Text>
       </Pressable>
 
       <Pressable
@@ -86,11 +121,11 @@ export default function AccountSettingsScreen() {
         onPress={() => router.push('/ops/reports')}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.ops.title}</Text>
+        <Text style={styles.linkText}>{t.ops.title}</Text>
       </Pressable>
 
-      <Text style={styles.section}>{en.settings.featureFlags}</Text>
-      <Text style={styles.hint}>{en.settings.featureFlagsHint}</Text>
+      <Text style={styles.section}>{t.settings.featureFlags}</Text>
+      <Text style={styles.hint}>{t.settings.featureFlagsHint}</Text>
       {FLAG_LABELS.map((f) => (
         <Pressable
           key={f.key}
@@ -112,9 +147,9 @@ export default function AccountSettingsScreen() {
         onPress={() => void onSignOut()}
         disabled={busy}
         accessibilityRole="button"
-        accessibilityLabel={en.settings.signOut}
+        accessibilityLabel={t.settings.signOut}
       >
-        <Text style={styles.signOutText}>{en.settings.signOut}</Text>
+        <Text style={styles.signOutText}>{t.settings.signOut}</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -125,6 +160,25 @@ const styles = StyleSheet.create({
   back: { color: colors.muted, marginBottom: 12, minHeight: 44 },
   title: { fontSize: 22, fontWeight: '600', color: colors.ink },
   sub: { marginTop: 6, color: colors.muted, marginBottom: 16 },
+  langRow: { marginBottom: 8 },
+  langLabel: { fontSize: 12, color: colors.soft, letterSpacing: 1, marginBottom: 8 },
+  langBtns: { flexDirection: 'row', gap: 8 },
+  langBtn: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  langBtnActive: {
+    borderColor: colors.ink,
+    backgroundColor: colors.ink,
+  },
+  langBtnText: { color: colors.ink, fontSize: 14, fontWeight: '600' },
+  langBtnTextActive: { color: colors.bg },
   section: { marginTop: 20, fontSize: 12, color: colors.soft, letterSpacing: 1 },
   hint: { marginTop: 4, marginBottom: 8, fontSize: 12, color: colors.muted },
   link: {

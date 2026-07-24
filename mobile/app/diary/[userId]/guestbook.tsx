@@ -1,13 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function GuestbookScreen() {
+  const t = useMessages();
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>{en.guestbook.title}</Text>
-      <Text style={styles.sub}>{en.guestbook.sub}</Text>
+      <Text style={styles.title}>{t.guestbook.title}</Text>
+      <Text style={styles.sub}>{t.guestbook.sub}</Text>
     </SafeAreaView>
   );
 }

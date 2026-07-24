@@ -48,9 +48,9 @@ import {
   type Profile,
 } from '@/types/domain';
 import { colors } from '@/constants/theme';
-import { DEFAULT_TIMEZONE, en } from '@/i18n/en';
-
+import { useMessages, DEFAULT_TIMEZONE } from '@/i18n';
 export default function DiaryScreen() {
+  const t = useMessages();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [me, setMe] = useState<Profile | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
@@ -171,7 +171,7 @@ export default function DiaryScreen() {
       if (app.code === 'OFFLINE') {
         setOffline(true);
         await persistLocalDraft();
-        setError(en.errors.offline);
+        setError(t.errors.offline);
       } else if (app.code === 'CONFLICT') {
         await persistLocalDraft();
         const server = await getDiary(me.id);
@@ -192,7 +192,7 @@ export default function DiaryScreen() {
             },
           });
         }
-        setError(en.diary.conflictTitle);
+        setError(t.diary.conflictTitle);
       } else {
         await persistLocalDraft();
         setError(app.message);
@@ -235,8 +235,8 @@ export default function DiaryScreen() {
       const app = toAppError(e);
       setError(
         app.code === 'EXTERNAL_SERVICE_FAILED'
-          ? en.diaryMusic.serviceDown
-          : app.message || en.diaryMusic.saveFailed,
+          ? t.diaryMusic.serviceDown
+          : app.message || t.diaryMusic.saveFailed,
       );
     }
   };
@@ -263,7 +263,7 @@ export default function DiaryScreen() {
       await openSpotifyTrack(music);
       track('diary_music_opened_in_spotify', { market: 'US' });
     } catch (e) {
-      setError(toAppError(e).message || en.diaryMusic.openFailed);
+      setError(toAppError(e).message || t.diaryMusic.openFailed);
     }
   };
 
@@ -287,8 +287,8 @@ export default function DiaryScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <AppForbiddenState
-          title={en.diary.privateBlocked}
-          actionLabel={en.diary.back}
+          title={t.diary.privateBlocked}
+          actionLabel={t.diary.back}
           onAction={() => router.back()}
         />
       </SafeAreaView>
@@ -299,20 +299,20 @@ export default function DiaryScreen() {
     <SafeAreaView style={styles.safe}>
       <OfflineBanner
         visible={offline || draftHint}
-        message={draftHint ? en.diary.draftSaved : undefined}
+        message={draftHint ? t.diary.draftSaved : undefined}
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button">
-          <Text style={styles.back}>{en.diary.back}</Text>
+          <Text style={styles.back}>{t.diary.back}</Text>
         </Pressable>
         <Text style={styles.title}>{owner.displayName}</Text>
         <Text style={styles.mood}>
-          {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : en.diary.noMood}
+          {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : t.diary.noMood}
         </Text>
 
         {conflict ? (
           <View style={styles.conflict}>
-            <Text style={styles.conflictTitle}>{en.diary.conflictTitle}</Text>
+            <Text style={styles.conflictTitle}>{t.diary.conflictTitle}</Text>
             <Pressable
               style={styles.link}
               onPress={() =>
@@ -335,7 +335,7 @@ export default function DiaryScreen() {
                 })()
               }
             >
-              <Text>{en.diary.conflictServer}</Text>
+              <Text>{t.diary.conflictServer}</Text>
             </Pressable>
             <Pressable
               style={styles.link}
@@ -354,14 +354,14 @@ export default function DiaryScreen() {
                 })()
               }
             >
-              <Text>{en.diary.conflictOverwrite}</Text>
+              <Text>{t.diary.conflictOverwrite}</Text>
             </Pressable>
           </View>
         ) : null}
 
         {editing && isMine ? (
           <View>
-            <Text style={styles.label}>{en.diary.mood}</Text>
+            <Text style={styles.label}>{t.diary.mood}</Text>
             <View style={styles.moodRow}>
               {DIARY_MOODS.map((m) => (
                 <Pressable
@@ -376,7 +376,7 @@ export default function DiaryScreen() {
               ))}
             </View>
             <Text style={styles.label}>
-              {en.diary.tenChar} ({ten.length}/{MAX_TEN_CHAR})
+              {t.diary.tenChar} ({ten.length}/{MAX_TEN_CHAR})
             </Text>
             <TextInput
               value={ten}
@@ -388,7 +388,7 @@ export default function DiaryScreen() {
               style={styles.input}
               placeholderTextColor={colors.soft}
             />
-            <Text style={styles.label}>{en.diary.shortText}</Text>
+            <Text style={styles.label}>{t.diary.shortText}</Text>
             <TextInput
               value={shortText}
               onChangeText={(v) => {
@@ -401,17 +401,17 @@ export default function DiaryScreen() {
               placeholderTextColor={colors.soft}
             />
 
-            <Text style={styles.label}>{en.diary.musicSection}</Text>
+            <Text style={styles.label}>{t.diary.musicSection}</Text>
             {!isFeatureEnabled('spotify_search_enabled') ? (
-              <Text style={styles.empty}>{en.circle.featureDisabled}</Text>
+              <Text style={styles.empty}>{t.circle.featureDisabled}</Text>
             ) : music && !pickingMusic ? (
               <>
                 <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
                 <Pressable style={styles.link} onPress={() => setPickingMusic(true)}>
-                  <Text>{en.diaryMusic.change}</Text>
+                  <Text>{t.diaryMusic.change}</Text>
                 </Pressable>
                 <Pressable style={styles.link} onPress={() => void onRemoveMusic()}>
-                  <Text>{en.diaryMusic.remove}</Text>
+                  <Text>{t.diaryMusic.remove}</Text>
                 </Pressable>
               </>
             ) : pickingMusic ? (
@@ -421,7 +421,7 @@ export default function DiaryScreen() {
               />
             ) : (
               <Pressable style={styles.link} onPress={() => setPickingMusic(true)}>
-                <Text>{en.diaryMusic.add}</Text>
+                <Text>{t.diaryMusic.add}</Text>
               </Pressable>
             )}
 
@@ -433,32 +433,32 @@ export default function DiaryScreen() {
               accessibilityRole="button"
               accessibilityState={{ busy: saving }}
             >
-              <Text style={styles.btnText}>{en.diary.save}</Text>
+              <Text style={styles.btnText}>{t.diary.save}</Text>
             </Pressable>
           </View>
         ) : (
           <View>
             {entry?.tenCharText ? (
               <View style={styles.card}>
-                <Text style={styles.label}>{en.diary.tenChar}</Text>
+                <Text style={styles.label}>{t.diary.tenChar}</Text>
                 <Text style={styles.ten}>{entry.tenCharText}</Text>
               </View>
             ) : null}
             {entry?.shortText ? (
               <View style={styles.card}>
-                <Text style={styles.label}>{en.diary.shortText}</Text>
+                <Text style={styles.label}>{t.diary.shortText}</Text>
                 <Text style={styles.body}>{entry.shortText}</Text>
               </View>
             ) : null}
             {music ? (
               <DiaryMusicCardView music={music} onOpen={() => void onOpenMusic()} />
             ) : isMine ? (
-              <Text style={styles.empty}>{en.diary.emptyMusic}</Text>
+              <Text style={styles.empty}>{t.diary.emptyMusic}</Text>
             ) : null}
             {!entry ? (
               <AppEmptyState
-                title={isMine ? en.diary.emptyToday : en.diary.emptyOther}
-                subtitle={isMine ? en.diary.emptyTodaySub : undefined}
+                title={isMine ? t.diary.emptyToday : t.diary.emptyOther}
+                subtitle={isMine ? t.diary.emptyTodaySub : undefined}
               />
             ) : null}
             {error ? <AppErrorState message={error} /> : null}
@@ -471,19 +471,19 @@ export default function DiaryScreen() {
             onPress={() => setEditing(true)}
             accessibilityRole="button"
           >
-            <Text style={styles.btnText}>{en.diary.editToday}</Text>
+            <Text style={styles.btnText}>{t.diary.editToday}</Text>
           </Pressable>
         ) : null}
 
         <>
           <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
-            <Text>{en.diary.guestbook}</Text>
+            <Text>{t.diary.guestbook}</Text>
           </Pressable>
           <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
-            <Text>{en.diary.past}</Text>
+            <Text>{t.diary.past}</Text>
           </Pressable>
           <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
-            <Text>{en.diary.album}</Text>
+            <Text>{t.diary.album}</Text>
           </Pressable>
         </>
 
@@ -498,7 +498,7 @@ export default function DiaryScreen() {
                 })
               }
             >
-              <Text>{en.diary.leaveNote}</Text>
+              <Text>{t.diary.leaveNote}</Text>
             </Pressable>
             <Pressable
               style={styles.report}
@@ -513,7 +513,7 @@ export default function DiaryScreen() {
                 })
               }
             >
-              <Text style={styles.reportText}>{en.reports.reportProfile}</Text>
+              <Text style={styles.reportText}>{t.reports.reportProfile}</Text>
             </Pressable>
             <Pressable
               style={styles.report}
@@ -525,7 +525,7 @@ export default function DiaryScreen() {
                 })()
               }
             >
-              <Text style={styles.reportText}>{en.reports.blockUser}</Text>
+              <Text style={styles.reportText}>{t.reports.blockUser}</Text>
             </Pressable>
           </>
         ) : null}

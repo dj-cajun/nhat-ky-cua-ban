@@ -10,9 +10,9 @@ import {
 } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function JoinRequestStatusScreen() {
+  const t = useMessages();
   const { requestId } = useLocalSearchParams<{ requestId: string }>();
   const [progress, setProgress] = useState<Awaited<ReturnType<typeof getJoinProgress>> | null>(
     null,
@@ -55,7 +55,7 @@ export default function JoinRequestStatusScreen() {
   if (!progress) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.title}>{en.join.title}</Text>
+        <Text style={styles.title}>{t.join.title}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </SafeAreaView>
     );
@@ -63,22 +63,22 @@ export default function JoinRequestStatusScreen() {
 
   const statusLabel =
     progress.status === 'approved' || member
-      ? en.join.done
+      ? t.join.done
       : progress.status === 'cancelled'
-        ? en.join.cancelled
+        ? t.join.cancelled
         : progress.status === 'expired'
-          ? en.join.expired
-          : en.join.progress(progress.recommended, progress.total);
+          ? t.join.expired
+          : t.join.progress(progress.recommended, progress.total);
 
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.replace('/(tabs)/universe')}>
-        <Text style={styles.back}>{en.join.back}</Text>
+        <Text style={styles.back}>{t.join.back}</Text>
       </Pressable>
       <Text style={styles.title}>{statusLabel}</Text>
       {progress.status === 'pending' ? (
         <Text style={styles.sub}>
-          {en.join.progressDetail(progress.recommended, progress.total)}
+          {t.join.progressDetail(progress.recommended, progress.total)}
         </Text>
       ) : null}
       {/* Never show who recommended / who said unknown */}
@@ -86,12 +86,12 @@ export default function JoinRequestStatusScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.link} onPress={() => void reload()}>
-        <Text>{en.join.refresh}</Text>
+        <Text>{t.join.refresh}</Text>
       </Pressable>
 
       {progress.status === 'pending' ? (
         <Pressable style={styles.link} onPress={() => void cancel()}>
-          <Text style={{ color: colors.warn }}>{en.join.cancel}</Text>
+          <Text style={{ color: colors.warn }}>{t.join.cancel}</Text>
         </Pressable>
       ) : null}
 
@@ -100,7 +100,7 @@ export default function JoinRequestStatusScreen() {
           style={styles.btn}
           onPress={() => router.replace(`/circles/${progress.circleId}`)}
         >
-          <Text style={styles.btnText}>{en.join.done}</Text>
+          <Text style={styles.btnText}>{t.join.done}</Text>
         </Pressable>
       )}
     </SafeAreaView>

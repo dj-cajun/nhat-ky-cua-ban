@@ -3,7 +3,7 @@
  * Mirrors server RPC rules for founding/join; production trusts Edge Functions / DB only.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_TIMEZONE } from '@/i18n/en';
+import { DEFAULT_TIMEZONE } from '@/i18n';
 import {
   AppError,
   CIRCLE_COLORS,

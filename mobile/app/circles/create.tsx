@@ -13,9 +13,9 @@ import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import type { Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function CreateCircleScreen() {
+  const t = useMessages();
   const [me, setMe] = useState<Profile | null>(null);
   const [directory, setDirectory] = useState<Profile[]>([]);
   const [name, setName] = useState('');
@@ -46,11 +46,11 @@ export default function CreateCircleScreen() {
     if (!me) return;
     setError('');
     if (!name.trim()) {
-      setError(en.circle.nameRequired);
+      setError(t.circle.nameRequired);
       return;
     }
     if (picked.length !== 2) {
-      setError(en.circle.pickRequired);
+      setError(t.circle.pickRequired);
       return;
     }
     try {
@@ -68,21 +68,21 @@ export default function CreateCircleScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>{en.circle.cancel}</Text>
+        <Text style={styles.back}>{t.circle.cancel}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.circle.createTitle}</Text>
-      <Text style={styles.sub}>{en.circle.createSub}</Text>
+      <Text style={styles.title}>{t.circle.createTitle}</Text>
+      <Text style={styles.sub}>{t.circle.createSub}</Text>
 
-      <Text style={styles.label}>{en.circle.tempName}</Text>
+      <Text style={styles.label}>{t.circle.tempName}</Text>
       <TextInput
         value={name}
         onChangeText={setName}
         style={styles.input}
-        placeholder={en.circle.namePlaceholder}
+        placeholder={t.circle.namePlaceholder}
         placeholderTextColor={colors.soft}
       />
 
-      <Text style={styles.label}>{en.circle.pickTwo(picked.length)}</Text>
+      <Text style={styles.label}>{t.circle.pickTwo(picked.length)}</Text>
       <View style={{ gap: 8 }}>
         {directory.slice(0, 5).map((p) => {
           const on = picked.includes(p.id);
@@ -101,9 +101,9 @@ export default function CreateCircleScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.btn} onPress={() => void submit()}>
-        <Text style={styles.btnText}>{en.circle.sendInvites}</Text>
+        <Text style={styles.btnText}>{t.circle.sendInvites}</Text>
       </Pressable>
-      <Text style={styles.hint}>{en.circle.demoHint}</Text>
+      <Text style={styles.hint}>{t.circle.demoHint}</Text>
     </SafeAreaView>
   );
 }

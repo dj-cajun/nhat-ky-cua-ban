@@ -1,8 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { MemberBadge } from '@/features/presence/derive-member-badge';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 type Props = {
   badge: MemberBadge;
   displayName: string;
@@ -15,14 +14,15 @@ type Props = {
  * Green = present; orange = present + verified response (check mark shape).
  */
 export function MemberPresenceBadge({ badge, displayName, connectionOk = true }: Props) {
+  const t = useMessages();
   if (!connectionOk || !badge) {
     return <View style={styles.slot} />;
   }
 
   const label =
     badge === 'orange'
-      ? en.a11y.badgeOrange(displayName)
-      : en.a11y.badgeGreen(displayName);
+      ? t.a11y.badgeOrange(displayName)
+      : t.a11y.badgeGreen(displayName);
 
   return (
     <View

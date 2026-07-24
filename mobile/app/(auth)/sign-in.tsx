@@ -11,32 +11,32 @@ import { signUpLocal } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function SignInScreen() {
+  const t = useMessages();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.brand}>{en.brand}</Text>
-      <Text style={styles.title}>{en.auth.chooseSignIn}</Text>
-      <Text style={styles.sub}>{en.tagline}</Text>
+      <Text style={styles.brand}>{t.brand}</Text>
+      <Text style={styles.title}>{t.auth.chooseSignIn}</Text>
+      <Text style={styles.sub}>{t.tagline}</Text>
 
       {/* US App Store: Apple first when third-party login is offered */}
       <Pressable
         style={styles.btn}
-        onPress={() => setError(en.auth.appleNote)}
+        onPress={() => setError(t.auth.appleNote)}
       >
-        <Text style={styles.btnText}>{en.auth.apple}</Text>
+        <Text style={styles.btnText}>{t.auth.apple}</Text>
       </Pressable>
 
       <Pressable
         style={[styles.btn, styles.ghost]}
-        onPress={() => setError(en.auth.googleNote)}
+        onPress={() => setError(t.auth.googleNote)}
       >
-        <Text style={styles.ghostText}>{en.auth.google}</Text>
-        <Text style={styles.badge}>{en.auth.comingSoon}</Text>
+        <Text style={styles.ghostText}>{t.auth.google}</Text>
+        <Text style={styles.badge}>{t.auth.comingSoon}</Text>
       </Pressable>
 
       <TextInput
@@ -52,13 +52,13 @@ export default function SignInScreen() {
         style={[styles.btn, styles.ghost]}
         onPress={() => {
           if (!email.includes('@')) {
-            setError(en.auth.invalidEmail);
+            setError(t.auth.invalidEmail);
             return;
           }
           router.push({ pathname: '/(auth)/onboarding', params: { email } });
         }}
       >
-        <Text style={styles.ghostText}>{en.auth.email}</Text>
+        <Text style={styles.ghostText}>{t.auth.email}</Text>
       </Pressable>
 
       <Pressable
@@ -73,12 +73,12 @@ export default function SignInScreen() {
           }
         }}
       >
-        <Text style={styles.btnText}>{en.auth.demo}</Text>
+        <Text style={styles.btnText}>{t.auth.demo}</Text>
       </Pressable>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Link href="/(auth)/sign-up" style={styles.link}>
-        {en.auth.noAccount}
+        {t.auth.noAccount}
       </Link>
       <Text style={styles.market}>United States · English</Text>
     </SafeAreaView>

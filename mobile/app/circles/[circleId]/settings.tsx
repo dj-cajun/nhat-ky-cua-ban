@@ -2,29 +2,29 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { en } from '@/i18n/en';
-
+import { useMessages } from '@/i18n';
 export default function CircleSettingsScreen() {
+  const t = useMessages();
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()} accessibilityRole="button">
-        <Text style={styles.back}>{en.circle.backUniverse}</Text>
+        <Text style={styles.back}>{t.circle.backUniverse}</Text>
       </Pressable>
-      <Text style={styles.title}>{en.circle.settingsTitle}</Text>
-      <Text style={styles.sub}>{en.circle.settingsSub}</Text>
+      <Text style={styles.title}>{t.circle.settingsTitle}</Text>
+      <Text style={styles.sub}>{t.circle.settingsSub}</Text>
       <Pressable
         style={styles.link}
         onPress={() => router.push('/settings/blocked-users')}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.settings.blockedUsers}</Text>
+        <Text style={styles.linkText}>{t.settings.blockedUsers}</Text>
       </Pressable>
       <Pressable
         style={styles.link}
         onPress={() => router.push('/settings/account')}
         accessibilityRole="button"
       >
-        <Text style={styles.linkText}>{en.settings.account}</Text>
+        <Text style={styles.linkText}>{t.settings.account}</Text>
       </Pressable>
     </SafeAreaView>
   );
