@@ -33,6 +33,17 @@
 
 ## 런타임
 
-- 웹 `/` = Your Diary (가입 → 우주 → **미니홈피 다이어리** `DiaryHomePage`)
-- 모바일: 인트로 → My Universe → 구체 탭 → **`DiaryHompyHome`** (`mobile/src/features/diary-home/`) → `/diary/[userId]`
+한 줄 연결:
+
+```text
+Try the demo
+→ 우주 탄생 인트로 (MP4)
+→ My Universe (구체 + 서클 행성)
+→ 중앙 구체 탭 (또는 Diary 탭)
+→ 파스텔 미니홈피 DiaryHompyHome (/diary/[userId])
+```
+
+- 웹 `/` = Your Diary (`DiaryHomePage`)
+- 모바일: `mobile/src/features/diary-home/DiaryHompyHome`
+- Diary 탭도 같은 `/diary/[userId]` 미니홈피로 진입
 - 학교/Zalo HompyApp은 기본 마운트하지 않음

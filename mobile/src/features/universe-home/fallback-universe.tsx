@@ -96,53 +96,69 @@ export function FallbackUniverse({
       <StarField width={width} height={height} />
 
       <Animated.View
-        style={[styles.sphereWrap, { left, top, width: diameter, height: diameter }, sphereStyle]}
+        style={[
+          styles.sphereWrap,
+          {
+            left: left - diameter * 0.175,
+            top: top - diameter * 0.175,
+            width: diameter * 1.35,
+            height: diameter * 1.35,
+          },
+          sphereStyle,
+        ]}
       >
-        <View
-          style={[
-            styles.glow,
-            {
-              width: diameter * 1.35,
-              height: diameter * 1.35,
-              borderRadius: diameter * 0.675,
-              backgroundColor: INTRO_HANDOFF.sphere.glow,
-            },
-          ]}
-        />
         <Pressable
           onPress={onPressSelf}
-          style={[
-            styles.sphere,
-            {
-              width: diameter,
-              height: diameter,
-              borderRadius: diameter / 2,
-              backgroundColor: INTRO_HANDOFF.sphere.color,
-            },
-          ]}
+          style={styles.sphereHit}
           accessibilityRole="button"
           accessibilityLabel={profile.displayName}
+          testID="universe-self-sphere"
         >
           <View
+            pointerEvents="none"
             style={[
-              styles.highlight,
+              styles.glow,
               {
-                width: diameter * 0.35,
-                height: diameter * 0.18,
-                borderRadius: diameter * 0.1,
+                width: diameter * 1.35,
+                height: diameter * 1.35,
+                borderRadius: diameter * 0.675,
+                backgroundColor: INTRO_HANDOFF.sphere.glow,
               },
             ]}
           />
-          <Animated.View style={[styles.profile, profileStyle]}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{profile.displayName.slice(0, 1)}</Text>
-            </View>
-            <Text style={styles.name} numberOfLines={1}>
-              {profile.displayName}
-            </Text>
-          </Animated.View>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.sphere,
+              {
+                width: diameter,
+                height: diameter,
+                borderRadius: diameter / 2,
+                backgroundColor: INTRO_HANDOFF.sphere.color,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.highlight,
+                {
+                  width: diameter * 0.35,
+                  height: diameter * 0.18,
+                  borderRadius: diameter * 0.1,
+                },
+              ]}
+            />
+            <Animated.View style={[styles.profile, profileStyle]}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{profile.displayName.slice(0, 1)}</Text>
+              </View>
+              <Text style={styles.name} numberOfLines={1}>
+                {profile.displayName}
+              </Text>
+            </Animated.View>
+          </View>
+          <View pointerEvents="none" style={styles.shadow} />
         </Pressable>
-        <View style={styles.shadow} />
       </Animated.View>
 
       <Animated.View style={[StyleSheet.absoluteFill, planetsStyle]} pointerEvents="box-none">
@@ -210,6 +226,13 @@ const styles = StyleSheet.create({
   root: { overflow: 'hidden' },
   sphereWrap: {
     position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 4,
+  },
+  sphereHit: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },

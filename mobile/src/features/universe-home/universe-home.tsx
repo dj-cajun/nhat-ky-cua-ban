@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -17,7 +16,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { CircleSummary, Profile } from '@/types/domain';
-import { colors } from '@/constants/theme';
 import { useMessages } from '@/i18n';
 import { INTRO_HANDOFF, type IntroMode } from './handoff';
 import { IntroPlayer } from './intro-player';
@@ -151,7 +149,10 @@ export function UniverseHome({
 
   return (
     <View style={[styles.root, { backgroundColor: INTRO_HANDOFF.spaceBg }]}>
-      <Animated.View style={[StyleSheet.absoluteFill, sceneStyle]} pointerEvents="box-none">
+      <Animated.View
+        style={[StyleSheet.absoluteFill, sceneStyle]}
+        pointerEvents={introPlaying ? 'none' : 'auto'}
+      >
         {mode != null ? (
           <UniverseScene3D
             profile={profile}
@@ -250,16 +251,7 @@ export function UniverseHome({
             </Pressable>
           ) : null}
 
-          {revealProfile ? (
-            <Pressable
-              style={styles.nameChip}
-              onPress={onPressSelf}
-              accessibilityRole="button"
-              accessibilityLabel={profile.displayName}
-            >
-              <Text style={styles.nameChipText}>{profile.displayName}</Text>
-            </Pressable>
-          ) : null}
+          {/* Profile lives on the center sphere — avoid overlay chips that steal taps. */}
         </SafeAreaView>
       ) : null}
     </View>
@@ -309,14 +301,4 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   createText: { color: '#F7F4EF', fontSize: 14, textAlign: 'center' },
-  nameChip: {
-    position: 'absolute',
-    alignSelf: 'center',
-    bottom: '38%',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: 'rgba(20,16,12,0.45)',
-  },
-  nameChipText: { color: colors.bg, fontSize: 13, fontWeight: '600' },
 });

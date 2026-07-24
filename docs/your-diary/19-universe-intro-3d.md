@@ -14,10 +14,11 @@
 → 영상 opacity 1→0 / 3D opacity 0→1 (크로스페이드)
 → 프로필 페이드업 (사용자별)
 → 서클 행성 순차 등장
-→ 터치로 서클 진입 → 이후는 2D UI
+→ 중앙 구체 탭 → 파스텔 미니홈피 (/diary/[userId])
+→ 행성 탭 → 서클 상세 (이후 2D)
 ```
 
-3D는 **내 우주 홈에만**. 다이어리·쪽지·서클 상세는 2D 유지.
+3D는 **내 우주 홈에만**. 미니홈피·쪽지·서클 상세는 2D 유지.
 
 ---
 
@@ -43,7 +44,7 @@ npm run start:intro   # 전체 인트로 강제 (iOS/Android 시뮬레이터 권
 
 1. **Try the demo** → 데모 서클(Brooklyn Friends) 시드 + 전체 인트로 예약  
 2. My Universe: `universe-birth.mp4` → 크로스페이드 → 구체/행성  
-3. 중앙 구체 → 내 다이어리 · 행성 → 서클 상세 (이후 2D)
+3. 중앙 구체 → **미니홈피** · 행성 → 서클 상세 · Diary 탭 → 같은 미니홈피
 
 웹만 볼 때: `npm run web:intro` (인트로는 MP4, 우주는 2D glow fallback).
 
