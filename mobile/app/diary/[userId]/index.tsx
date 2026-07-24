@@ -197,6 +197,17 @@ export default function DiaryScreen() {
         {!isMine && me && !blockedRelation ? (
           <>
             <Pressable
+              style={styles.link}
+              onPress={() =>
+                router.push({
+                  pathname: '/messages/compose',
+                  params: { recipientId: userId },
+                })
+              }
+            >
+              <Text>{en.diary.leaveNote}</Text>
+            </Pressable>
+            <Pressable
               style={styles.report}
               onPress={() =>
                 router.push({

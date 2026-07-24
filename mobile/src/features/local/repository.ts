@@ -132,6 +132,31 @@ interface LocalDb {
     reason: string;
     createdAt: string;
   }[];
+  privateMessages: {
+    id: string;
+    circleId: string;
+    senderId: string;
+    recipientId: string;
+    senderMode: 'named' | 'alias';
+    aliasId?: string;
+    body: string;
+    replyToMessageId?: string;
+    status: 'active' | 'sender_deleted' | 'recipient_deleted' | 'removed';
+    clientRequestId: string;
+    createdAt: string;
+  }[];
+  privateMessageUserStates: {
+    messageId: string;
+    userId: string;
+    hiddenAt?: string;
+    openedAt?: string;
+  }[];
+  messagePreferences: {
+    userId: string;
+    namedEnabled: boolean;
+    aliasEnabled: boolean;
+    updatedAt: string;
+  }[];
 }
 
 export interface CirclePostRecord {
@@ -232,6 +257,9 @@ const empty: LocalDb = {
   circleAliases: [],
   anonymousPosts: [],
   adminAuditLogs: [],
+  privateMessages: [],
+  privateMessageUserStates: [],
+  messagePreferences: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -290,6 +318,9 @@ export async function loadLocalDb(): Promise<void> {
     memory.circleAliases ??= [];
     memory.anonymousPosts ??= [];
     memory.adminAuditLogs ??= [];
+    memory.privateMessages ??= [];
+    memory.privateMessageUserStates ??= [];
+    memory.messagePreferences ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -1723,6 +1754,23 @@ function buildLocalReportSnapshot(targetType: string, targetId: string): Record<
       createdAt: ap.createdAt,
     };
   }
+  if (targetType === 'message') {
+    const m = memory.privateMessages.find((x) => x.id === targetId);
+    if (!m) throw new AppError('NOT_FOUND', 'Target not found.');
+    const alias = m.aliasId
+      ? memory.circleAliases.find((a) => a.id === m.aliasId)
+      : undefined;
+    return {
+      messageId: m.id,
+      circleId: m.circleId,
+      senderId: m.senderId,
+      recipientId: m.recipientId,
+      senderMode: m.senderMode,
+      aliasName: alias?.aliasName,
+      body: m.body,
+      createdAt: m.createdAt,
+    };
+  }
   return { targetId };
 }
 
@@ -1760,6 +1808,13 @@ async function assertCanReportTarget(
       throw new AppError('FORBIDDEN', 'You can’t view this.');
     }
     if (await isBlockedBetween(reporterId, ap.authorUserId)) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+  }
+  if (targetType === 'message') {
+    const m = memory.privateMessages.find((x) => x.id === targetId);
+    if (!m) throw new AppError('NOT_FOUND', 'Target not found.');
+    if (m.senderId !== reporterId && m.recipientId !== reporterId) {
       throw new AppError('FORBIDDEN', 'You can’t view this.');
     }
   }
@@ -2272,4 +2327,614 @@ export async function resolveAnonymousAuthor(input: {
   });
   await persist();
   return { postId: post.id, authorUserId: post.authorUserId, circleId: post.circleId };
+}
+
+// ---------------------------------------------------------------------------
+// Phase 9 — private notes (letter-style, not chat)
+// ---------------------------------------------------------------------------
+
+function ensureMessagePrefs(userId: string) {
+  let row = memory.messagePreferences.find((p) => p.userId === userId);
+  if (!row) {
+    row = {
+      userId,
+      namedEnabled: true,
+      aliasEnabled: true,
+      updatedAt: now(),
+    };
+    memory.messagePreferences.push(row);
+  }
+  return row;
+}
+
+function validateNoteBodyLocal(body: string): void {
+  const trim = body.trim();
+  if (trim.length < 1 || trim.length > 300) {
+    throw new AppError('VALIDATION', 'Write 1–300 characters.');
+  }
+  if (/https?:\/\//i.test(trim) || /www\./i.test(trim)) {
+    throw new AppError('VALIDATION', 'Links aren’t allowed.');
+  }
+  if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(trim)) {
+    throw new AppError('VALIDATION', 'Email addresses aren’t allowed.');
+  }
+  if (trim.replace(/\D/g, '').length >= 7) {
+    throw new AppError('VALIDATION', 'Phone numbers aren’t allowed.');
+  }
+  if (/(.)\1{9,}/.test(trim)) {
+    throw new AppError('VALIDATION', 'That text looks spammy.');
+  }
+  if (/@\w{2,}/.test(trim)) {
+    throw new AppError('VALIDATION', 'Mentions aren’t allowed.');
+  }
+}
+
+function replyDepthLocal(messageId: string): number {
+  let id: string | undefined = messageId;
+  let depth = 0;
+  while (id && depth < 10) {
+    const m = memory.privateMessages.find((x) => x.id === id);
+    if (!m?.replyToMessageId) break;
+    depth += 1;
+    id = m.replyToMessageId;
+  }
+  return depth;
+}
+
+export async function listSharedCirclesWith(
+  viewerId: string,
+  otherUserId: string,
+): Promise<{ id: string; name: string }[]> {
+  await loadLocalDb();
+  if (!otherUserId || otherUserId === viewerId) {
+    throw new AppError('VALIDATION', 'Pick someone else.');
+  }
+  if (await isBlockedBetween(viewerId, otherUserId)) {
+    throw new AppError('FORBIDDEN', "You can't view this.");
+  }
+  const mine = memory.members.filter(
+    (m) => m.userId === viewerId && m.status === 'active',
+  );
+  const out: { id: string; name: string }[] = [];
+  for (const m of mine) {
+    const other = memory.members.find(
+      (x) =>
+        x.circleId === m.circleId && x.userId === otherUserId && x.status === 'active',
+    );
+    if (!other) continue;
+    const circle = memory.circles.find((c) => c.id === m.circleId && c.status === 'open');
+    if (circle) out.push({ id: circle.id, name: circle.name });
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getMyMessagePreferences(
+  userId: string,
+): Promise<{ namedEnabled: boolean; aliasEnabled: boolean }> {
+  await loadLocalDb();
+  assertNotSuspended(userId);
+  const row = ensureMessagePrefs(userId);
+  return { namedEnabled: row.namedEnabled, aliasEnabled: row.aliasEnabled };
+}
+
+export async function updateMyMessagePreferences(
+  userId: string,
+  namedEnabled: boolean,
+  aliasEnabled: boolean,
+): Promise<{ namedEnabled: boolean; aliasEnabled: boolean }> {
+  await loadLocalDb();
+  assertNotSuspended(userId);
+  const row = ensureMessagePrefs(userId);
+  row.namedEnabled = namedEnabled;
+  row.aliasEnabled = aliasEnabled;
+  row.updatedAt = now();
+  await persist();
+  return { namedEnabled: row.namedEnabled, aliasEnabled: row.aliasEnabled };
+}
+
+async function sendPrivateMessageLocal(input: {
+  circleId: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  senderMode: 'named' | 'alias';
+  replyToMessageId?: string | null;
+  clientRequestId: string;
+}): Promise<{ id: string; senderMode: 'named' | 'alias'; createdAt: string }> {
+  await loadLocalDb();
+  assertNotSuspended(input.senderId);
+  if (!input.recipientId || input.recipientId === input.senderId) {
+    throw new AppError('VALIDATION', 'Pick someone else.');
+  }
+  if (!(await isCircleMember(input.circleId, input.senderId))) {
+    throw new AppError('FORBIDDEN', 'Only members can send notes.');
+  }
+  if (!(await isCircleMember(input.circleId, input.recipientId))) {
+    throw new AppError('FORBIDDEN', 'Only members can send notes.');
+  }
+  if (await isBlockedBetween(input.senderId, input.recipientId)) {
+    throw new AppError('FORBIDDEN', "You can't send this.");
+  }
+  const mod = memory.moderationStatus.find((m) => m.userId === input.senderId);
+  if (mod?.accountStatus === 'restricted' || mod?.accountStatus === 'suspended') {
+    throw new AppError('FORBIDDEN', 'Messaging is temporarily limited.');
+  }
+  const prefs = ensureMessagePrefs(input.recipientId);
+  if (input.senderMode === 'named' && !prefs.namedEnabled) {
+    throw new AppError('FORBIDDEN', "You can't send a named note to this person right now.");
+  }
+  if (input.senderMode === 'alias' && !prefs.aliasEnabled) {
+    throw new AppError(
+      'FORBIDDEN',
+      "You can't send an alias note to this person right now.",
+    );
+  }
+  validateNoteBodyLocal(input.body);
+
+  const dup = memory.privateMessages.find(
+    (m) =>
+      m.senderId === input.senderId && m.clientRequestId === input.clientRequestId,
+  );
+  if (dup) {
+    return { id: dup.id, senderMode: dup.senderMode, createdAt: dup.createdAt };
+  }
+
+  if (input.replyToMessageId) {
+    const reply = memory.privateMessages.find((m) => m.id === input.replyToMessageId);
+    if (!reply) throw new AppError('NOT_FOUND', 'Note not found.');
+    if (reply.status === 'removed') throw new AppError('FORBIDDEN', "You can't reply.");
+    if (
+      input.senderId !== reply.senderId &&
+      input.senderId !== reply.recipientId
+    ) {
+      throw new AppError('FORBIDDEN', "You can't reply.");
+    }
+    if (
+      input.recipientId !== reply.senderId &&
+      input.recipientId !== reply.recipientId
+    ) {
+      throw new AppError('FORBIDDEN', "You can't reply.");
+    }
+    if (replyDepthLocal(input.replyToMessageId) >= 3) {
+      throw new AppError('VALIDATION', 'This letter chain is long enough.');
+    }
+  }
+
+  const nowMs = Date.now();
+  if (input.senderMode === 'named') {
+    const tenMin = memory.privateMessages.filter(
+      (m) =>
+        m.senderId === input.senderId &&
+        m.recipientId === input.recipientId &&
+        m.senderMode === 'named' &&
+        nowMs - new Date(m.createdAt).getTime() < 10 * 60_000,
+    ).length;
+    if (tenMin >= 3) throw new AppError('RATE_LIMITED', 'Please wait before sending again.');
+    const day = memory.privateMessages.filter(
+      (m) =>
+        m.senderId === input.senderId &&
+        m.recipientId === input.recipientId &&
+        m.senderMode === 'named' &&
+        nowMs - new Date(m.createdAt).getTime() < 24 * 60 * 60_000,
+    ).length;
+    if (day >= 10) throw new AppError('RATE_LIMITED', 'Daily note limit reached.');
+  } else {
+    const dayPair = memory.privateMessages.filter(
+      (m) =>
+        m.senderId === input.senderId &&
+        m.recipientId === input.recipientId &&
+        m.senderMode === 'alias' &&
+        nowMs - new Date(m.createdAt).getTime() < 24 * 60 * 60_000,
+    ).length;
+    if (dayPair >= 1) throw new AppError('RATE_LIMITED', 'Please wait before sending again.');
+    const weekPair = memory.privateMessages.filter(
+      (m) =>
+        m.senderId === input.senderId &&
+        m.recipientId === input.recipientId &&
+        m.senderMode === 'alias' &&
+        nowMs - new Date(m.createdAt).getTime() < 7 * 24 * 60 * 60_000,
+    ).length;
+    if (weekPair >= 2) throw new AppError('RATE_LIMITED', 'Weekly alias note limit reached.');
+    const dayAll = memory.privateMessages.filter(
+      (m) =>
+        m.senderId === input.senderId &&
+        m.senderMode === 'alias' &&
+        nowMs - new Date(m.createdAt).getTime() < 24 * 60 * 60_000,
+    ).length;
+    if (dayAll >= 5) throw new AppError('RATE_LIMITED', 'Daily alias note limit reached.');
+  }
+
+  let aliasId: string | undefined;
+  if (input.senderMode === 'alias') {
+    const alias = await getOrCreateCircleAlias(input.circleId, input.senderId);
+    aliasId = alias.aliasId;
+  }
+
+  const msg = {
+    id: uid(),
+    circleId: input.circleId,
+    senderId: input.senderId,
+    recipientId: input.recipientId,
+    senderMode: input.senderMode,
+    aliasId,
+    body: input.body.trim(),
+    replyToMessageId: input.replyToMessageId ?? undefined,
+    status: 'active' as const,
+    clientRequestId: input.clientRequestId,
+    createdAt: now(),
+  };
+  memory.privateMessages.push(msg);
+  memory.privateMessageUserStates.push({
+    messageId: msg.id,
+    userId: input.recipientId,
+  });
+
+  const sender = memory.profiles.find((p) => p.id === input.senderId);
+  memory.notifications.push({
+    id: uid(),
+    userId: input.recipientId,
+    eventType: 'private_message_received',
+    payload: {
+      messageId: msg.id,
+      senderMode: input.senderMode,
+      ...(input.senderMode === 'named'
+        ? { senderDisplay: sender?.displayName ?? 'Someone' }
+        : {}),
+      circleId: input.circleId,
+    },
+    createdAt: now(),
+  });
+  await persist();
+  return { id: msg.id, senderMode: msg.senderMode, createdAt: msg.createdAt };
+}
+
+export async function sendNamedMessage(input: {
+  circleId: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  replyToMessageId?: string | null;
+  clientRequestId: string;
+}) {
+  return sendPrivateMessageLocal({ ...input, senderMode: 'named' });
+}
+
+export async function sendAliasMessage(input: {
+  circleId: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  replyToMessageId?: string | null;
+  clientRequestId: string;
+}) {
+  return sendPrivateMessageLocal({ ...input, senderMode: 'alias' });
+}
+
+export async function replyToPrivateMessage(input: {
+  sourceMessageId: string;
+  actorId: string;
+  senderMode: 'named' | 'alias';
+  body: string;
+  clientRequestId: string;
+}) {
+  await loadLocalDb();
+  const src = memory.privateMessages.find((m) => m.id === input.sourceMessageId);
+  if (!src) throw new AppError('NOT_FOUND', 'Note not found.');
+  if (input.actorId !== src.senderId && input.actorId !== src.recipientId) {
+    throw new AppError('FORBIDDEN', "You can't reply.");
+  }
+  const recipientId =
+    input.actorId === src.senderId ? src.recipientId : src.senderId;
+  return sendPrivateMessageLocal({
+    circleId: src.circleId,
+    senderId: input.actorId,
+    recipientId,
+    body: input.body,
+    senderMode: input.senderMode,
+    replyToMessageId: input.sourceMessageId,
+    clientRequestId: input.clientRequestId,
+  });
+}
+
+export async function getReceivedMessages(input: {
+  viewerId: string;
+  cursorCreatedAt?: string | null;
+  cursorId?: string | null;
+  limit?: number;
+}): Promise<{
+  items: {
+    id: string;
+    senderMode: 'named' | 'alias';
+    senderDisplay: string;
+    body: string;
+    circle: { id: string; name: string };
+    isOpened: boolean;
+    createdAt: string;
+    replyToMessageId: string | null;
+  }[];
+  nextCursor: { createdAt: string; id: string } | null;
+}> {
+  await loadLocalDb();
+  assertNotSuspended(input.viewerId);
+  const lim = Math.max(1, Math.min(input.limit ?? 20, 20));
+  let rows = memory.privateMessages
+    .filter(
+      (m) =>
+        m.recipientId === input.viewerId &&
+        (m.status === 'active' || m.status === 'sender_deleted'),
+    )
+    .sort((a, b) => {
+      const t = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return t !== 0 ? t : b.id.localeCompare(a.id);
+    });
+
+  rows = rows.filter((m) => {
+    if (
+      memory.blocks.some(
+        (b) =>
+          (b.blockerId === input.viewerId && b.blockedId === m.senderId) ||
+          (b.blockerId === m.senderId && b.blockedId === input.viewerId),
+      )
+    ) {
+      return false;
+    }
+    const st = memory.privateMessageUserStates.find(
+      (s) => s.messageId === m.id && s.userId === input.viewerId,
+    );
+    if (st?.hiddenAt) return false;
+    if (
+      memory.hiddenContent.some(
+        (h) =>
+          h.userId === input.viewerId &&
+          h.targetType === 'message' &&
+          h.targetId === m.id,
+      )
+    ) {
+      return false;
+    }
+    if (input.cursorCreatedAt && input.cursorId) {
+      const ct = new Date(input.cursorCreatedAt).getTime();
+      const pt = new Date(m.createdAt).getTime();
+      if (pt > ct) return false;
+      if (pt === ct && m.id >= input.cursorId) return false;
+    }
+    return true;
+  });
+
+  const page = rows.slice(0, lim);
+  const items = page.map((m) => {
+    const circle = memory.circles.find((c) => c.id === m.circleId);
+    const st = memory.privateMessageUserStates.find(
+      (s) => s.messageId === m.id && s.userId === input.viewerId,
+    );
+    let senderDisplay = 'Someone';
+    if (m.senderMode === 'alias') {
+      senderDisplay =
+        memory.circleAliases.find((a) => a.id === m.aliasId)?.aliasName ?? 'Alias';
+    } else {
+      senderDisplay =
+        memory.profiles.find((p) => p.id === m.senderId)?.displayName ?? 'Someone';
+    }
+    return {
+      id: m.id,
+      senderMode: m.senderMode,
+      senderDisplay,
+      body: m.body,
+      circle: { id: m.circleId, name: circle?.name ?? 'Circle' },
+      isOpened: Boolean(st?.openedAt),
+      createdAt: m.createdAt,
+      replyToMessageId: m.replyToMessageId ?? null,
+    };
+  });
+
+  return {
+    items,
+    nextCursor:
+      page.length === lim
+        ? { createdAt: page[page.length - 1].createdAt, id: page[page.length - 1].id }
+        : null,
+  };
+}
+
+export async function getSentMessages(input: {
+  viewerId: string;
+  cursorCreatedAt?: string | null;
+  cursorId?: string | null;
+  limit?: number;
+}): Promise<{
+  items: {
+    id: string;
+    senderMode: 'named' | 'alias';
+    recipientDisplay: string;
+    body: string;
+    circle: { id: string; name: string };
+    createdAt: string;
+    replyToMessageId: string | null;
+  }[];
+  nextCursor: { createdAt: string; id: string } | null;
+}> {
+  await loadLocalDb();
+  assertNotSuspended(input.viewerId);
+  const lim = Math.max(1, Math.min(input.limit ?? 20, 20));
+  let rows = memory.privateMessages
+    .filter(
+      (m) =>
+        m.senderId === input.viewerId &&
+        (m.status === 'active' || m.status === 'recipient_deleted'),
+    )
+    .sort((a, b) => {
+      const t = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return t !== 0 ? t : b.id.localeCompare(a.id);
+    });
+
+  rows = rows.filter((m) => {
+    const st = memory.privateMessageUserStates.find(
+      (s) => s.messageId === m.id && s.userId === input.viewerId,
+    );
+    if (st?.hiddenAt) return false;
+    if (input.cursorCreatedAt && input.cursorId) {
+      const ct = new Date(input.cursorCreatedAt).getTime();
+      const pt = new Date(m.createdAt).getTime();
+      if (pt > ct) return false;
+      if (pt === ct && m.id >= input.cursorId) return false;
+    }
+    return true;
+  });
+
+  const page = rows.slice(0, lim);
+  const items = page.map((m) => {
+    const circle = memory.circles.find((c) => c.id === m.circleId);
+    return {
+      id: m.id,
+      senderMode: m.senderMode,
+      recipientDisplay:
+        memory.profiles.find((p) => p.id === m.recipientId)?.displayName ?? 'Someone',
+      body: m.body,
+      circle: { id: m.circleId, name: circle?.name ?? 'Circle' },
+      createdAt: m.createdAt,
+      replyToMessageId: m.replyToMessageId ?? null,
+    };
+  });
+
+  return {
+    items,
+    nextCursor:
+      page.length === lim
+        ? { createdAt: page[page.length - 1].createdAt, id: page[page.length - 1].id }
+        : null,
+  };
+}
+
+export async function openPrivateMessage(
+  messageId: string,
+  viewerId: string,
+): Promise<{
+  id: string;
+  senderMode: 'named' | 'alias';
+  senderDisplay: string;
+  body: string;
+  circle: { id: string; name: string };
+  isOpened: boolean;
+  createdAt: string;
+  replyToMessageId: string | null;
+}> {
+  await loadLocalDb();
+  const msg = memory.privateMessages.find((m) => m.id === messageId);
+  if (!msg) throw new AppError('NOT_FOUND', 'Note not found.');
+  if (msg.recipientId !== viewerId) throw new AppError('FORBIDDEN', "You can't open this.");
+  if (msg.status === 'removed') throw new AppError('FORBIDDEN', "You can't open this.");
+  if (await isBlockedBetween(viewerId, msg.senderId)) {
+    throw new AppError('FORBIDDEN', "You can't open this.");
+  }
+  let st = memory.privateMessageUserStates.find(
+    (s) => s.messageId === messageId && s.userId === viewerId,
+  );
+  if (!st) {
+    st = { messageId, userId: viewerId, openedAt: now() };
+    memory.privateMessageUserStates.push(st);
+  } else if (!st.openedAt) {
+    st.openedAt = now();
+  }
+  await persist();
+
+  let senderDisplay = 'Someone';
+  if (msg.senderMode === 'alias') {
+    senderDisplay =
+      memory.circleAliases.find((a) => a.id === msg.aliasId)?.aliasName ?? 'Alias';
+  } else {
+    senderDisplay =
+      memory.profiles.find((p) => p.id === msg.senderId)?.displayName ?? 'Someone';
+  }
+  const circle = memory.circles.find((c) => c.id === msg.circleId);
+  return {
+    id: msg.id,
+    senderMode: msg.senderMode,
+    senderDisplay,
+    body: msg.body,
+    circle: { id: msg.circleId, name: circle?.name ?? 'Circle' },
+    isOpened: true,
+    createdAt: msg.createdAt,
+    replyToMessageId: msg.replyToMessageId ?? null,
+  };
+}
+
+export async function hidePrivateMessage(messageId: string, userId: string): Promise<void> {
+  await loadLocalDb();
+  const msg = memory.privateMessages.find((m) => m.id === messageId);
+  if (!msg) throw new AppError('NOT_FOUND', 'Note not found.');
+  if (userId !== msg.senderId && userId !== msg.recipientId) {
+    throw new AppError('FORBIDDEN', "You can't hide this.");
+  }
+  let st = memory.privateMessageUserStates.find(
+    (s) => s.messageId === messageId && s.userId === userId,
+  );
+  if (!st) {
+    memory.privateMessageUserStates.push({
+      messageId,
+      userId,
+      hiddenAt: now(),
+    });
+  } else {
+    st.hiddenAt = now();
+  }
+  await persist();
+}
+
+export async function blockPrivateMessageSender(
+  messageId: string,
+  actorId: string,
+): Promise<void> {
+  await loadLocalDb();
+  const msg = memory.privateMessages.find((m) => m.id === messageId);
+  if (!msg) throw new AppError('NOT_FOUND', 'Note not found.');
+  if (msg.recipientId !== actorId) {
+    throw new AppError('FORBIDDEN', 'Only the recipient can do this.');
+  }
+  if (msg.senderId === actorId) {
+    throw new AppError('VALIDATION', "You can't block yourself.");
+  }
+  await blockUser(actorId, msg.senderId);
+}
+
+export async function resolvePrivateMessageSender(input: {
+  messageId: string;
+  moderationCaseId: string;
+  reason: string;
+  adminId: string;
+  isModerator: boolean;
+}): Promise<{
+  messageId: string;
+  senderId: string;
+  recipientId: string;
+  circleId: string;
+  senderMode: 'named' | 'alias';
+}> {
+  await loadLocalDb();
+  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  if (!input.reason.trim() || input.reason.trim().length < 3) {
+    throw new AppError('VALIDATION', 'Reason required.');
+  }
+  const msg = memory.privateMessages.find((m) => m.id === input.messageId);
+  if (!msg) throw new AppError('NOT_FOUND', 'Note not found.');
+  const report = memory.reports.find((r) => r.id === input.moderationCaseId);
+  if (!report || report.targetType !== 'message' || report.targetId !== input.messageId) {
+    throw new AppError('FORBIDDEN', 'A linked report case is required.');
+  }
+  memory.adminAuditLogs.push({
+    id: uid(),
+    adminId: input.adminId,
+    action: 'resolve_private_message_sender',
+    targetType: 'message',
+    targetId: input.messageId,
+    reason: input.reason.trim(),
+    createdAt: now(),
+  });
+  await persist();
+  return {
+    messageId: msg.id,
+    senderId: msg.senderId,
+    recipientId: msg.recipientId,
+    circleId: msg.circleId,
+    senderMode: msg.senderMode,
+  };
 }

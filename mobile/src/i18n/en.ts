@@ -74,6 +74,7 @@ export const en = {
     past: 'Past entries',
     album: 'Photo album',
     safety: 'Safety',
+    leaveNote: 'Leave a note',
   },
 
   moods: {
@@ -210,8 +211,49 @@ export const en = {
 
   messages: {
     title: 'Notes',
-    sub: 'No chat rooms — named or alias one-off notes only, with server rate limits.',
+    sub: 'One short letter at a time — not a chat room. No read receipts or typing.',
     detail: 'Note',
+    inbox: 'Inbox',
+    sent: 'Sent',
+    preferences: 'Note settings',
+    preferencesSub: 'Choose which kinds of notes you want to receive.',
+    namedEnabled: 'Receive notes with real names',
+    aliasEnabled: 'Receive alias notes',
+    aliasOffHint:
+      'Turning alias notes off blocks new ones. Existing notes stay in your inbox.',
+    emptyInbox: 'No notes yet.',
+    emptySent: 'You haven’t sent a note yet.',
+    loadMore: 'Load more',
+    newBadge: 'New',
+    to: (name: string) => `To ${name}`,
+    asAlias: 'as alias',
+    composeTitle: (name: string) => `Leave a note for ${name}`,
+    replyTitle: (name: string) => `Reply to ${name}`,
+    composeSub: 'A short letter — not a chat thread.',
+    howToSend: 'How do you want to send it?',
+    sendNamed: 'With my name',
+    sendAlias: 'With my alias',
+    aliasConfirm:
+      'They’ll see your circle alias, not your name. Safety reports can still identify the account.',
+    pickCircle: 'Which circle is this for?',
+    noSharedCircle: 'You don’t share an open circle with this person.',
+    noteLabel: 'Your note',
+    notePlaceholder: 'Write a short note…',
+    safetyNotice:
+      'Alias notes show your circle alias to the recipient. If a note is reported for safety issues, moderators can identify the account.',
+    send: 'Send note',
+    cancel: 'Cancel',
+    back: '← Back',
+    reply: 'Reply',
+    report: 'Report',
+    hide: 'Hide for me',
+    blockSender: 'Block sender',
+    blockConfirmTitle: 'Block this sender?',
+    blockConfirmBody:
+      'Block the person who sent this note? Real names stay hidden for alias notes.',
+    blockConfirm: 'Block',
+    menu: '⋯',
+    leaveNote: 'Leave a note',
   },
 
   reports: {

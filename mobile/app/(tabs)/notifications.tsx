@@ -35,6 +35,10 @@ export default function NotificationsScreen() {
         </Text>
       </Pressable>
 
+      <Pressable style={styles.link} onPress={() => router.push('/messages')}>
+        <Text style={styles.linkText}>{en.messages.title}</Text>
+      </Pressable>
+
       {pendingRecs === 0 ? <Text style={styles.empty}>{en.notifications.empty}</Text> : null}
     </SafeAreaView>
   );
