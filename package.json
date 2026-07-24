@@ -1,8 +1,8 @@
 {
   "name": "nhat-ky-cua-ban",
   "private": true,
-  "version": "1.0.0",
-  "description": "너의 다이어리 — Zalo Mini App 익명 소셜 다이어리",
+  "version": "2.0.0-beta",
+  "description": "너의 다이어리 — 세 사람의 신뢰로 열리는 폐쇄형 서클 다이어리",
   "type": "module",
   "scripts": {
     "dev": "vite",

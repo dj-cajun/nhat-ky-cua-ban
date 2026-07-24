@@ -1,207 +1,104 @@
+import { useEffect, useState } from 'react';
 import { Provider as JotaiProvider, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useState } from 'react';
-import { IntroPage } from '@/pages/intro';
-import { HomePage } from '@/pages/home';
-import { LoginPage } from '@/pages/login';
-import { OnboardingPage } from '@/pages/onboarding';
-import { DotoriPage } from '@/pages/dotori';
-import { BoardPage } from '@/pages/board';
-import { AlbumPage } from '@/pages/album';
-import { FoundingPage } from '@/pages/founding';
-import { db } from '@/lib/db';
-import { initDemoSession, isDemoMode } from '@/lib/demo-init';
-import { canEnterClassHome, joinFoundingByToken } from '@/lib/class-founding';
-import { consumeJoinToken, parseFoundingUrl, peekJoinToken } from '@/lib/founding-params';
-import { getOnboardingPrefillFromToken } from '@/lib/founding-router';
-import { ensureProfileName } from '@/lib/profile-name';
-import { ensureHintSealOnProfile } from '@/lib/supabase-sync';
-import { isZaloLoggedIn } from '@/lib/zalo-auth';
-import { handleDevReset, isIntroSeen, isOnboarded, markIntroSeen } from '@/lib/session';
-import { primeProfanityBlacklist } from '@/lib/profanity-remote';
-import { vi } from '@/i18n/vi';
-import { appPageAtom, currentUserAtom, postsAtom, visitorsAtom } from '@/stores/atoms';
-import { useProfileFont } from '@/hooks/useProfileFont';
+import { SignupPage } from '@/pages/v1/signup';
+import { UniversePage } from '@/pages/v1/universe';
+import { CirclePage } from '@/pages/v1/circle';
+import { DiaryPage, DiaryEditPage } from '@/pages/v1/diary';
+import {
+  CircleCreatePage,
+  CircleSetupPage,
+  InvitesPage,
+} from '@/pages/v1/circle-create';
+import * as store from '@/lib/v1-store';
+import {
+  v1CirclesAtom,
+  v1DiaryOwnerIdAtom,
+  v1PageAtom,
+  v1ProfileAtom,
+} from '@/stores/v1-atoms';
 
-type AppStage = 'boot' | 'intro' | 'login' | 'onboarding' | 'founding' | 'app';
+type Stage = 'boot' | 'signup' | 'app';
 
-function resolveStage(): AppStage {
-  if (!isZaloLoggedIn()) return 'login';
-  if (!isOnboarded()) return 'onboarding';
-
-  const profile = db.getProfile();
-  if (
-    profile &&
-    !canEnterClassHome(profile.schoolName, profile.className, profile.id)
-  ) {
-    return 'founding';
-  }
-
-  return 'app';
-}
-
-function AppContent() {
-  const page = useAtomValue(appPageAtom);
-  const setPage = useSetAtom(appPageAtom);
-  const setUser = useSetAtom(currentUserAtom);
-  const setPosts = useSetAtom(postsAtom);
-  const setVisitors = useSetAtom(visitorsAtom);
-  const [stage, setStage] = useState<AppStage>('boot');
-  const [foundingJoinToken, setFoundingJoinToken] = useState<string | null>(null);
-  const [onboardingPrefill, setOnboardingPrefill] = useState<{
-    schoolName: string;
-    className: string;
-  } | null>(null);
-
-  useProfileFont();
-
-  const hydrateApp = useCallback(() => {
-    const profile = db.getProfile();
-    if (profile) {
-      const repaired = ensureProfileName(profile);
-      setUser(repaired);
-      setPosts(db.getPosts());
-      setVisitors(db.getVisitors());
-    }
-  }, [setUser, setPosts, setVisitors]);
-
-  const enterApp = useCallback(() => {
-    setStage('app');
-    hydrateApp();
-    setPage('home');
-  }, [hydrateApp, setPage]);
+function V1App() {
+  const [stage, setStage] = useState<Stage>('boot');
+  const page = useAtomValue(v1PageAtom);
+  const setPage = useSetAtom(v1PageAtom);
+  const setProfile = useSetAtom(v1ProfileAtom);
+  const setCircles = useSetAtom(v1CirclesAtom);
+  const setDiaryOwner = useSetAtom(v1DiaryOwnerIdAtom);
 
   useEffect(() => {
-    const foundingIntent = parseFoundingUrl();
-    if (foundingIntent.joinToken) {
-      setFoundingJoinToken(foundingIntent.joinToken);
-      setOnboardingPrefill(getOnboardingPrefillFromToken(foundingIntent.joinToken));
-    } else {
-      const pendingToken = peekJoinToken();
-      if (pendingToken) {
-        setFoundingJoinToken(pendingToken);
-        setOnboardingPrefill(getOnboardingPrefillFromToken(pendingToken));
-      }
-    }
-
-    if (handleDevReset()) {
-      setStage('intro');
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === '1') {
+      store.clearV1Data();
+      params.delete('reset');
+      const q = params.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${q ? `?${q}` : ''}`);
+      setStage('signup');
       return;
     }
 
-    primeProfanityBlacklist();
-
-    if (!isIntroSeen()) {
-      setStage('intro');
+    const profile = store.getSessionProfile();
+    if (!profile) {
+      setStage('signup');
       return;
     }
 
-    if (!isOnboarded() && isDemoMode()) {
-      if (!isZaloLoggedIn()) {
-        void import('@/lib/zalo-auth').then(({ loginWithZalo }) =>
-          loginWithZalo().then(() => {
-            void initDemoSession().then(() => window.location.reload());
-          }),
-        );
-        return;
-      }
-      void initDemoSession().then(() => window.location.reload());
-      return;
-    }
-
-    const next = resolveStage();
-    setStage(next);
-    if (next === 'app') {
-      void ensureHintSealOnProfile().then(() => hydrateApp());
-    }
-  }, [hydrateApp]);
+    store.ensureDemoDirectory(profile.id);
+    setProfile(profile);
+    setCircles(store.listMyCircles(profile.id));
+    setDiaryOwner(profile.id);
+    setPage('universe');
+    setStage('app');
+  }, [setCircles, setDiaryOwner, setPage, setProfile]);
 
   if (stage === 'boot') {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#faf9f6] text-sm text-slate-500">
-        {vi.app.loading}
+      <div className="flex h-screen items-center justify-center bg-[#f7f4ef] text-sm text-[#8a8178]">
+        불러오는 중…
       </div>
     );
   }
 
-  if (stage === 'intro') {
+  if (stage === 'signup') {
     return (
-      <IntroPage
+      <SignupPage
         onComplete={() => {
-          markIntroSeen();
-          setStage('login');
+          const profile = store.getSessionProfile();
+          if (!profile) return;
+          setProfile(profile);
+          setCircles(store.listMyCircles(profile.id));
+          setDiaryOwner(profile.id);
+          setPage('universe');
+          setStage('app');
         }}
       />
     );
   }
 
-  if (stage === 'login') {
-    return <LoginPage onLoggedIn={() => setStage('onboarding')} />;
+  switch (page) {
+    case 'circle':
+      return <CirclePage />;
+    case 'diary':
+      return <DiaryPage />;
+    case 'diary-edit':
+      return <DiaryEditPage />;
+    case 'circle-create':
+      return <CircleCreatePage />;
+    case 'circle-setup':
+      return <CircleSetupPage />;
+    case 'invites':
+      return <InvitesPage />;
+    case 'universe':
+    default:
+      return <UniversePage />;
   }
-
-  if (stage === 'onboarding') {
-    return (
-      <OnboardingPage
-        initialSchool={onboardingPrefill?.schoolName}
-        initialClass={onboardingPrefill?.className}
-        onComplete={() => {
-          const profile = db.getProfile();
-          const token = foundingJoinToken ?? consumeJoinToken();
-          if (profile && token) {
-            joinFoundingByToken(token, profile.id, profile.realName);
-            setFoundingJoinToken(null);
-          }
-          void ensureHintSealOnProfile().then(() => enterApp());
-        }}
-      />
-    );
-  }
-
-  if (stage === 'founding') {
-    const profile = db.getProfile();
-    if (!profile) {
-      setStage('onboarding');
-      return null;
-    }
-
-    const joinToken = foundingJoinToken ?? consumeJoinToken();
-
-    return (
-      <FoundingPage
-        schoolName={profile.schoolName}
-        className={profile.className}
-        joinToken={joinToken}
-        onComplete={() => {
-          setFoundingJoinToken(null);
-          enterApp();
-        }}
-      />
-    );
-  }
-
-  if (page === 'dotori') {
-    return (
-      <DotoriPage
-        onBack={() => setPage('home')}
-        onLogout={() => setStage('login')}
-      />
-    );
-  }
-
-  if (page === 'board') {
-    return <BoardPage onBack={() => setPage('home')} />;
-  }
-
-  if (page === 'album') {
-    return <AlbumPage onBack={() => setPage('home')} />;
-  }
-
-  return <HomePage />;
 }
 
 export function App() {
   return (
     <JotaiProvider>
-      <AppContent />
+      <V1App />
     </JotaiProvider>
   );
 }
