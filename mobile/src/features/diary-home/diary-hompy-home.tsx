@@ -34,6 +34,11 @@ type Props = {
   canView: boolean;
   onEditToday: () => void;
   onOpenMusic?: () => void;
+  /** Prefer stack unwind / circle graph over jumping to universe. */
+  onBack?: () => void;
+  backLabel?: string;
+  /** Keep circle context when hopping between friend homes. */
+  fromCircleId?: string;
 };
 
 /**
@@ -53,6 +58,9 @@ export function DiaryHompyHome({
   canView,
   onEditToday,
   onOpenMusic,
+  onBack,
+  backLabel,
+  fromCircleId,
 }: Props) {
   const t = useMessages();
   const [locale] = useLocale();
@@ -63,18 +71,37 @@ export function DiaryHompyHome({
 
   const week = useMemo(() => buildWeek(recentEntries, locale), [recentEntries, locale]);
 
+  const openDiary = (targetId: string) => {
+    if (fromCircleId) {
+      router.push({
+        pathname: '/diary/[userId]',
+        params: { userId: targetId, fromCircleId },
+      });
+      return;
+    }
+    router.push(`/diary/${targetId}`);
+  };
+
+  const handleBack =
+    onBack ??
+    (() => {
+      if (router.canGoBack()) router.back();
+      else router.replace('/(tabs)/universe');
+    });
+
+  const resolvedBackLabel =
+    backLabel ?? (locale === 'ko' ? '내 우주' : 'Universe');
+
   return (
     <View style={styles.shell}>
       <ScrollView contentContainerStyle={styles.canvas} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, styles.sky]}>
           <Pressable
-            onPress={() => router.replace('/(tabs)/universe')}
+            onPress={handleBack}
             accessibilityRole="button"
             style={styles.headerBtn}
           >
-            <Text style={styles.headerBtnText}>
-              ← {locale === 'ko' ? '내 우주' : 'Universe'}
-            </Text>
+            <Text style={styles.headerBtnText}>← {resolvedBackLabel}</Text>
           </Pressable>
           <Text style={styles.brand}>{brand}</Text>
           <View style={{ width: 64 }} />
@@ -130,7 +157,7 @@ export function DiaryHompyHome({
           >
             <Pressable
               style={[styles.chip, isMine && styles.chipOn]}
-              onPress={() => router.push(`/diary/${me.id}`)}
+              onPress={() => openDiary(me.id)}
             >
               <Text style={[styles.chipText, isMine && styles.chipTextOn]}>
                 {locale === 'ko' ? '내 홈' : 'My home'}
@@ -142,7 +169,7 @@ export function DiaryHompyHome({
                 <Pressable
                   key={m.id}
                   style={[styles.chip, on && styles.chipOn]}
-                  onPress={() => router.push(`/diary/${m.id}`)}
+                  onPress={() => openDiary(m.id)}
                 >
                   <Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
                     {m.name}

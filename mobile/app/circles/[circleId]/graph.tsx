@@ -196,7 +196,7 @@ export default function CircleGraphScreen() {
           title={t.states.forbiddenTitle}
           subtitle={t.states.forbiddenSub}
           actionLabel={t.diary.back}
-          onAction={() => router.back()}
+          onAction={() => router.replace('/(tabs)/universe')}
           style={styles.forbidden}
         />
       </SafeAreaView>
@@ -214,7 +214,11 @@ export default function CircleGraphScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          onPress={() => router.replace('/(tabs)/universe')}
+          hitSlop={12}
+          accessibilityRole="button"
+        >
           <Text style={styles.back}>← {t.universe.brand}</Text>
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -250,12 +254,22 @@ export default function CircleGraphScreen() {
             opacity={n.opacity}
             hot={hotId === n.id}
             onHot={(on) => setHotId(on ? n.id : null)}
-            onPress={() => router.push(`/diary/${n.id}`)}
+            onPress={() =>
+              router.push({
+                pathname: '/diary/[userId]',
+                params: { userId: n.id, fromCircleId: circle.id },
+              })
+            }
           />
         ))}
 
         <Pressable
-          onPress={() => router.push(`/diary/${me.id}`)}
+          onPress={() =>
+            router.push({
+              pathname: '/diary/[userId]',
+              params: { userId: me.id, fromCircleId: circle.id },
+            })
+          }
           style={[styles.selfWrap, { left: cx - 28, top: cy - 28 }]}
           accessibilityRole="button"
           accessibilityLabel={me.displayName}

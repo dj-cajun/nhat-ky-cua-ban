@@ -55,11 +55,16 @@ import {
 } from '@/types/domain';
 import { colors } from '@/constants/theme';
 import { hompy } from '@/constants/hompy-theme';
-import { useMessages, DEFAULT_TIMEZONE } from '@/i18n';
+import { useMessages, DEFAULT_TIMEZONE, useLocale } from '@/i18n';
 
 export default function DiaryScreen() {
   const t = useMessages();
-  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const [locale] = useLocale();
+  const { userId, fromCircleId } = useLocalSearchParams<{
+    userId: string;
+    fromCircleId?: string;
+  }>();
+  const circleReturnId = Array.isArray(fromCircleId) ? fromCircleId[0] : fromCircleId;
   const [me, setMe] = useState<Profile | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
@@ -344,7 +349,13 @@ export default function DiaryScreen() {
         <AppForbiddenState
           title={t.diary.privateBlocked}
           actionLabel={t.diary.back}
-          onAction={() => router.back()}
+          onAction={() => {
+            if (circleReturnId) {
+              router.replace(`/circles/${circleReturnId}/graph`);
+              return;
+            }
+            router.back();
+          }}
         />
       </SafeAreaView>
     );
@@ -372,6 +383,24 @@ export default function DiaryScreen() {
           canView={canView}
           onEditToday={() => setEditing(true)}
           onOpenMusic={() => void onOpenMusic()}
+          fromCircleId={circleReturnId}
+          backLabel={
+            circleReturnId
+              ? circles.find((c) => c.id === circleReturnId)?.name ??
+                (locale === 'ko' ? '서클' : 'Circle')
+              : undefined
+          }
+          onBack={() => {
+            if (circleReturnId) {
+              router.replace(`/circles/${circleReturnId}/graph`);
+              return;
+            }
+            if (router.canGoBack()) {
+              router.back();
+              return;
+            }
+            router.replace('/(tabs)/universe');
+          }}
         />
         {!isMine ? (
           <View style={styles.hompySafety}>
@@ -396,6 +425,10 @@ export default function DiaryScreen() {
                 void (async () => {
                   await blockUser(me.id, userId);
                   track(AnalyticsEvents.block_created, { market: 'US' });
+                  if (circleReturnId) {
+                    router.replace(`/circles/${circleReturnId}/graph`);
+                    return;
+                  }
                   router.replace('/(tabs)/universe');
                 })()
               }
