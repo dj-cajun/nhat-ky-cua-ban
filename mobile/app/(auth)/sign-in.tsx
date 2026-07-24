@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signUpLocal } from '@/features/local/repository';
+import { requestIntroReplay, resetUniverseVisitSession } from '@/features/universe-home';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
@@ -66,6 +67,9 @@ export default function SignInScreen() {
         onPress={async () => {
           try {
             await signUpLocal('Alex');
+            // Local/demo: always land on My Universe with the full intro.
+            resetUniverseVisitSession();
+            await requestIntroReplay();
             track('circle_creation_started', { via: 'demo_shortcut', market: 'US' });
             router.replace('/(tabs)/universe');
           } catch (e) {

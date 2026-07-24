@@ -57,6 +57,19 @@ describe('resolveIntroMode', () => {
     // force flag consumed
     await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
   });
+
+  it('EXPO_PUBLIC_FORCE_UNIVERSE_INTRO forces full on cold start', async () => {
+    await markIntroSeen();
+    const prev = process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO;
+    process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO = '1';
+    try {
+      await expect(resolveIntroMode({ isTabReturn: false })).resolves.toBe('full');
+      await expect(resolveIntroMode({ isTabReturn: true })).resolves.toBe('none');
+    } finally {
+      if (prev === undefined) delete process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO;
+      else process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO = prev;
+    }
+  });
 });
 
 describe('consumeUniverseVisitKind', () => {

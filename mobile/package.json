@@ -8,9 +8,11 @@
     "sync:intro": "node scripts/sync-intro-asset.mjs",
     "render:intro": "python3 scripts/render-universe-intro.py && npm run sync:intro",
     "start": "npm run sync:intro && expo start",
+    "start:intro": "npm run sync:intro && EXPO_PUBLIC_FORCE_UNIVERSE_INTRO=1 expo start",
     "android": "npm run sync:intro && expo start --android",
     "ios": "npm run sync:intro && expo start --ios",
     "web": "npm run sync:intro && expo start --web",
+    "web:intro": "npm run sync:intro && EXPO_PUBLIC_FORCE_UNIVERSE_INTRO=1 expo start --web",
     "typecheck": "npm run sync:intro && tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint ."

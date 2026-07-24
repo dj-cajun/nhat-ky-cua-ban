@@ -2,11 +2,21 @@
 
 **`universe-birth.mp4`** — vertical 9:16 cinematic birth → gold identity orb.
 
+## Preview locally (full intro every cold start)
+
+```bash
+cd mobile
+npm install --legacy-peer-deps
+npm run start:intro
+```
+
+Then open the app → **Try the demo** (or already signed in → My Universe).  
+Full intro plays from the bundled MP4. Settings → “Replay My Universe intro” also works.
+
 ## Regenerate
 
 ```bash
-python3 mobile/scripts/render-universe-intro.py
-cd mobile && npm run sync:intro
+cd mobile && npm run render:intro
 ```
 
 ## Spec (matches `INTRO_HANDOFF`)

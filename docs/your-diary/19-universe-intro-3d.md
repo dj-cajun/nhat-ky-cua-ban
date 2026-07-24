@@ -33,6 +33,16 @@
 
 레포에 기본 `universe-birth.mp4`가 포함되어 있다. 교체하려면 같은 경로에 덮어쓰고 sync한다.
 
+### 로컬에서 인트로부터 보기
+
+```bash
+cd mobile
+npm install --legacy-peer-deps
+npm run start:intro   # 전체 인트로 강제
+```
+
+앱에서 **Try the demo** → My Universe. 데모 진입·`start:intro`는 전체 인트로를 재생한다.
+
 ---
 
 ## 영상 제작 스펙 (그대로 전달)

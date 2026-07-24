@@ -1,6 +1,7 @@
 export { INTRO_HANDOFF, type IntroMode } from './handoff';
 export { getIntroVideoSource, HAS_INTRO_VIDEO } from './intro-asset';
-export { markIntroSeen, requestIntroReplay, resolveIntroMode } from './intro-policy';
+export { markIntroSeen, requestIntroReplay, resolveIntroMode, isIntroForceEnv } from './intro-policy';
+export { resetUniverseVisitSession } from './session-visit';
 export { UniverseHome } from './universe-home';
 export { UniverseScene3D } from './universe-scene';
 export { FallbackUniverse } from './fallback-universe';

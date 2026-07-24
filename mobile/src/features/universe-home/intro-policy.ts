@@ -4,6 +4,11 @@ import type { IntroMode } from './handoff';
 const KEY_SEEN = 'your-diary-universe-intro-seen';
 const KEY_FORCE = 'your-diary-universe-intro-force-once';
 
+/** Local preview: `EXPO_PUBLIC_FORCE_UNIVERSE_INTRO=1 npm run start` (or `npm run start:intro`). */
+export function isIntroForceEnv(): boolean {
+  return process.env.EXPO_PUBLIC_FORCE_UNIVERSE_INTRO === '1';
+}
+
 /** First install / forced replay → full. Later cold starts → short. Tab return → none. */
 export async function resolveIntroMode(opts: {
   /** true when this focus is returning from another tab in-session */
@@ -17,6 +22,11 @@ export async function resolveIntroMode(opts: {
     }
   } catch {
     /* ignore */
+  }
+
+  // Dev/local: every cold open plays the full bundled intro (or synthetic).
+  if (isIntroForceEnv() && !opts.isTabReturn) {
+    return 'full';
   }
 
   if (opts.isTabReturn) return 'none';
