@@ -116,6 +116,13 @@ export function UniversePage() {
         )}
         <button
           type="button"
+          onClick={() => setPage('recommendations')}
+          className="w-full rounded-2xl border border-[#d9d0c4] bg-white py-3 text-sm text-[#2f2a26]"
+        >
+          추천 요청함
+        </button>
+        <button
+          type="button"
           onClick={() => setPage('circle-create')}
           className="w-full rounded-2xl border border-[#d9d0c4] bg-white py-3 text-sm text-[#2f2a26]"
         >

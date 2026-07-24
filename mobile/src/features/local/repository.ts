@@ -40,12 +40,28 @@ interface JoinRequest {
   circleId: string;
   applicantId: string;
   status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
+  expiresAt: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Recommendation {
+  id: string;
   requestId: string;
   recommenderId: string;
-  decision: 'pending' | 'recommended' | 'unknown' | 'later';
+  decision: 'pending' | 'recommended' | 'unknown';
+  respondedAt?: string;
+  createdAt: string;
+}
+
+interface NotificationEvent {
+  id: string;
+  userId: string;
+  eventType: string;
+  payload: Record<string, string>;
+  createdAt: string;
+  readAt?: string;
 }
 
 interface Member {
@@ -72,6 +88,7 @@ interface LocalDb {
   pollOptions: PollOptionRecord[];
   responses: ResponseRecord[];
   reports: ReportRecord[];
+  notifications: NotificationEvent[];
 }
 
 export interface CirclePostRecord {
@@ -126,6 +143,7 @@ const empty: LocalDb = {
   pollOptions: [],
   responses: [],
   reports: [],
+  notifications: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -162,6 +180,28 @@ export async function loadLocalDb(): Promise<void> {
     memory.responses ??= [];
     memory.reports ??= [];
     memory.blocks ??= [];
+    memory.notifications ??= [];
+    memory.recommendations = (memory.recommendations ?? []).map((r) => {
+      const rawDecision = String((r as Recommendation).decision ?? 'pending');
+      return {
+        id: (r as Recommendation).id ?? uid(),
+        requestId: r.requestId,
+        recommenderId: r.recommenderId,
+        decision: (rawDecision === 'later' || rawDecision === 'pending'
+          ? 'pending'
+          : rawDecision === 'recommended'
+            ? 'recommended'
+            : 'unknown') as Recommendation['decision'],
+        respondedAt: (r as Recommendation).respondedAt,
+        createdAt: (r as Recommendation).createdAt ?? now(),
+      };
+    });
+    memory.joinRequests = (memory.joinRequests ?? []).map((j) => ({
+      ...j,
+      expiresAt: (j as JoinRequest).expiresAt ?? new Date(Date.now() + 7 * 86400000).toISOString(),
+      createdAt: (j as JoinRequest).createdAt ?? now(),
+      updatedAt: (j as JoinRequest).updatedAt ?? now(),
+    }));
   } else {
     memory = structuredClone(empty);
   }
@@ -176,9 +216,9 @@ export async function clearLocalDb(): Promise<void> {
 
 function ensureDemoFriends(selfId: string): void {
   const seeds: Profile[] = [
-    { id: '00000000-0000-4000-8000-0000000000a1', displayName: 'Maya', status: 'active', createdAt: now() },
-    { id: '00000000-0000-4000-8000-0000000000b2', displayName: 'Jordan', status: 'active', createdAt: now() },
-    { id: '00000000-0000-4000-8000-0000000000c3', displayName: 'Avery', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000a1', displayName: 'Minseo', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000b2', displayName: 'Junho', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000c3', displayName: 'Seoyeon', status: 'active', createdAt: now() },
     { id: '00000000-0000-4000-8000-0000000000d4', displayName: 'Sam', status: 'active', createdAt: now() },
     { id: '00000000-0000-4000-8000-0000000000e5', displayName: 'Casey', status: 'active', createdAt: now() },
   ];
@@ -412,8 +452,14 @@ export async function listMyCircleSummaries(userId: string): Promise<CircleSumma
     });
 }
 
-export async function listCircleMembers(circleId: string): Promise<Member[]> {
+export async function listCircleMembers(
+  circleId: string,
+  viewerId?: string,
+): Promise<Member[]> {
   await loadLocalDb();
+  if (viewerId && !(await isCircleMember(circleId, viewerId))) {
+    throw new AppError('FORBIDDEN', 'Only members can view the roster.');
+  }
   return memory.members.filter((m) => m.circleId === circleId && m.status === 'active');
 }
 
@@ -429,12 +475,70 @@ export async function isCircleMember(circleId: string, userId: string): Promise<
   );
 }
 
+/** Invite-link preview — minimal fields only (mirrors get_circle_invite_preview) */
+export async function getCircleInvitePreview(
+  circleId: string,
+  viewerId: string,
+): Promise<{
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  symbol: string;
+  memberCount: number;
+  isMember: boolean;
+} | null> {
+  await loadLocalDb();
+  const circle = memory.circles.find((c) => c.id === circleId && c.status === 'open');
+  if (!circle) return null;
+  const members = memory.members.filter((m) => m.circleId === circleId && m.status === 'active');
+  return {
+    id: circle.id,
+    name: circle.name,
+    description: circle.description,
+    color: circle.color,
+    symbol: circle.symbol,
+    memberCount: members.length,
+    isMember: await isCircleMember(circleId, viewerId),
+  };
+}
+
+/** Members eligible as recommenders for an applicant (active, not blocked, not self) */
+export async function listJoinRecommenderCandidates(
+  circleId: string,
+  applicantId: string,
+): Promise<Profile[]> {
+  await loadLocalDb();
+  const circle = memory.circles.find((c) => c.id === circleId);
+  if (!circle || circle.status !== 'open') {
+    throw new AppError('NOT_FOUND', 'Circle not found.');
+  }
+  if (await isCircleMember(circleId, applicantId)) {
+    throw new AppError('CONFLICT', 'You’re already a member.');
+  }
+  const members = memory.members.filter((m) => m.circleId === circleId && m.status === 'active');
+  const out: Profile[] = [];
+  for (const m of members) {
+    if (m.userId === applicantId) continue;
+    if (await isBlockedBetween(applicantId, m.userId)) continue;
+    const profile = memory.profiles.find((p) => p.id === m.userId);
+    if (profile) out.push(profile);
+  }
+  return out;
+}
+
+/** Mirrors create_circle_join_request RPC */
 export async function createJoinRequest(
   circleId: string,
   applicantId: string,
   recommenderIds: string[],
 ): Promise<JoinRequest> {
   await loadLocalDb();
+  const circle = memory.circles.find((c) => c.id === circleId);
+  if (!circle) throw new AppError('NOT_FOUND', 'Circle not found.');
+  if (circle.status !== 'open') {
+    throw new AppError('VALIDATION', 'This circle isn’t open for joins.');
+  }
   if (await isCircleMember(circleId, applicantId)) {
     throw new AppError('CONFLICT', 'You’re already a member.');
   }
@@ -451,96 +555,311 @@ export async function createJoinRequest(
   if (unique.has(applicantId)) {
     throw new AppError('VALIDATION', 'You can’t recommend yourself.');
   }
+  if (
+    memory.joinRequests.some(
+      (r) => r.circleId === circleId && r.applicantId === applicantId && r.status === 'pending',
+    )
+  ) {
+    throw new AppError('CONFLICT', 'You already have a pending request.');
+  }
+
   for (const id of recommenderIds) {
     if (!(await isCircleMember(circleId, id))) {
       throw new AppError('VALIDATION', 'Recommenders must be circle members.');
     }
-    if (memory.blocks.some((b) => b.blockerId === id && b.blockedId === applicantId)) {
+    if (await isBlockedBetween(applicantId, id)) {
       throw new AppError('FORBIDDEN', 'Blocked members can’t be recommenders.');
     }
   }
 
+  const stamp = now();
   const request: JoinRequest = {
     id: uid(),
     circleId,
     applicantId,
     status: 'pending',
+    expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+    createdAt: stamp,
+    updatedAt: stamp,
   };
   memory.joinRequests.push(request);
   for (const recommenderId of recommenderIds) {
     memory.recommendations.push({
+      id: uid(),
       requestId: request.id,
       recommenderId,
       decision: 'pending',
+      createdAt: stamp,
+    });
+    memory.notifications.push({
+      id: uid(),
+      userId: recommenderId,
+      eventType: 'join_recommendation_requested',
+      payload: { requestId: request.id, circleId },
+      createdAt: stamp,
     });
   }
   await persist();
   return request;
 }
 
-/** §7 approve mirror — insert recommendation then membership in one logical txn */
+function expireJoinRequestIfNeeded(request: JoinRequest): void {
+  if (request.status === 'pending' && new Date(request.expiresAt).getTime() <= Date.now()) {
+    request.status = 'expired';
+    request.updatedAt = now();
+  }
+}
+
+/** Mirrors respond_circle_recommendation — decision by recommendation row id */
+export async function respondCircleRecommendation(
+  recommendationId: string,
+  actorId: string,
+  decision: 'recommended' | 'unknown',
+): Promise<'pending' | 'approved'> {
+  await loadLocalDb();
+  const rec = memory.recommendations.find((r) => r.id === recommendationId);
+  if (!rec) throw new AppError('NOT_FOUND', 'Recommendation request not found.');
+  if (rec.recommenderId !== actorId) {
+    throw new AppError('FORBIDDEN', 'This recommendation isn’t yours.');
+  }
+  if (rec.decision !== 'pending') {
+    throw new AppError('CONFLICT', 'You already responded.');
+  }
+
+  const request = memory.joinRequests.find((r) => r.id === rec.requestId);
+  if (!request) throw new AppError('NOT_FOUND', 'Join request not found.');
+  expireJoinRequestIfNeeded(request);
+  if (request.status !== 'pending') {
+    throw new AppError('CONFLICT', 'This request was already handled.');
+  }
+  if (!(await isCircleMember(request.circleId, actorId))) {
+    throw new AppError('FORBIDDEN', 'Only circle members can recommend.');
+  }
+
+  rec.decision = decision;
+  rec.respondedAt = now();
+
+  if (decision !== 'recommended') {
+    await persist();
+    return 'pending';
+  }
+
+  const recommendedCount = new Set(
+    memory.recommendations
+      .filter((r) => r.requestId === request.id && r.decision === 'recommended')
+      .map((r) => r.recommenderId),
+  ).size;
+
+  if (recommendedCount < CIRCLE_JOIN_RECOMMENDATION_COUNT) {
+    await persist();
+    return 'pending';
+  }
+
+  if (!(await isCircleMember(request.circleId, request.applicantId))) {
+    memory.members.push({
+      circleId: request.circleId,
+      userId: request.applicantId,
+      role: 'member',
+      isPioneer: false,
+      status: 'active',
+    });
+  }
+  request.status = 'approved';
+  request.approvedAt = now();
+  request.updatedAt = now();
+
+  for (const r of memory.recommendations) {
+    if (r.requestId === request.id && r.decision === 'pending') {
+      r.decision = 'unknown';
+      r.respondedAt = r.respondedAt ?? now();
+    }
+  }
+
+  memory.notifications.push({
+    id: uid(),
+    userId: request.applicantId,
+    eventType: 'join_request_approved',
+    payload: { requestId: request.id, circleId: request.circleId },
+    createdAt: now(),
+  });
+
+  await persist();
+  return 'approved';
+}
+
+/** @deprecated prefer respondCircleRecommendation(recommendationId) */
 export async function decideRecommendation(
   requestId: string,
   recommenderId: string,
   decision: 'recommended' | 'unknown' | 'later',
 ): Promise<JoinRequest | null> {
+  if (decision === 'later') return null;
   await loadLocalDb();
   const rec = memory.recommendations.find(
     (r) => r.requestId === requestId && r.recommenderId === recommenderId,
   );
   if (!rec) throw new AppError('NOT_FOUND', 'Recommendation request not found.');
-  if (rec.decision !== 'pending' && rec.decision !== 'later') {
-    throw new AppError('CONFLICT', 'You already responded.');
-  }
+  const status = await respondCircleRecommendation(rec.id, recommenderId, decision);
+  const request = memory.joinRequests.find((r) => r.id === requestId) ?? null;
+  if (!request) return null;
+  return status === 'approved' || request.status === 'pending' ? request : null;
+}
 
+export async function cancelJoinRequest(requestId: string, applicantId: string): Promise<void> {
+  await loadLocalDb();
   const request = memory.joinRequests.find((r) => r.id === requestId);
-  if (!request || request.status !== 'pending') {
-    throw new AppError('CONFLICT', 'This request was already handled.');
+  if (!request || request.applicantId !== applicantId || request.status !== 'pending') {
+    throw new AppError('CONFLICT', 'This request can’t be cancelled.');
   }
-  if (!(await isCircleMember(request.circleId, recommenderId))) {
-    throw new AppError('FORBIDDEN', 'Only circle members can recommend.');
-  }
-
-  rec.decision = decision;
-  if (decision !== 'recommended') {
-    await persist();
-    return null;
-  }
-
-  const recommendedCount = memory.recommendations.filter(
-    (r) => r.requestId === requestId && r.decision === 'recommended',
-  ).length;
-
-  if (recommendedCount < CIRCLE_JOIN_RECOMMENDATION_COUNT) {
-    await persist();
-    return request;
-  }
-
-  // Join at most once
-  if (await isCircleMember(request.circleId, request.applicantId)) {
-    request.status = 'approved';
-    await persist();
-    return request;
-  }
-
-  memory.members.push({
-    circleId: request.circleId,
-    userId: request.applicantId,
-    role: 'member',
-    isPioneer: false,
-    status: 'active',
-  });
-  request.status = 'approved';
+  request.status = 'cancelled';
+  request.updatedAt = now();
   await persist();
+}
+
+/** Applicant-safe progress — never returns recommender identities or decisions */
+export async function getJoinProgress(
+  requestId: string,
+  viewerId?: string,
+): Promise<{
+  requestId: string;
+  circleId: string;
+  status: JoinRequest['status'];
+  recommended: number;
+  total: number;
+  expiresAt: string;
+}> {
+  await loadLocalDb();
+  const request = memory.joinRequests.find((r) => r.id === requestId);
+  if (!request) throw new AppError('NOT_FOUND', 'Join request not found.');
+  if (viewerId && request.applicantId !== viewerId) {
+    throw new AppError('FORBIDDEN', 'Only the applicant can view progress.');
+  }
+  expireJoinRequestIfNeeded(request);
+  const recommended = new Set(
+    memory.recommendations
+      .filter((r) => r.requestId === requestId && r.decision === 'recommended')
+      .map((r) => r.recommenderId),
+  ).size;
+  return {
+    requestId: request.id,
+    circleId: request.circleId,
+    status: request.status,
+    recommended,
+    total: CIRCLE_JOIN_RECOMMENDATION_COUNT,
+    expiresAt: request.expiresAt,
+  };
+}
+
+/** Recommender inbox — applicant name + circle name only */
+export async function listMyJoinRecommendations(recommenderId: string): Promise<
+  {
+    recommendationId: string;
+    requestId: string;
+    decision: Recommendation['decision'];
+    createdAt: string;
+    applicantDisplayName: string;
+    circleId: string;
+    circleName: string;
+    requestedAt: string;
+  }[]
+> {
+  await loadLocalDb();
+  const out = [];
+  for (const r of memory.recommendations) {
+    if (r.recommenderId !== recommenderId || r.decision !== 'pending') continue;
+    const req = memory.joinRequests.find((j) => j.id === r.requestId);
+    if (!req || req.status !== 'pending') continue;
+    expireJoinRequestIfNeeded(req);
+    if (req.status !== 'pending') continue;
+    const applicant = memory.profiles.find((p) => p.id === req.applicantId);
+    const circle = memory.circles.find((c) => c.id === req.circleId);
+    out.push({
+      recommendationId: r.id,
+      requestId: r.requestId,
+      decision: r.decision,
+      createdAt: r.createdAt,
+      applicantDisplayName: applicant?.displayName ?? 'Someone',
+      circleId: req.circleId,
+      circleName: circle?.name ?? 'Circle',
+      requestedAt: req.createdAt,
+    });
+  }
+  return out;
+}
+
+export async function getJoinRequest(
+  requestId: string,
+  viewerId: string,
+): Promise<JoinRequest | null> {
+  await loadLocalDb();
+  const request = memory.joinRequests.find((r) => r.id === requestId) ?? null;
+  if (!request) return null;
+  if (request.applicantId !== viewerId) {
+    throw new AppError('FORBIDDEN', 'Only the applicant can view this request.');
+  }
+  expireJoinRequestIfNeeded(request);
   return request;
 }
 
-export async function getJoinProgress(requestId: string): Promise<{ recommended: number; total: number }> {
+export async function getRecommendationForViewer(
+  recommendationId: string,
+  viewerId: string,
+): Promise<{
+  recommendationId: string;
+  applicantDisplayName: string;
+  circleName: string;
+  circleId: string;
+  requestedAt: string;
+  decision: Recommendation['decision'];
+} | null> {
   await loadLocalDb();
-  const recommended = memory.recommendations.filter(
-    (r) => r.requestId === requestId && r.decision === 'recommended',
-  ).length;
-  return { recommended, total: CIRCLE_JOIN_RECOMMENDATION_COUNT };
+  const r = memory.recommendations.find((x) => x.id === recommendationId);
+  if (!r || r.recommenderId !== viewerId) return null;
+  const req = memory.joinRequests.find((j) => j.id === r.requestId);
+  if (!req) return null;
+  const applicant = memory.profiles.find((p) => p.id === req.applicantId);
+  const circle = memory.circles.find((c) => c.id === req.circleId);
+  return {
+    recommendationId: r.id,
+    applicantDisplayName: applicant?.displayName ?? 'Someone',
+    circleName: circle?.name ?? 'Circle',
+    circleId: req.circleId,
+    requestedAt: req.createdAt,
+    decision: r.decision,
+  };
+}
+
+/** Demo: Yujin applies; Minseo / Junho / Seoyeon recommend (fixed seeds) */
+export const DEMO_JOIN_IDS = {
+  yujin: '00000000-0000-4000-8000-0000000000f6',
+  minseo: '00000000-0000-4000-8000-0000000000a1',
+  junho: '00000000-0000-4000-8000-0000000000b2',
+  seoyeon: '00000000-0000-4000-8000-0000000000c3',
+} as const;
+
+export async function ensureDemoJoinApplicant(): Promise<Profile> {
+  await loadLocalDb();
+  let profile = memory.profiles.find((p) => p.id === DEMO_JOIN_IDS.yujin);
+  if (!profile) {
+    profile = {
+      id: DEMO_JOIN_IDS.yujin,
+      displayName: 'Yujin',
+      status: 'active',
+      createdAt: now(),
+    };
+    memory.profiles.push(profile);
+    await persist();
+  }
+  return profile;
+}
+
+export async function switchSession(userId: string): Promise<Profile> {
+  await loadLocalDb();
+  const profile = memory.profiles.find((p) => p.id === userId);
+  if (!profile) throw new AppError('NOT_FOUND', 'Profile not found.');
+  memory.sessionUserId = userId;
+  await persist();
+  return profile;
 }
 
 export async function upsertDiary(input: {

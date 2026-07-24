@@ -20,9 +20,14 @@ import {
   createCirclePost,
   decideRecommendation,
   demoAcceptAll,
+  DEMO_JOIN_IDS,
+  ensureDemoJoinApplicant,
+  getJoinProgress,
   getPollSummary,
   hasResponded,
   isBlockedBetween,
+  isCircleMember,
+  listCircleMembers,
   listPollOptions,
   openCircleFromDraft,
   proposeCircleDraft,
@@ -89,13 +94,18 @@ describe('join recommendations', () => {
     await clearLocalDb();
   });
 
-  it('approves only after 3 recommendations', async () => {
+  async function openDemoCircle() {
     const me = await signUpLocal('Pioneer');
     const { draftId } = await proposeCircleDraft(me.id, 'Circle', [
       '00000000-0000-4000-8000-0000000000a1',
       '00000000-0000-4000-8000-0000000000b2',
     ]);
     const circle = await demoAcceptAll(draftId);
+    return { me, circle };
+  }
+
+  it('approves only after 3 recommendations', async () => {
+    const { me, circle } = await openDemoCircle();
     const applicant = '00000000-0000-4000-8000-0000000000c3';
     const req = await createJoinRequest(circle.id, applicant, [
       me.id,
@@ -115,6 +125,100 @@ describe('join recommendations', () => {
       'recommended',
     );
     expect(done?.status).toBe('approved');
+  });
+
+  it('does not approve with only 2 recommendations', async () => {
+    const { me, circle } = await openDemoCircle();
+    const applicant = DEMO_JOIN_IDS.yujin;
+    await ensureDemoJoinApplicant();
+    const req = await createJoinRequest(circle.id, applicant, [
+      me.id,
+      DEMO_JOIN_IDS.minseo,
+      DEMO_JOIN_IDS.junho,
+    ]);
+    await decideRecommendation(req.id, me.id, 'recommended');
+    await decideRecommendation(req.id, DEMO_JOIN_IDS.minseo, 'recommended');
+    await decideRecommendation(req.id, DEMO_JOIN_IDS.junho, 'unknown');
+    const prog = await getJoinProgress(req.id, applicant);
+    expect(prog.recommended).toBe(2);
+    expect(prog.status).toBe('pending');
+    expect(await isCircleMember(circle.id, applicant)).toBe(false);
+  });
+
+  it('rejects duplicate recommenders and self', async () => {
+    const { me, circle } = await openDemoCircle();
+    await expect(
+      createJoinRequest(circle.id, DEMO_JOIN_IDS.yujin, [me.id, me.id, DEMO_JOIN_IDS.minseo]),
+    ).rejects.toThrow(/different/);
+    await expect(
+      createJoinRequest(circle.id, me.id, [
+        DEMO_JOIN_IDS.minseo,
+        DEMO_JOIN_IDS.junho,
+        DEMO_JOIN_IDS.seoyeon,
+      ]),
+    ).rejects.toThrow(/already a member/);
+  });
+
+  it('rejects non-member recommenders', async () => {
+    const { me, circle } = await openDemoCircle();
+    await ensureDemoJoinApplicant();
+    await expect(
+      createJoinRequest(circle.id, DEMO_JOIN_IDS.yujin, [
+        me.id,
+        DEMO_JOIN_IDS.minseo,
+        '00000000-0000-4000-8000-0000000000d4',
+      ]),
+    ).rejects.toThrow(/members/);
+  });
+
+  it('hides recommender decisions from applicant progress', async () => {
+    const { me, circle } = await openDemoCircle();
+    await ensureDemoJoinApplicant();
+    const req = await createJoinRequest(circle.id, DEMO_JOIN_IDS.yujin, [
+      me.id,
+      DEMO_JOIN_IDS.minseo,
+      DEMO_JOIN_IDS.junho,
+    ]);
+    await decideRecommendation(req.id, DEMO_JOIN_IDS.minseo, 'unknown');
+    const prog = await getJoinProgress(req.id, DEMO_JOIN_IDS.yujin);
+    expect(JSON.stringify(prog)).not.toContain(DEMO_JOIN_IDS.minseo);
+    expect(prog.recommended).toBe(0);
+  });
+
+  it('blocks non-members from listing circle members', async () => {
+    const { circle } = await openDemoCircle();
+    await ensureDemoJoinApplicant();
+    await expect(listCircleMembers(circle.id, DEMO_JOIN_IDS.yujin)).rejects.toThrow(/Only members/);
+  });
+
+  it('allows access after approval', async () => {
+    const { me, circle } = await openDemoCircle();
+    await ensureDemoJoinApplicant();
+    // Need Seoyeon in circle — open with minseo+junho then add seoyeon via join... 
+    // Circle already has pioneer + minseo + junho. Use those three.
+    const req = await createJoinRequest(circle.id, DEMO_JOIN_IDS.yujin, [
+      me.id,
+      DEMO_JOIN_IDS.minseo,
+      DEMO_JOIN_IDS.junho,
+    ]);
+    await decideRecommendation(req.id, me.id, 'recommended');
+    await decideRecommendation(req.id, DEMO_JOIN_IDS.minseo, 'recommended');
+    await decideRecommendation(req.id, DEMO_JOIN_IDS.junho, 'recommended');
+    expect(await isCircleMember(circle.id, DEMO_JOIN_IDS.yujin)).toBe(true);
+    const members = await listCircleMembers(circle.id, DEMO_JOIN_IDS.yujin);
+    expect(members.some((m) => m.userId === DEMO_JOIN_IDS.yujin)).toBe(true);
+  });
+
+  it('does not allow double response', async () => {
+    const { me, circle } = await openDemoCircle();
+    await ensureDemoJoinApplicant();
+    const req = await createJoinRequest(circle.id, DEMO_JOIN_IDS.yujin, [
+      me.id,
+      DEMO_JOIN_IDS.minseo,
+      DEMO_JOIN_IDS.junho,
+    ]);
+    await decideRecommendation(req.id, me.id, 'recommended');
+    await expect(decideRecommendation(req.id, me.id, 'recommended')).rejects.toThrow(/already/);
   });
 });
 

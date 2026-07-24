@@ -19,6 +19,7 @@ import type {
   DiaryVisibilityMode,
   GuestbookEntry,
   InviteStatus,
+  JoinRequestStatus,
 } from '@/types/circle';
 import {
   CIRCLE_COLORS,
@@ -98,10 +99,17 @@ export function ensureDemoDirectory(selfId: string): AppProfile[] {
     },
     {
       id: 'demo-friend-c',
-      displayName: '하은',
+      displayName: '서연',
       authProvider: 'demo',
       createdAt: now(),
       bio: '서클 멤버',
+    },
+    {
+      id: 'demo-applicant-yujin',
+      displayName: '유진',
+      authProvider: 'demo',
+      createdAt: now(),
+      bio: '가입 신청자',
     },
   ];
   const all = read<AppProfile[]>(KEYS.profiles, []);
@@ -177,10 +185,6 @@ export function listMyCircles(userId: string): Circle[] {
 
 export function getCircle(id: string): Circle | null {
   return read<Circle[]>(KEYS.circles, []).find((c) => c.id === id) ?? null;
-}
-
-export function listCircleMembers(circleId: string): CircleMember[] {
-  return read<CircleMember[]>(KEYS.members, []).filter((m) => m.circleId === circleId);
 }
 
 export function proposeCircle(input: {
@@ -339,26 +343,72 @@ export function updateCircleDesign(
   return circles[idx];
 }
 
-export function requestJoin(circleId: string, applicantId: string, recommenderIds: string[]): CircleJoinRequest {
-  const members = listCircleMembers(circleId);
+export function listCircleMembers(circleId: string, viewerId?: string): CircleMember[] {
+  if (viewerId) {
+    const ok = read<CircleMember[]>(KEYS.members, []).some(
+      (m) => m.circleId === circleId && m.userId === viewerId,
+    );
+    if (!ok) throw new Error('멤버만 목록을 볼 수 있습니다.');
+  }
+  return read<CircleMember[]>(KEYS.members, []).filter((m) => m.circleId === circleId);
+}
+
+export function getCircleInvitePreview(circleId: string, viewerId: string) {
+  const circle = getCircle(circleId);
+  if (!circle || circle.status !== 'open') return null;
+  const members = read<CircleMember[]>(KEYS.members, []).filter((m) => m.circleId === circleId);
+  return {
+    id: circle.id,
+    name: circle.name,
+    description: circle.description,
+    color: circle.color,
+    symbol: circle.symbol,
+    memberCount: members.length,
+    isMember: members.some((m) => m.userId === viewerId),
+  };
+}
+
+export function requestJoin(
+  circleId: string,
+  applicantId: string,
+  recommenderIds: string[],
+): CircleJoinRequest {
+  const circle = getCircle(circleId);
+  if (!circle || circle.status !== 'open') throw new Error('열린 서클이 아닙니다.');
+  const members = read<CircleMember[]>(KEYS.members, []).filter((m) => m.circleId === circleId);
   if (members.some((m) => m.userId === applicantId)) {
     throw new Error('이미 멤버입니다.');
   }
   if (recommenderIds.length !== CIRCLE_JOIN_RECOMMENDATION_COUNT) {
     throw new Error(`추천인 ${CIRCLE_JOIN_RECOMMENDATION_COUNT}명을 선택해야 합니다.`);
   }
+  const unique = new Set(recommenderIds);
+  if (unique.size !== CIRCLE_JOIN_RECOMMENDATION_COUNT) {
+    throw new Error('서로 다른 추천인 3명을 선택해야 합니다.');
+  }
+  if (unique.has(applicantId)) {
+    throw new Error('본인을 추천인으로 지정할 수 없습니다.');
+  }
+  const pending = read<CircleJoinRequest[]>(KEYS.joinRequests, []).some(
+    (r) => r.circleId === circleId && r.applicantId === applicantId && r.status === 'pending',
+  );
+  if (pending) throw new Error('이미 대기 중인 신청이 있습니다.');
+
   for (const id of recommenderIds) {
     if (!members.some((m) => m.userId === id)) {
       throw new Error('추천인은 기존 멤버여야 합니다.');
     }
   }
 
+  const stamp = now();
   const request: CircleJoinRequest = {
     id: uid(),
     circleId,
     applicantId,
     status: 'pending',
-    createdAt: now(),
+    expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+    createdAt: stamp,
+    updatedAt: stamp,
   };
   write(KEYS.joinRequests, [...read<CircleJoinRequest[]>(KEYS.joinRequests, []), request]);
 
@@ -367,7 +417,7 @@ export function requestJoin(circleId: string, applicantId: string, recommenderId
     joinRequestId: request.id,
     recommenderId,
     status: 'pending',
-    createdAt: now(),
+    createdAt: stamp,
   }));
   write(KEYS.recommendations, [
     ...read<CircleRecommendation[]>(KEYS.recommendations, []),
@@ -381,45 +431,142 @@ export function respondRecommendation(
   userId: string,
   status: 'recommended' | 'unknown' | 'later',
 ): CircleJoinRequest | null {
+  if (status === 'later') return null;
+
   const recs = read<CircleRecommendation[]>(KEYS.recommendations, []);
   const rec = recs.find((r) => r.id === recommendationId);
   if (!rec || rec.recommenderId !== userId) throw new Error('추천 요청을 찾을 수 없습니다.');
+  if (rec.status !== 'pending') throw new Error('이미 응답했습니다.');
+
+  const requests = read<CircleJoinRequest[]>(KEYS.joinRequests, []);
+  const req = requests.find((r) => r.id === rec.joinRequestId);
+  if (!req || req.status !== 'pending') throw new Error('이미 처리된 신청입니다.');
+  if (new Date(req.expiresAt).getTime() <= Date.now()) {
+    req.status = 'expired';
+    req.updatedAt = now();
+    write(KEYS.joinRequests, requests);
+    throw new Error('만료된 신청입니다.');
+  }
+
+  const members = read<CircleMember[]>(KEYS.members, []);
+  if (!members.some((m) => m.circleId === req.circleId && m.userId === userId)) {
+    throw new Error('서클 멤버만 추천할 수 있습니다.');
+  }
+
   rec.status = status;
+  rec.respondedAt = now();
   write(KEYS.recommendations, recs);
 
   if (status !== 'recommended') return null;
 
   const related = recs.filter((r) => r.joinRequestId === rec.joinRequestId);
-  const recommended = related.filter((r) => r.status === 'recommended').length;
-  if (recommended < CIRCLE_JOIN_RECOMMENDATION_COUNT) return null;
+  const recommended = new Set(
+    related.filter((r) => r.status === 'recommended').map((r) => r.recommenderId),
+  ).size;
+  if (recommended < CIRCLE_JOIN_RECOMMENDATION_COUNT) return req;
 
-  const requests = read<CircleJoinRequest[]>(KEYS.joinRequests, []);
-  const req = requests.find((r) => r.id === rec.joinRequestId);
-  if (!req || req.status !== 'pending') return null;
+  if (!members.some((m) => m.circleId === req.circleId && m.userId === req.applicantId)) {
+    members.push({
+      circleId: req.circleId,
+      userId: req.applicantId,
+      role: 'member',
+      isPioneer: false,
+      joinedAt: now(),
+    });
+    write(KEYS.members, members);
+  }
 
   req.status = 'approved';
+  req.approvedAt = now();
+  req.updatedAt = now();
   write(KEYS.joinRequests, requests);
 
-  const members = read<CircleMember[]>(KEYS.members, []);
-  members.push({
+  for (const r of recs) {
+    if (r.joinRequestId === req.id && r.status === 'pending') {
+      r.status = 'unknown';
+      r.respondedAt = r.respondedAt ?? now();
+    }
+  }
+  write(KEYS.recommendations, recs);
+  return req;
+}
+
+/** Applicant-safe: counts only */
+export function getJoinProgress(
+  requestId: string,
+  viewerId?: string,
+): { recommended: number; total: number; status: JoinRequestStatus; circleId: string } {
+  const requests = read<CircleJoinRequest[]>(KEYS.joinRequests, []);
+  const req = requests.find((r) => r.id === requestId);
+  if (!req) throw new Error('신청을 찾을 수 없습니다.');
+  if (viewerId && req.applicantId !== viewerId) {
+    throw new Error('본인 신청만 확인할 수 있습니다.');
+  }
+  const recs = read<CircleRecommendation[]>(KEYS.recommendations, []).filter(
+    (r) => r.joinRequestId === requestId,
+  );
+  return {
+    recommended: new Set(recs.filter((r) => r.status === 'recommended').map((r) => r.recommenderId))
+      .size,
+    total: CIRCLE_JOIN_RECOMMENDATION_COUNT,
+    status: req.status,
     circleId: req.circleId,
-    userId: req.applicantId,
+  };
+}
+
+export function listMyRecommendations(recommenderId: string): CircleRecommendation[] {
+  const recs = read<CircleRecommendation[]>(KEYS.recommendations, []);
+  const requests = read<CircleJoinRequest[]>(KEYS.joinRequests, []);
+  return recs.filter((r) => {
+    if (r.recommenderId !== recommenderId || r.status !== 'pending') return false;
+    const req = requests.find((j) => j.id === r.joinRequestId);
+    return req?.status === 'pending';
+  });
+}
+
+export function cancelJoinRequest(requestId: string, applicantId: string): void {
+  const requests = read<CircleJoinRequest[]>(KEYS.joinRequests, []);
+  const req = requests.find((r) => r.id === requestId);
+  if (!req || req.applicantId !== applicantId || req.status !== 'pending') {
+    throw new Error('취소할 수 없습니다.');
+  }
+  req.status = 'cancelled';
+  req.updatedAt = now();
+  write(KEYS.joinRequests, requests);
+}
+
+export function switchDemoSession(profileId: string): AppProfile {
+  const all = read<AppProfile[]>(KEYS.profiles, []);
+  const profile = all.find((p) => p.id === profileId);
+  if (!profile) throw new Error('프로필을 찾을 수 없습니다.');
+  write(KEYS.profile, profile);
+  return profile;
+}
+
+export function demoAddMember(circleId: string, userId: string): void {
+  const members = read<CircleMember[]>(KEYS.members, []);
+  if (members.some((m) => m.circleId === circleId && m.userId === userId)) return;
+  members.push({
+    circleId,
+    userId,
     role: 'member',
     isPioneer: false,
     joinedAt: now(),
   });
   write(KEYS.members, members);
-  return req;
 }
 
-export function getJoinProgress(requestId: string): { recommended: number; total: number } {
-  const recs = read<CircleRecommendation[]>(KEYS.recommendations, []).filter(
-    (r) => r.joinRequestId === requestId,
-  );
-  return {
-    recommended: recs.filter((r) => r.status === 'recommended').length,
-    total: CIRCLE_JOIN_RECOMMENDATION_COUNT,
-  };
+export function listMemberProfilesForJoinPicker(
+  circleId: string,
+  applicantId: string,
+): AppProfile[] {
+  const memberIds = read<CircleMember[]>(KEYS.members, [])
+    .filter((m) => m.circleId === circleId)
+    .map((m) => m.userId)
+    .filter((id) => id !== applicantId);
+  return memberIds
+    .map((id) => getProfileById(id))
+    .filter((p): p is AppProfile => Boolean(p));
 }
 
 export function heartbeatPresence(circleId: string, userId: string, sessionId: string): void {

@@ -157,6 +157,9 @@ export default function CircleHomeScreen() {
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/notice`)}>
         <Text style={styles.linkText}>{en.circle.noticePoll}</Text>
       </Pressable>
+      <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/join`)}>
+        <Text style={styles.linkText}>{en.circle.joinInvite}</Text>
+      </Pressable>
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/settings`)}>
         <Text style={styles.linkText}>{en.circle.settings}</Text>
       </Pressable>

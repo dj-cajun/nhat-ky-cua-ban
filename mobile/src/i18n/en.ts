@@ -136,6 +136,41 @@ export const en = {
     aliasTitle: 'Alias board',
     aliasSub:
       'Ship report/block/moderation tools before alias posting. Real author IDs stay off the client.',
+    joinInvite: 'Join with recommendations',
+  },
+
+  join: {
+    title: 'Join this circle',
+    needThree: 'You need recommendations from 3 members who actually know you.',
+    pickThree: (n: number) => `Choose 3 members (${n}/3)`,
+    submit: 'Request to join',
+    cancel: 'Cancel request',
+    refresh: 'Refresh status',
+    progress: (n: number, total: number) =>
+      n >= total
+        ? 'You’re in'
+        : `Waiting on recommendations · ${n}/${total}`,
+    progressDetail: (n: number, total: number) =>
+      `${n} of ${total} members have recommended you`,
+    done: 'Join complete — open the circle',
+    ended: 'This request ended',
+    expired: 'This request expired',
+    cancelled: 'Request cancelled',
+    alreadyMember: 'You’re already in this circle',
+    membersHidden: 'Member names beyond this picker stay private until you’re approved.',
+    back: '← Back',
+    demoAsYujin: 'Demo: continue as Yujin (applicant)',
+  },
+
+  recommendations: {
+    title: 'Recommendation requests',
+    empty: 'No pending recommendations.',
+    prompt: 'Do you actually know this person, and are you okay sharing this circle with them?',
+    recommend: 'Recommend',
+    unknown: 'Not sure',
+    later: 'Later',
+    forCircle: (name: string) => `Circle: ${name}`,
+    back: '← Back',
   },
 
   messages: {

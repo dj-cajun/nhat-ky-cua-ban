@@ -26,8 +26,8 @@ export class AppError extends Error {
 export type CircleStatus = 'draft' | 'pending_accept' | 'open' | 'archived';
 export type MemberStatus = 'active' | 'left' | 'removed';
 export type DraftResponseStatus = 'pending' | 'accepted' | 'declined' | 'expired';
-export type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
 export type RecommendationDecision = 'pending' | 'recommended' | 'unknown' | 'later';
+export type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
 export type DiaryVisibilityMode = 'private' | 'selected_circles' | 'all_circles';
 export type DiaryMood =
   | 'happy'

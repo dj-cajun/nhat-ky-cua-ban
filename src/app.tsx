@@ -9,6 +9,12 @@ import {
   CircleSetupPage,
   InvitesPage,
 } from '@/pages/v1/circle-create';
+import {
+  CircleJoinPage,
+  JoinStatusPage,
+  RecommendationDetailPage,
+  RecommendationsPage,
+} from '@/pages/v1/join';
 import * as store from '@/lib/v1-store';
 import {
   v1CirclesAtom,
@@ -89,6 +95,14 @@ function V1App() {
       return <CircleSetupPage />;
     case 'invites':
       return <InvitesPage />;
+    case 'circle-join':
+      return <CircleJoinPage />;
+    case 'join-status':
+      return <JoinStatusPage />;
+    case 'recommendations':
+      return <RecommendationsPage />;
+    case 'recommendation-detail':
+      return <RecommendationDetailPage />;
     case 'universe':
     default:
       return <UniversePage />;

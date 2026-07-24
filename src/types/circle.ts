@@ -6,7 +6,7 @@ export type MemberRole = 'member' | 'admin' | 'pioneer';
 
 export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired';
 
-export type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+export type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
 
 export type RecommendationStatus = 'pending' | 'recommended' | 'unknown' | 'later';
 
@@ -83,7 +83,10 @@ export interface CircleJoinRequest {
   circleId: string;
   applicantId: string;
   status: JoinRequestStatus;
+  expiresAt: string;
+  approvedAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CircleRecommendation {
@@ -91,6 +94,7 @@ export interface CircleRecommendation {
   joinRequestId: string;
   recommenderId: string;
   status: RecommendationStatus;
+  respondedAt?: string;
   createdAt: string;
 }
 

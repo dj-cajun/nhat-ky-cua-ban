@@ -147,7 +147,15 @@ export function CirclePage() {
         </div>
       </section>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setPage('circle-join')}
+          className="w-full rounded-2xl border border-[#d9d0c4] bg-white py-3 text-sm"
+        >
+          초대 가입 (3인 추천)
+        </button>
+        <div className="flex gap-2">
         <button
           type="button"
           onClick={() => setPage('circle-setup')}
@@ -176,6 +184,7 @@ export function CirclePage() {
         >
           공지 만들기
         </button>
+        </div>
       </div>
     </div>
   );
