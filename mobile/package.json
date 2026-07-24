@@ -9,6 +9,7 @@
     "render:intro": "python3 scripts/render-universe-intro.py && npm run sync:intro",
     "start": "npm run sync:intro && expo start",
     "start:intro": "npm run sync:intro && EXPO_PUBLIC_FORCE_UNIVERSE_INTRO=1 expo start",
+    "preview:intro": "npm run sync:intro && python3 -m http.server 8765 --directory assets/intro --bind 127.0.0.1",
     "android": "npm run sync:intro && expo start --android",
     "ios": "npm run sync:intro && expo start --ios",
     "web": "npm run sync:intro && expo start --web",
@@ -18,6 +19,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@expo/metro-runtime": "~57.0.7",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.110.8",
@@ -32,12 +34,14 @@
     "expo-status-bar": "~57.0.1",
     "expo-video": "~57.0.2",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-url-polyfill": "^4.0.0",
+    "react-native-web": "^0.21.2",
     "three": "^0.185.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"

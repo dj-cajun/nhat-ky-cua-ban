@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Your Diary — Universe Intro</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #05060A;
+      font-family: "SF Pro Display", "Segoe UI", sans-serif;
+      color: #F7F4EF;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px 40px;
+      gap: 16px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 230, 168, 0.85);
+    }
+    .phone {
+      width: min(360px, 92vw);
+      aspect-ratio: 9 / 16;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #000;
+      box-shadow:
+        0 0 0 1px rgba(255,230,168,0.18),
+        0 24px 80px rgba(0,0,0,0.55);
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #05060A;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      border: 1px solid rgba(255,230,168,0.35);
+      background: rgba(20,16,12,0.65);
+      color: #F7F4EF;
+      border-radius: 14px;
+      padding: 12px 16px;
+      min-height: 44px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { border-color: rgba(255,230,168,0.7); }
+    p {
+      margin: 0;
+      max-width: 360px;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.45;
+      color: rgba(247,244,239,0.65);
+    }
+    code { color: #FFE6A8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Your Diary · Universe Intro</h1>
+    <div class="phone">
+      <video id="v" src="./universe-birth.mp4" playsinline muted autoplay></video>
+    </div>
+    <div class="row">
+      <button type="button" id="replay">Replay from start</button>
+    </div>
+    <p>9:16 · 4s · handoff gold orb. App: <code>cd mobile && npm run start:intro</code> → Try the demo.</p>
+  </div>
+  <script>
+    const v = document.getElementById('v');
+    document.getElementById('replay').onclick = () => {
+      v.currentTime = 0;
+      void v.play();
+    };
+    v.addEventListener('ended', () => {
+      setTimeout(() => {
+        v.currentTime = 0;
+        void v.play();
+      }, 800);
+    });
+  </script>
+</body>
+</html>
