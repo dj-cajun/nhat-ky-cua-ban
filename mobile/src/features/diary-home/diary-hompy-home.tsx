@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -11,6 +11,7 @@ import type { DiaryMusicCard } from '@/features/diary-music/diary-music.types';
 import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
 import type { GuestbookRow } from '@/features/local/repository';
 import { openDiaryFromCircle } from '@/features/universe-home/circle-visit';
+import { DotPaper, OutlineBox } from '@/features/diary-home/hompy-outline';
 import { hompy } from '@/constants/hompy-theme';
 import { useLocale, useMessages, APP_NAME } from '@/i18n';
 import {
@@ -35,16 +36,15 @@ type Props = {
   canView: boolean;
   onEditToday: () => void;
   onOpenMusic?: () => void;
-  /** Prefer stack unwind / circle graph over jumping to universe. */
   onBack?: () => void;
   backLabel?: string;
-  /** Keep circle context when hopping between friend homes. */
   fromCircleId?: string;
 };
 
 /**
- * Pastel mini-hompy shell for Your Diary (mobile).
- * Visual mapping from web `DiaryHomePage` / docs/your-diary/18-minihome-ui-mapping.md
+ * Pastel mini-hompy — restore web `DiaryHomePage` outline (cy-shell / sk-outline),
+ * then only add circle-diary features (Spotify, visit strip, circle back).
+ * No StatusBar / Dotori / Investigation.
  */
 export function DiaryHompyHome({
   me,
@@ -69,7 +69,6 @@ export function DiaryHompyHome({
   const moodMeta = DIARY_MOODS.find((m) => m.id === entry?.mood);
   const brand = locale === 'ko' ? '너의 다이어리' : APP_NAME;
   const circle = circles[0];
-
   const week = useMemo(() => buildWeek(recentEntries, locale), [recentEntries, locale]);
 
   const openDiary = (targetId: string) => {
@@ -93,211 +92,313 @@ export function DiaryHompyHome({
 
   return (
     <View style={styles.shell}>
-      <ScrollView contentContainerStyle={styles.canvas} showsVerticalScrollIndicator={false}>
-        <View style={[styles.card, styles.sky]}>
-          <Pressable
-            onPress={handleBack}
-            accessibilityRole="button"
-            style={styles.headerBtn}
+      <OutlineBox
+        size="lg"
+        fill={hompy.canvas}
+        stroke={hompy.pencilBold}
+        style={styles.canvasBox}
+        contentStyle={styles.canvasContent}
+      >
+        <DotPaper />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header — cy-box-sky */}
+          <OutlineBox
+            fill={hompy.sky}
+            stroke={hompy.skyInk}
+            contentStyle={styles.header}
           >
-            <Text style={styles.headerBtnText}>← {resolvedBackLabel}</Text>
-          </Pressable>
-          <Text style={styles.brand}>{brand}</Text>
-          <View style={{ width: 64 }} />
-        </View>
+            <Pressable
+              onPress={handleBack}
+              accessibilityRole="button"
+              style={styles.headerBtn}
+              hitSlop={8}
+            >
+              <Text style={styles.headerBtnText}>← {resolvedBackLabel}</Text>
+            </Pressable>
+            <Text style={styles.brand}>{brand}</Text>
+            <View style={styles.headerSpacer} />
+          </OutlineBox>
 
-        <View style={[styles.card, styles.blush]}>
-          <View style={styles.profileRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{owner.displayName.slice(0, 1)}</Text>
-            </View>
-            <View style={styles.profileMeta}>
-              <Text style={styles.name} numberOfLines={1}>
-                {owner.displayName}
-              </Text>
-              <Text style={styles.moodLine}>
-                {moodMeta
-                  ? `${moodMeta.emoji} ${moodMeta.label}`
-                  : t.diary.noMood}
-              </Text>
-              {circle ? (
-                <Text style={styles.circleLine} numberOfLines={1}>
-                  {circle.symbol} {circle.name}
+          {/* Profile — cy-box-blush */}
+          <OutlineBox
+            fill={hompy.blush}
+            stroke={hompy.blushInk}
+            contentStyle={styles.profilePad}
+          >
+            <View style={styles.profileRow}>
+              <OutlineBox
+                size="sm"
+                fill="#FFFFFF"
+                stroke={hompy.blushInk}
+                style={styles.avatarBox}
+                contentStyle={styles.avatarInner}
+              >
+                <Text style={styles.avatarText}>{owner.displayName.slice(0, 1)}</Text>
+              </OutlineBox>
+              <View style={styles.profileMeta}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {owner.displayName}
                 </Text>
+                <Text style={styles.moodLine}>
+                  {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : t.diary.noMood}
+                </Text>
+                {circle ? (
+                  <Text style={styles.circleLine} numberOfLines={1}>
+                    {circle.symbol} {circle.name}
+                  </Text>
+                ) : null}
+              </View>
+              {isMine ? (
+                <HardBtn label={t.diary.editToday} onPress={onEditToday} />
               ) : null}
             </View>
-            {isMine ? (
-              <Pressable style={styles.hardBtn} onPress={onEditToday} accessibilityRole="button">
-                <Text style={styles.hardBtnText}>{t.diary.editToday}</Text>
-              </Pressable>
-            ) : null}
-          </View>
 
-          <View style={styles.todayMe}>
-            <Text style={styles.todayLabel}>
-              {locale === 'ko' ? '오늘 나는' : 'Today I…'}
-            </Text>
-            <Text style={styles.todayText}>
-              {canView
-                ? entry?.tenCharText?.trim() ||
-                  entry?.shortText?.trim() ||
-                  (isMine ? t.diary.emptyToday : t.diary.emptyOther)
-                : t.diary.privateBlocked}
-            </Text>
-          </View>
-        </View>
-
-        {visitMembers.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={[styles.card, styles.lemon, { maxHeight: 52 }]}
-            contentContainerStyle={styles.visitRow}
-          >
-            <Pressable
-              style={[styles.chip, isMine && styles.chipOn]}
-              onPress={() => openDiary(me.id)}
+            <OutlineBox
+              size="sm"
+              fill="rgba(255,255,255,0.72)"
+              stroke={hompy.blushInk}
+              style={styles.todayMe}
+              contentStyle={styles.todayMeInner}
             >
-              <Text style={[styles.chipText, isMine && styles.chipTextOn]}>
-                {locale === 'ko' ? '내 홈' : 'My home'}
+              <Text style={styles.todayLabel}>
+                {locale === 'ko' ? '오늘 나는' : 'Today I…'}
               </Text>
-            </Pressable>
-            {visitMembers.map((m) => {
-              const on = m.id === owner.id;
-              return (
+              <Text style={styles.todayText}>
+                {canView
+                  ? entry?.tenCharText?.trim() ||
+                    entry?.shortText?.trim() ||
+                    (isMine ? t.diary.emptyToday : t.diary.emptyOther)
+                  : t.diary.privateBlocked}
+              </Text>
+            </OutlineBox>
+          </OutlineBox>
+
+          {/* Visit strip — cy-box-lemon (additive directory hop) */}
+          {visitMembers.length > 0 ? (
+            <OutlineBox
+              fill={hompy.lemon}
+              stroke={hompy.lemonInk}
+              contentStyle={styles.visitPad}
+            >
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.visitRow}
+              >
+                <Chip
+                  label={locale === 'ko' ? '내 홈' : 'My home'}
+                  on={isMine}
+                  onPress={() => openDiary(me.id)}
+                />
+                {visitMembers.map((m) => (
+                  <Chip
+                    key={m.id}
+                    label={m.name}
+                    on={m.id === owner.id}
+                    onPress={() => openDiary(m.id)}
+                  />
+                ))}
+              </ScrollView>
+            </OutlineBox>
+          ) : null}
+
+          {/* Calendar | Album — original 2-col */}
+          <View style={styles.grid2}>
+            <OutlineBox
+              fill={hompy.mint}
+              stroke={hompy.mintInk}
+              style={styles.gridCell}
+              contentStyle={styles.panelPad}
+            >
+              <Text style={styles.panelTitle}>
+                {new Date().getFullYear()}.{new Date().getMonth() + 1}
+              </Text>
+              {week.map((d) => (
                 <Pressable
-                  key={m.id}
-                  style={[styles.chip, on && styles.chipOn]}
-                  onPress={() => openDiary(m.id)}
+                  key={d.key}
+                  style={styles.weekRow}
+                  onPress={() => {
+                    if (isMine) onEditToday();
+                  }}
                 >
-                  <Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
-                    {m.name}
+                  <Text style={styles.weekDay}>{d.day}</Text>
+                  <Text style={styles.weekN}>{d.n}</Text>
+                  <Text style={styles.weekNote} numberOfLines={1}>
+                    {d.note}
                   </Text>
                 </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : null}
+              ))}
+            </OutlineBox>
 
-        <View style={styles.grid2}>
-          <View style={[styles.card, styles.mint, styles.gridCell]}>
-            <Text style={styles.panelTitle}>
-              {new Date().getFullYear()}.{new Date().getMonth() + 1}
-            </Text>
-            {week.map((d) => (
-              <Pressable
-                key={d.key}
-                style={styles.weekRow}
-                onPress={() => (isMine ? onEditToday() : router.push(`/diary/${owner.id}/calendar`))}
-              >
-                <Text style={styles.weekDay}>{d.day}</Text>
-                <Text style={styles.weekN}>{d.n}</Text>
-                <Text style={styles.weekNote} numberOfLines={1}>
-                  {d.note}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Pressable
-            style={[styles.card, styles.peach, styles.gridCell, styles.album]}
-            onPress={() => router.push(`/diary/${owner.id}/album`)}
-          >
-            <Text style={styles.panelTitle}>
-              {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
-            </Text>
-            <View style={styles.albumInner}>
-              <Text style={styles.albumGlyph}>▣</Text>
-              <Text style={styles.albumHint}>
-                {canView && entry
-                  ? locale === 'ko'
-                    ? '오늘의 한 컷'
-                    : "Today’s frame"
-                  : locale === 'ko'
-                    ? '아직 사진이 없어요'
-                    : 'No photos yet'}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
-
-        <View style={[styles.card, styles.lavender]}>
-          <Text style={styles.panelTitle}>
-            {locale === 'ko' ? '짧은 글' : 'Short entry'}
-          </Text>
-          {canView && entry?.shortText ? (
-            <Text style={styles.body}>{entry.shortText}</Text>
-          ) : (
-            <Text style={styles.emptyHint}>
-              {locale === 'ko' ? '아직 짧은 글이 없어요.' : 'No short entry yet.'}
-            </Text>
-          )}
-
-          <Text style={[styles.panelTitle, { marginTop: 12 }]}>{t.diary.guestbook}</Text>
-          {guestbook.length > 0 ? (
-            guestbook.slice(0, 4).map((g) => (
-              <Text key={g.id} style={styles.gbLine} numberOfLines={2}>
-                <Text style={styles.gbAuthor}>
-                  {guestbookAuthors[g.authorUserId] ?? '·'} ·{' '}
-                </Text>
-                {g.body}
-              </Text>
-            ))
-          ) : (
-            <Text style={styles.emptyHint}>
-              {locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.'}
-            </Text>
-          )}
-
-          <View style={styles.linkRow}>
-            <Pressable
-              style={styles.hardBtn}
-              onPress={() => router.push(`/diary/${owner.id}/guestbook`)}
+            <OutlineBox
+              fill={hompy.peach}
+              stroke={hompy.peachInk}
+              style={styles.gridCell}
+              contentStyle={styles.panelPad}
             >
-              <Text style={styles.hardBtnText}>
-                {locale === 'ko' ? '방명록 →' : 'Guestbook →'}
+              <Text style={styles.panelTitle}>
+                {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
               </Text>
-            </Pressable>
-            {circle ? (
-              <Pressable
-                style={styles.hardBtn}
-                onPress={() => router.push(`/circles/${circle.id}/anonymous-board`)}
-              >
-                <Text style={styles.hardBtnText}>
-                  {locale === 'ko' ? '가명 게시판 →' : 'Alias board →'}
+              <View style={styles.albumInner}>
+                <OutlineBox
+                  size="sm"
+                  fill="#FFFFFF"
+                  stroke={hompy.peachInk}
+                  style={styles.albumFrame}
+                  contentStyle={styles.albumFrameInner}
+                >
+                  <View style={styles.albumGlyph}>
+                    <View style={styles.albumGlyphOuter} />
+                    <View style={styles.albumGlyphInner} />
+                  </View>
+                </OutlineBox>
+                <Text style={styles.albumHint}>
+                  {canView && entry
+                    ? locale === 'ko'
+                      ? '오늘의 한 컷'
+                      : "Today’s frame"
+                    : locale === 'ko'
+                      ? '아직 사진이 없어요'
+                      : 'No photos yet'}
                 </Text>
-              </Pressable>
-            ) : null}
+              </View>
+            </OutlineBox>
           </View>
 
-          {music ? (
-            <View style={{ marginTop: 10 }}>
-              <DiaryMusicCardView music={music} onOpen={() => onOpenMusic?.()} />
-            </View>
-          ) : (
-            <Text style={[styles.emptyHint, { marginTop: 10 }]}>
-              ♪ {t.diaryMusic.emptyToday}
-            </Text>
-          )}
-        </View>
+          {/* Board preview — cy-box-lavender */}
+          <OutlineBox
+            fill={hompy.lavender}
+            stroke={hompy.lavenderInk}
+            contentStyle={styles.boardPad}
+          >
+            <BoardBlock
+              title={locale === 'ko' ? '짧은 글' : 'Short entry'}
+              empty={locale === 'ko' ? '아직 짧은 글이 없어요.' : 'No short entry yet.'}
+            >
+              {canView && entry?.shortText ? (
+                <Text style={styles.body}>{entry.shortText}</Text>
+              ) : null}
+            </BoardBlock>
 
-        {!isMine ? (
-          <View style={styles.safetyRow}>
-            <Pressable
-              style={styles.hardBtn}
-              onPress={() =>
-                router.push({
-                  pathname: '/messages/compose',
-                  params: { recipientId: owner.id },
-                })
+            <BoardBlock
+              title={t.diary.guestbook}
+              empty={
+                locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.'
               }
             >
-              <Text style={styles.hardBtnText}>{t.diary.leaveNote}</Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </ScrollView>
+              {guestbook.length > 0 ? (
+                <View style={{ gap: 4 }}>
+                  {guestbook.slice(0, 4).map((g) => (
+                    <Text key={g.id} style={styles.gbLine} numberOfLines={2}>
+                      <Text style={styles.gbAuthor}>
+                        {guestbookAuthors[g.authorUserId] ?? '·'} ·{' '}
+                      </Text>
+                      {g.body}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </BoardBlock>
+
+            <View style={styles.linkRow}>
+              {circle ? (
+                <HardBtn
+                  label={locale === 'ko' ? '가명 게시판 →' : 'Alias board →'}
+                  onPress={() => router.push(`/circles/${circle.id}/anonymous-board`)}
+                />
+              ) : null}
+              {/* Additive: Spotify slot (web shows placeholder chip) */}
+              {music ? (
+                <View style={styles.musicWrap}>
+                  <DiaryMusicCardView music={music} onOpen={() => onOpenMusic?.()} />
+                </View>
+              ) : (
+                <HardBtn
+                  label={`♪ ${locale === 'ko' ? '오늘의 음악 (Spotify)' : "Today’s music (Spotify)"}`}
+                  onPress={() => onOpenMusic?.()}
+                />
+              )}
+            </View>
+
+            {!isMine ? (
+              <View style={styles.safetyRow}>
+                <HardBtn
+                  label={t.diary.leaveNote}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/messages/compose',
+                      params: { recipientId: owner.id },
+                    })
+                  }
+                />
+              </View>
+            ) : null}
+          </OutlineBox>
+        </ScrollView>
+      </OutlineBox>
     </View>
+  );
+}
+
+function BoardBlock({
+  title,
+  empty,
+  children,
+}: {
+  title: string;
+  empty: string;
+  children: ReactNode;
+}) {
+  const has = Boolean(children);
+  return (
+    <View style={styles.boardBlock}>
+      <Text style={styles.panelTitle}>{title}</Text>
+      {has ? children : <Text style={styles.emptyHint}>{empty}</Text>}
+    </View>
+  );
+}
+
+function HardBtn({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <OutlineBox
+        size="sm"
+        fill="#FFFFFF"
+        stroke={hompy.hard}
+        contentStyle={styles.hardBtnInner}
+      >
+        <Text style={styles.hardBtnText}>{label}</Text>
+      </OutlineBox>
+    </Pressable>
+  );
+}
+
+function Chip({
+  label,
+  on,
+  onPress,
+}: {
+  label: string;
+  on: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <OutlineBox
+        size="sm"
+        fill={on ? hompy.hard : '#FFFFFF'}
+        stroke={on ? hompy.hard : hompy.pencilLight}
+        contentStyle={styles.chipInner}
+      >
+        <Text style={[styles.chipText, on && styles.chipTextOn]} numberOfLines={1}>
+          {label}
+        </Text>
+      </OutlineBox>
+    </Pressable>
   );
 }
 
@@ -314,56 +415,53 @@ function buildWeek(entries: DiaryEntry[], locale: string) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const entry = byDate.get(key);
+    const row = byDate.get(key);
     return {
       key,
       day: days[i]!,
       n: d.getDate(),
-      note: entry?.tenCharText?.trim() || '·',
+      note: row?.tenCharText?.trim() || '·',
     };
   });
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, backgroundColor: hompy.table, padding: 8 },
-  canvas: {
+  shell: {
+    flex: 1,
+    backgroundColor: hompy.table,
+    padding: 8,
+  },
+  canvasBox: { flex: 1 },
+  canvasContent: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: {
     gap: 8,
     padding: 8,
-    paddingBottom: 36,
-    backgroundColor: hompy.canvas,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: 'rgba(139,122,158,0.25)',
+    paddingBottom: 28,
   },
-  card: {
-    borderRadius: 14,
-    borderWidth: 2,
-    padding: 12,
-    backgroundColor: hompy.paper,
-  },
-  sky: {
-    backgroundColor: hompy.sky,
-    borderColor: hompy.skyInk,
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 44,
   },
-  blush: { backgroundColor: hompy.blush, borderColor: hompy.blushInk },
-  lemon: { backgroundColor: hompy.lemon, borderColor: hompy.lemonInk },
-  mint: { backgroundColor: hompy.mint, borderColor: hompy.mintInk },
-  peach: { backgroundColor: hompy.peach, borderColor: hompy.peachInk },
-  lavender: { backgroundColor: hompy.lavender, borderColor: hompy.lavenderInk },
-  headerBtn: { minHeight: 36, justifyContent: 'center' },
+  headerBtn: { minHeight: 36, justifyContent: 'center', minWidth: 72 },
   headerBtnText: { fontSize: 11, fontWeight: '700', color: hompy.ink },
-  brand: { fontSize: 12, fontWeight: '700', color: hompy.ink, letterSpacing: 0.4 },
+  brand: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: hompy.ink,
+    letterSpacing: 0.4,
+  },
+  headerSpacer: { width: 72 },
+  profilePad: { padding: 12 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: {
+  avatarBox: { width: 56, height: 56 },
+  avatarInner: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: hompy.blushInk,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -372,72 +470,98 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '700', color: hompy.ink },
   moodLine: { marginTop: 2, fontSize: 11, color: hompy.muted },
   circleLine: { marginTop: 2, fontSize: 10, color: hompy.soft },
-  hardBtn: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: hompy.hard,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    minHeight: 36,
-    justifyContent: 'center',
+  todayMe: { marginTop: 12 },
+  todayMeInner: { padding: 10 },
+  todayLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: hompy.muted,
+    marginBottom: 4,
   },
-  hardBtnText: { fontSize: 10, fontWeight: '700', color: hompy.ink },
-  todayMe: {
-    marginTop: 12,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(232,164,196,0.45)',
-  },
-  todayLabel: { fontSize: 10, fontWeight: '700', color: hompy.muted, marginBottom: 4 },
   todayText: { fontSize: 13, color: hompy.ink, lineHeight: 18 },
-  visitRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
-  chip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#D0CAD8',
-    backgroundColor: '#fff',
+  visitPad: { paddingVertical: 8, paddingHorizontal: 8 },
+  visitRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  chipInner: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    minHeight: 36,
+    minHeight: 34,
     justifyContent: 'center',
   },
-  chipOn: { backgroundColor: hompy.hard, borderColor: hompy.hard },
   chipText: { fontSize: 11, fontWeight: '700', color: hompy.ink, maxWidth: 88 },
   chipTextOn: { color: '#fff' },
   grid2: { flexDirection: 'row', gap: 8 },
   gridCell: { flex: 1, minHeight: 168 },
-  panelTitle: { fontSize: 10, fontWeight: '700', color: hompy.muted, marginBottom: 6 },
+  panelPad: { padding: 8, flexGrow: 1 },
+  panelTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: hompy.muted,
+    marginBottom: 6,
+  },
   weekRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.08)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(74,63,85,0.18)',
+    borderStyle: 'dotted',
     paddingBottom: 3,
     marginBottom: 3,
   },
   weekDay: { width: 14, fontSize: 10, fontWeight: '700', color: hompy.soft },
   weekN: { width: 16, fontSize: 10, color: hompy.ink },
   weekNote: { flex: 1, fontSize: 10, color: hompy.muted },
-  album: { justifyContent: 'flex-start' },
   albumInner: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 10,
-    padding: 8,
+    gap: 8,
     minHeight: 120,
   },
-  albumGlyph: { fontSize: 28, color: hompy.peachInk, marginBottom: 6 },
+  albumFrame: { width: 72, height: 72 },
+  albumFrameInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  albumGlyph: {
+    width: 40,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  albumGlyphOuter: {
+    position: 'absolute',
+    width: 40,
+    height: 28,
+    borderWidth: 1.5,
+    borderColor: hompy.peachInk,
+    borderRadius: 4,
+    top: 4,
+  },
+  albumGlyphInner: {
+    width: 22,
+    height: 16,
+    borderWidth: 1.5,
+    borderColor: hompy.peachInk,
+    borderRadius: 2,
+    opacity: 0.7,
+  },
   albumHint: { fontSize: 10, color: hompy.muted, textAlign: 'center' },
+  boardPad: { padding: 10, gap: 10 },
+  boardBlock: { gap: 2 },
   body: { fontSize: 12, color: hompy.ink, lineHeight: 18 },
   emptyHint: { fontSize: 10, color: hompy.soft },
-  gbLine: { fontSize: 11, color: hompy.ink, marginBottom: 4 },
+  gbLine: { fontSize: 11, color: hompy.ink },
   gbAuthor: { color: hompy.soft },
-  linkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  safetyRow: { flexDirection: 'row', gap: 8 },
+  linkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 4, alignItems: 'center' },
+  musicWrap: { flexGrow: 1, flexBasis: 200 },
+  hardBtnInner: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minHeight: 34,
+    justifyContent: 'center',
+  },
+  hardBtnText: { fontSize: 10, fontWeight: '700', color: hompy.ink },
+  safetyRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
 });

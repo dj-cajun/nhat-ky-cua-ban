@@ -8,9 +8,12 @@
 ## 원칙
 
 옛 제품 **기능**(학교·Zalo·도토리·TODAY/TOTAL·수사)은 버린다.  
-옛 미니홈피 **인터페이스**(파스텔·프로필·캘린더·앨범·방명록 분위기)는 디자인 원본으로 살린다.
+옛 미니홈피 **인터페이스**(파스텔·`sk-outline` 색연필 테두리·프로필·캘린더·앨범·방명록 분위기)는 디자인 원본으로 살린다.  
+새 기능은 **원본 레이아웃 위에만** 더한다 (Spotify · 서클 방문 스트립 · 뒤로가기 컨텍스트).
 
-참고 스냅샷: `legacy-minihome-reference/` (`443d8b3^`, revert 금지)
+참고 스냅샷: `legacy-minihome-reference/` (`443d8b3^`, revert 금지)  
+웹 기준: `src/pages/diary-home.tsx` + `src/index.css` (`.sk-outline` / `.cy-*`)  
+모바일: `mobile/src/features/diary-home/` (`OutlineBox` ≈ sk-outline)
 
 ---
 
@@ -44,6 +47,6 @@ Try the demo
 ```
 
 - 웹 `/` = Your Diary (`DiaryHomePage`)
-- 모바일: `mobile/src/features/diary-home/DiaryHompyHome`
+- 모바일: `mobile/src/features/diary-home/diary-hompy-home.tsx` (`OutlineBox` / `hompy-outline.tsx`)
 - Diary 탭도 같은 `/diary/[userId]` 미니홈피로 진입
 - 학교/Zalo HompyApp은 기본 마운트하지 않음
