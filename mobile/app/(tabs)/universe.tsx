@@ -76,8 +76,10 @@ export default function UniverseScreen() {
 
   const canCreate = isFeatureEnabled('circle_creation_enabled');
 
+  // No SafeArea padding around the scene — intro video + 3D/2D spheres share
+  // the full window. Chrome inside UniverseHome applies insets itself.
   return (
-    <SafeAreaView style={styles.safe} edges={introPlaying ? [] : ['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={[]}>
       {!introPlaying ? <OfflineBanner visible={offline} /> : null}
       {error && !introPlaying ? (
         <AppErrorState message={error} onRetry={() => void reload()} />

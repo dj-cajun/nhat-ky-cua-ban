@@ -4,15 +4,15 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { INTRO_HANDOFF } from './handoff';
+import { resolveHandoffLayout } from './handoff-layout';
 
 /**
  * Plays when `universe-birth.mp4` is not bundled yet.
- * Ends on the same handoff pose as the real video final frame.
+ * Ends on the same cover-matched handoff pose as the real video final frame.
  */
 export function SyntheticSunBirth({
   width,
@@ -31,9 +31,8 @@ export function SyntheticSunBirth({
   const glow = useSharedValue(short ? 0.55 : 0.15);
   const opacity = useSharedValue(1);
 
-  const diameter = width * INTRO_HANDOFF.sphere.diameterRatio;
-  const left = width * INTRO_HANDOFF.sphere.cx - diameter / 2;
-  const top = height * INTRO_HANDOFF.sphere.cy - diameter / 2;
+  const layout = resolveHandoffLayout(width, height);
+  const { diameter, left, top, cxPx, cyPx } = layout;
 
   useEffect(() => {
     const nearMs = short
@@ -94,8 +93,8 @@ export function SyntheticSunBirth({
           {
             width: diameter * 1.55,
             height: diameter * 1.55,
-            left: width * INTRO_HANDOFF.sphere.cx - (diameter * 1.55) / 2,
-            top: height * INTRO_HANDOFF.sphere.cy - (diameter * 1.55) / 2,
+            left: cxPx - (diameter * 1.55) / 2,
+            top: cyPx - (diameter * 1.55) / 2,
             backgroundColor: INTRO_HANDOFF.sphere.glow,
           },
           haloStyle,

@@ -1,9 +1,10 @@
-import { Canvas, useFrame } from '@react-three/fiber/native';
+import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { Component, Suspense, useMemo, useRef, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Group, Mesh } from 'three';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { INTRO_HANDOFF } from './handoff';
+import { resolveHandoffSphere3D } from './handoff-layout';
 import { FallbackUniverse } from './fallback-universe';
 
 export type UniverseSceneProps = {
@@ -17,8 +18,12 @@ export type UniverseSceneProps = {
   forceFallback?: boolean;
 };
 
+const CAMERA_Z = 4.2;
+const CAMERA_FOV = 42;
+
 /**
- * 3D My Universe home. GL failure → same-pose 2D glow spheres.
+ * 3D My Universe home. Sphere radius is derived from the intro cover layout
+ * so crossfade lands on the same pixels as `universe-birth.mp4`.
  */
 export function UniverseScene3D(props: UniverseSceneProps) {
   if (props.forceFallback) {
@@ -28,7 +33,10 @@ export function UniverseScene3D(props: UniverseSceneProps) {
   return (
     <GlSafeFallback {...props}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: INTRO_HANDOFF.spaceBg }]}>
-        <Canvas camera={{ position: [0, 0.15, 4.2], fov: 42 }} style={StyleSheet.absoluteFill}>
+        <Canvas
+          camera={{ position: [0, 0, CAMERA_Z], fov: CAMERA_FOV }}
+          style={StyleSheet.absoluteFill}
+        >
           <color attach="background" args={[INTRO_HANDOFF.spaceBg]} />
           <ambientLight intensity={0.35} />
           <pointLight position={[0, 0, 2.5]} intensity={1.4} color={INTRO_HANDOFF.sphere.glow} />
@@ -64,30 +72,42 @@ function UserSphere({
 }) {
   const mesh = useRef<Mesh>(null);
   const glow = useRef<Mesh>(null);
+  const { size } = useThree();
   const color = useMemo(() => hexToRgb(INTRO_HANDOFF.sphere.color), []);
   const glowColor = useMemo(() => hexToRgb(INTRO_HANDOFF.sphere.glow), []);
-  const radius = 0.85;
+  const { radius, y } = useMemo(
+    () =>
+      resolveHandoffSphere3D({
+        viewportWidth: size.width,
+        viewportHeight: size.height,
+        cameraZ: CAMERA_Z,
+        fovDeg: CAMERA_FOV,
+      }),
+    [size.width, size.height],
+  );
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (mesh.current) {
-      mesh.current.position.y = Math.sin(t * 0.7) * 0.04;
+      mesh.current.position.y = y + Math.sin(t * 0.7) * 0.04;
       mesh.current.rotation.y = t * 0.12;
     }
     if (glow.current) {
       const s = 1.08 + Math.sin(t * 1.4) * 0.03;
       glow.current.scale.setScalar(s);
+      glow.current.position.y = y;
     }
   });
 
   return (
-    <group position={[0, 0.08, 0]}>
-      <mesh ref={glow} scale={1.12}>
+    <group>
+      <mesh ref={glow} position={[0, y, 0]} scale={1.12}>
         <sphereGeometry args={[radius, 32, 32]} />
         <meshBasicMaterial color={glowColor} transparent opacity={0.22} depthWrite={false} />
       </mesh>
       <mesh
         ref={mesh}
+        position={[0, y, 0]}
         onClick={(e) => {
           e.stopPropagation();
           onPress();
@@ -109,7 +129,7 @@ function UserSphere({
         />
       </mesh>
       {revealProfile ? (
-        <mesh position={[0, 0, radius * 0.92]}>
+        <mesh position={[0, y, radius * 0.92]}>
           <circleGeometry args={[radius * 0.42, 32]} />
           <meshBasicMaterial color="#1a140e" transparent opacity={0.55} />
         </mesh>
@@ -128,6 +148,17 @@ function CirclePlanets({
   onPressCircle: (id: string) => void;
 }) {
   const group = useRef<Group>(null);
+  const { size } = useThree();
+  const { radius: selfR, y: selfY } = useMemo(
+    () =>
+      resolveHandoffSphere3D({
+        viewportWidth: size.width,
+        viewportHeight: size.height,
+        cameraZ: CAMERA_Z,
+        fovDeg: CAMERA_FOV,
+      }),
+    [size.width, size.height],
+  );
   const n = Math.max(circles.length, 1);
 
   useFrame(({ clock }) => {
@@ -138,15 +169,18 @@ function CirclePlanets({
 
   if (!reveal || circles.length === 0) return null;
 
+  const orbit = Math.max(selfR * 2.35, 1.15);
+
   return (
-    <group ref={group}>
+    <group ref={group} position={[0, selfY, 0]}>
       {circles.map((c, i) => {
         const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-        const orbit = 1.85 + (i % 3) * 0.18;
-        const x = Math.cos(angle) * orbit;
-        const z = Math.sin(angle) * orbit;
-        const y = Math.sin(i * 1.7) * 0.25;
+        const o = orbit + (i % 3) * selfR * 0.22;
+        const x = Math.cos(angle) * o;
+        const z = Math.sin(angle) * o;
+        const y = Math.sin(i * 1.7) * selfR * 0.35;
         const rgb = hexToRgb(c.color || '#7C9A8E');
+        const pr = Math.max(selfR * 0.32, 0.12);
         return (
           <mesh
             key={c.id}
@@ -160,7 +194,7 @@ function CirclePlanets({
               onPressCircle(c.id);
             }}
           >
-            <sphereGeometry args={[0.28, 24, 24]} />
+            <sphereGeometry args={[pr, 24, 24]} />
             <meshStandardMaterial color={rgb} emissive={rgb} emissiveIntensity={0.25} roughness={0.4} />
           </mesh>
         );

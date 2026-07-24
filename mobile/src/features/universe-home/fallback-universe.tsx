@@ -12,9 +12,10 @@ import { useEffect, useMemo } from 'react';
 import { Pressable, Text, useWindowDimensions } from 'react-native';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { INTRO_HANDOFF } from './handoff';
+import { resolveHandoffLayout } from './handoff-layout';
 
 /**
- * Low-end / GL-fail fallback: same handoff pose + floating glow spheres.
+ * Low-end / GL-fail / web: same cover-matched handoff pose as intro MP4.
  */
 export function FallbackUniverse({
   profile,
@@ -32,9 +33,8 @@ export function FallbackUniverse({
   onPressCircle: (id: string) => void;
 }) {
   const { width, height } = useWindowDimensions();
-  const diameter = width * INTRO_HANDOFF.sphere.diameterRatio;
-  const left = width * INTRO_HANDOFF.sphere.cx - diameter / 2;
-  const top = height * INTRO_HANDOFF.sphere.cy - diameter / 2;
+  const layout = resolveHandoffLayout(width, height);
+  const { diameter, left, top, cxPx, cyPx } = layout;
 
   const floatY = useSharedValue(0);
   const profileOp = useSharedValue(0);
@@ -85,11 +85,11 @@ export function FallbackUniverse({
       const radius = Math.min(width, height) * (0.28 + (i % 3) * 0.04);
       return {
         ...c,
-        x: width * INTRO_HANDOFF.sphere.cx + Math.cos(angle) * radius - 36,
-        y: height * INTRO_HANDOFF.sphere.cy + Math.sin(angle) * radius - 36,
+        x: cxPx + Math.cos(angle) * radius - 36,
+        y: cyPx + Math.sin(angle) * radius - 36,
       };
     });
-  }, [circles, width, height]);
+  }, [circles, width, height, cxPx, cyPx]);
 
   return (
     <View style={[styles.root, { width, height, backgroundColor: INTRO_HANDOFF.spaceBg }]}>

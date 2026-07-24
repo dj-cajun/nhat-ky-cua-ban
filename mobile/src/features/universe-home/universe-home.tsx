@@ -14,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { useMessages } from '@/i18n';
 import { INTRO_HANDOFF, type IntroMode } from './handoff';
@@ -52,6 +52,7 @@ export function UniverseHome({
 }: Props) {
   const t = useMessages();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [mode, setMode] = useState<IntroMode | null>(null);
   const [revealProfile, setRevealProfile] = useState(false);
@@ -207,7 +208,18 @@ export function UniverseHome({
       </Modal>
 
       {!introPlaying ? (
-        <SafeAreaView style={styles.chrome} pointerEvents="box-none">
+        <View
+          style={[
+            styles.chrome,
+            {
+              paddingTop: 16 + insets.top,
+              paddingBottom: 16 + insets.bottom,
+              paddingLeft: 16 + insets.left,
+              paddingRight: 16 + insets.right,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
           <View style={styles.header} pointerEvents="box-none">
             <View>
               <Text style={styles.brand}>{t.universe.brand}</Text>
@@ -250,9 +262,7 @@ export function UniverseHome({
               <Text style={styles.createText}>{t.universe.createCircle}</Text>
             </Pressable>
           ) : null}
-
-          {/* Profile lives on the center sphere — avoid overlay chips that steal taps. */}
-        </SafeAreaView>
+        </View>
       ) : null}
     </View>
   );
@@ -261,7 +271,7 @@ export function UniverseHome({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   modalRoot: { flex: 1, overflow: 'hidden' },
-  chrome: { ...StyleSheet.absoluteFill, padding: 16, justifyContent: 'space-between' },
+  chrome: { ...StyleSheet.absoluteFill, justifyContent: 'space-between' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { color: 'rgba(255,230,168,0.85)', fontSize: 12, letterSpacing: 0.6 },
   title: { fontSize: 20, fontWeight: '600', color: '#F7F4EF', marginTop: 2 },
