@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "sync:intro": "node scripts/sync-intro-asset.mjs",
+    "render:intro": "python3 scripts/render-universe-intro.py && npm run sync:intro",
     "start": "npm run sync:intro && expo start",
     "android": "npm run sync:intro && expo start --android",
     "ios": "npm run sync:intro && expo start --ios",
