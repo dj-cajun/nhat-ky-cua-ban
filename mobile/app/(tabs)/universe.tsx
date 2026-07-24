@@ -8,6 +8,7 @@ import {
 } from '@/features/local/repository';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function UniverseScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -33,8 +34,8 @@ export default function UniverseScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.brand}>내 우주</Text>
-          <Text style={styles.title}>관계의 지도</Text>
+          <Text style={styles.brand}>{en.universe.brand}</Text>
+          <Text style={styles.title}>{en.universe.title}</Text>
         </View>
         <Pressable
           style={styles.avatar}
@@ -61,15 +62,15 @@ export default function UniverseScreen() {
               <Text style={styles.circleName} numberOfLines={1}>
                 {c.name}
               </Text>
-              <Text style={styles.meta}>오늘 {c.wroteTodayCount}명</Text>
-              {c.hasActiveNotice ? <Text style={styles.meta}>공지</Text> : null}
+              <Text style={styles.meta}>{en.universe.wroteToday(c.wroteTodayCount)}</Text>
+              {c.hasActiveNotice ? <Text style={styles.meta}>{en.universe.notice}</Text> : null}
             </Pressable>
           ))}
         </View>
       </View>
 
       <Pressable style={styles.create} onPress={() => router.push('/circles/create')}>
-        <Text style={styles.createText}>서클 만들기 (친구 2명과 함께)</Text>
+        <Text style={styles.createText}>{en.universe.createCircle}</Text>
       </Pressable>
     </SafeAreaView>
   );

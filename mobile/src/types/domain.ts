@@ -1,6 +1,6 @@
 /**
- * 도메인 타입 — 서버/클라이언트가 공유하는 계약
- * DB 생성 타입은 database.generated.ts 로 대체 예정
+ * Domain types — shared client/server contracts.
+ * Swap in database.generated.ts after migrations.
  */
 
 export type AppErrorCode =
@@ -99,12 +99,12 @@ export const CIRCLE_COLORS = [
 export const CIRCLE_SYMBOLS = ['○', '◇', '△', '☆', '❀', '✦'] as const;
 
 export const DIARY_MOODS: { id: DiaryMood; label: string; emoji: string }[] = [
-  { id: 'happy', label: '기쁨', emoji: '😊' },
-  { id: 'calm', label: '평온', emoji: '😌' },
-  { id: 'tired', label: '피곤', emoji: '😮‍💨' },
-  { id: 'excited', label: '설렘', emoji: '✨' },
-  { id: 'sad', label: '슬픔', emoji: '😔' },
-  { id: 'anxious', label: '불안', emoji: '😰' },
-  { id: 'grateful', label: '감사', emoji: '🙏' },
-  { id: 'neutral', label: '그저 그럼', emoji: '😐' },
+  { id: 'happy', label: 'Happy', emoji: '😊' },
+  { id: 'calm', label: 'Calm', emoji: '😌' },
+  { id: 'tired', label: 'Tired', emoji: '😮‍💨' },
+  { id: 'excited', label: 'Excited', emoji: '✨' },
+  { id: 'sad', label: 'Sad', emoji: '😔' },
+  { id: 'anxious', label: 'Anxious', emoji: '😰' },
+  { id: 'grateful', label: 'Grateful', emoji: '🙏' },
+  { id: 'neutral', label: 'Okay', emoji: '😐' },
 ];

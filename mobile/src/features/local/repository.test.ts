@@ -34,8 +34,8 @@ describe('open_circle_from_draft rules', () => {
   });
 
   it('does not open until both invitees accept', async () => {
-    const me = await signUpLocal('나');
-    const { draftId } = await proposeCircleDraft(me.id, '스터디', [
+    const me = await signUpLocal('Alex');
+    const { draftId } = await proposeCircleDraft(me.id, 'Study group', [
       '00000000-0000-4000-8000-0000000000a1',
       '00000000-0000-4000-8000-0000000000b2',
     ]);
@@ -53,8 +53,8 @@ describe('open_circle_from_draft rules', () => {
   });
 
   it('cancels when one declines', async () => {
-    const me = await signUpLocal('나');
-    const { draftId } = await proposeCircleDraft(me.id, '실패', [
+    const me = await signUpLocal('Alex');
+    const { draftId } = await proposeCircleDraft(me.id, 'Failed attempt', [
       '00000000-0000-4000-8000-0000000000a1',
       '00000000-0000-4000-8000-0000000000b2',
     ]);
@@ -65,8 +65,8 @@ describe('open_circle_from_draft rules', () => {
   });
 
   it('demoAcceptAll opens with 3 pioneers', async () => {
-    const me = await signUpLocal('나');
-    const { draftId } = await proposeCircleDraft(me.id, '데모', [
+    const me = await signUpLocal('Alex');
+    const { draftId } = await proposeCircleDraft(me.id, 'Demo circle', [
       '00000000-0000-4000-8000-0000000000a1',
       '00000000-0000-4000-8000-0000000000b2',
     ]);
@@ -82,8 +82,8 @@ describe('join recommendations', () => {
   });
 
   it('approves only after 3 recommendations', async () => {
-    const me = await signUpLocal('개척');
-    const { draftId } = await proposeCircleDraft(me.id, '서클', [
+    const me = await signUpLocal('Pioneer');
+    const { draftId } = await proposeCircleDraft(me.id, 'Circle', [
       '00000000-0000-4000-8000-0000000000a1',
       '00000000-0000-4000-8000-0000000000b2',
     ]);
@@ -117,10 +117,10 @@ describe('diary privacy', () => {
   });
 
   it('blocks private diary from others', async () => {
-    const me = await signUpLocal('나');
+    const me = await signUpLocal('Alex');
     const entry = await upsertDiary({
       userId: me.id,
-      tenCharText: '조용한하루',
+      tenCharText: 'Quiet day',
       visibilityMode: 'private',
     });
     expect(await canViewDiary('other', me.id, entry)).toBe(false);

@@ -1,12 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function DiaryCalendarScreen() {
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>과거 기록</Text>
-      <Text style={styles.sub}>달력은 사용자가 열 때 로드합니다. entry_date + timezone 기준.</Text>
+      <Text style={styles.title}>{en.calendar.title}</Text>
+      <Text style={styles.sub}>{en.calendar.sub}</Text>
     </SafeAreaView>
   );
 }

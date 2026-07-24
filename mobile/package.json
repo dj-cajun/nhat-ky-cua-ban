@@ -1,6 +1,7 @@
 {
-  "name": "nhat-ky-cua-ban-mobile",
+  "name": "your-diary-mobile",
   "version": "2.0.0-beta",
+  "description": "Your Diary — US iOS/Android closed-circle diary (Expo)",
   "main": "expo-router/entry",
   "private": true,
   "scripts": {

@@ -1,12 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function CircleMembersScreen() {
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>멤버</Text>
-      <Text style={styles.sub}>서클 내부 검색은 이후 단계에서 연결합니다.</Text>
+      <Text style={styles.title}>{en.circle.members}</Text>
+      <Text style={styles.sub}>{en.circle.membersSub}</Text>
     </SafeAreaView>
   );
 }

@@ -2,16 +2,15 @@ import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function CircleDraftScreen() {
   const { draftId } = useLocalSearchParams<{ draftId: string }>();
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>개척 초안</Text>
+      <Text style={styles.title}>{en.circle.draftTitle}</Text>
       <Text style={styles.sub}>draftId: {draftId}</Text>
-      <Text style={styles.sub}>
-        세 명 모두 수락 후 open_circle_from_draft RPC로만 정식 서클이 생성됩니다.
-      </Text>
+      <Text style={styles.sub}>{en.circle.draftSub}</Text>
     </SafeAreaView>
   );
 }

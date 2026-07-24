@@ -1,9 +1,9 @@
 /**
- * 로컬 데모 저장소 — Supabase 미연결 시 도메인 규칙 검증용.
- * 개설/가입 승인은 서버 RPC와 동일한 조건을 클라이언트에서도 재현하되,
- * 프로덕션에서는 Edge Function / DB 함수만 신뢰한다.
+ * Local demo store when Supabase is not configured.
+ * Mirrors server RPC rules for founding/join; production trusts Edge Functions / DB only.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DEFAULT_TIMEZONE } from '@/i18n/en';
 import {
   AppError,
   CIRCLE_COLORS,
@@ -95,7 +95,7 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function todayInTz(tz = 'Asia/Seoul'): string {
+function todayInTz(tz = DEFAULT_TIMEZONE): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: tz,
     year: 'numeric',
@@ -123,11 +123,11 @@ export async function clearLocalDb(): Promise<void> {
 
 function ensureDemoFriends(selfId: string): void {
   const seeds: Profile[] = [
-    { id: '00000000-0000-4000-8000-0000000000a1', displayName: '민서', status: 'active', createdAt: now() },
-    { id: '00000000-0000-4000-8000-0000000000b2', displayName: '준호', status: 'active', createdAt: now() },
-    { id: '00000000-0000-4000-8000-0000000000c3', displayName: '하은', status: 'active', createdAt: now() },
-    { id: '00000000-0000-4000-8000-0000000000d4', displayName: '서연', status: 'active', createdAt: now() },
-    { id: '00000000-0000-4000-8000-0000000000e5', displayName: '지훈', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000a1', displayName: 'Maya', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000b2', displayName: 'Jordan', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000c3', displayName: 'Avery', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000d4', displayName: 'Sam', status: 'active', createdAt: now() },
+    { id: '00000000-0000-4000-8000-0000000000e5', displayName: 'Casey', status: 'active', createdAt: now() },
   ];
   for (const s of seeds) {
     if (s.id !== selfId && !memory.profiles.some((p) => p.id === s.id)) {
@@ -169,7 +169,7 @@ export async function getProfile(id: string): Promise<Profile | null> {
   return memory.profiles.find((p) => p.id === id) ?? null;
 }
 
-/** §6 open_circle_from_draft 와 동일한 조건 */
+/** Same rules as open_circle_from_draft (§6) */
 export async function proposeCircleDraft(
   proposerId: string,
   proposedName: string,
@@ -177,10 +177,10 @@ export async function proposeCircleDraft(
 ): Promise<{ draftId: string }> {
   await loadLocalDb();
   if (inviteeIds[0] === inviteeIds[1]) {
-    throw new AppError('VALIDATION', '서로 다른 두 사람을 지목해야 해요.');
+    throw new AppError('VALIDATION', 'Pick two different people.');
   }
   if (inviteeIds.includes(proposerId)) {
-    throw new AppError('VALIDATION', '자기 자신은 초대할 수 없어요.');
+    throw new AppError('VALIDATION', 'You can’t invite yourself.');
   }
 
   const draft: CircleDraft = {
@@ -224,10 +224,10 @@ export async function respondDraftInvite(
   const members = memory.draftMembers.filter((m) => m.draftId === draftId);
   const me = members.find((m) => m.userId === userId);
   if (!me || me.memberType !== 'invitee') {
-    throw new AppError('FORBIDDEN', '이 초대를 응답할 권한이 없어요.');
+    throw new AppError('FORBIDDEN', 'You can’t respond to this invite.');
   }
   if (me.responseStatus !== 'pending') {
-    throw new AppError('CONFLICT', '이미 응답한 초대예요.');
+    throw new AppError('CONFLICT', 'You already responded to this invite.');
   }
 
   if (!accept) {
@@ -246,7 +246,7 @@ export async function respondDraftInvite(
   return openCircleFromDraft(draftId, userId);
 }
 
-/** 서버 함수 open_circle_from_draft 미러 */
+/** Mirror of open_circle_from_draft */
 export async function openCircleFromDraft(
   draftId: string,
   actorId: string,
@@ -254,16 +254,16 @@ export async function openCircleFromDraft(
   await loadLocalDb();
   const draft = memory.drafts.find((d) => d.id === draftId);
   if (!draft || draft.status !== 'pending') {
-    throw new AppError('CONFLICT', '이미 처리된 초안이에요.');
+    throw new AppError('CONFLICT', 'This draft was already handled.');
   }
 
   const members = memory.draftMembers.filter((m) => m.draftId === draftId);
   const unique = new Set(members.map((m) => m.userId));
   if (unique.size !== CIRCLE_PIONEER_COUNT) {
-    throw new AppError('VALIDATION', '개척자는 정확히 세 명이어야 해요.');
+    throw new AppError('VALIDATION', 'A circle needs exactly three pioneers.');
   }
   if (!unique.has(actorId)) {
-    throw new AppError('FORBIDDEN', '초안 멤버만 개설할 수 있어요.');
+    throw new AppError('FORBIDDEN', 'Only draft members can open the circle.');
   }
   if (!members.every((m) => m.responseStatus === 'accepted')) {
     return null;
@@ -296,7 +296,7 @@ export async function openCircleFromDraft(
   return circle;
 }
 
-/** 데모: 두 초대 즉시 수락 */
+/** Demo: both invites accept immediately */
 export async function demoAcceptAll(draftId: string): Promise<Circle> {
   await loadLocalDb();
   const pending = memory.draftMembers.filter(
@@ -306,7 +306,7 @@ export async function demoAcceptAll(draftId: string): Promise<Circle> {
   for (const m of pending) {
     opened = await respondDraftInvite(draftId, m.userId, true);
   }
-  if (!opened) throw new AppError('UNKNOWN', '서클 개설에 실패했어요.');
+  if (!opened) throw new AppError('UNKNOWN', 'Couldn’t open the circle.');
   return opened;
 }
 
@@ -320,10 +320,10 @@ export async function updateCircleDesign(
     (m) => m.circleId === circleId && m.userId === actorId && m.status === 'active',
   );
   if (!member || (member.role !== 'admin' && !member.isPioneer)) {
-    throw new AppError('FORBIDDEN', '서클 정보를 수정할 권한이 없어요.');
+    throw new AppError('FORBIDDEN', 'You can’t edit this circle.');
   }
   const circle = memory.circles.find((c) => c.id === circleId);
-  if (!circle) throw new AppError('NOT_FOUND', '서클을 찾을 수 없어요.');
+  if (!circle) throw new AppError('NOT_FOUND', 'Circle not found.');
   Object.assign(circle, patch);
   await persist();
   return circle;
@@ -377,27 +377,27 @@ export async function createJoinRequest(
 ): Promise<JoinRequest> {
   await loadLocalDb();
   if (await isCircleMember(circleId, applicantId)) {
-    throw new AppError('CONFLICT', '이미 멤버예요.');
+    throw new AppError('CONFLICT', 'You’re already a member.');
   }
   if (recommenderIds.length !== CIRCLE_JOIN_RECOMMENDATION_COUNT) {
     throw new AppError(
       'VALIDATION',
-      `나를 아는 멤버 ${CIRCLE_JOIN_RECOMMENDATION_COUNT}명을 선택해 주세요.`,
+      `Choose ${CIRCLE_JOIN_RECOMMENDATION_COUNT} members who actually know you.`,
     );
   }
   const unique = new Set(recommenderIds);
   if (unique.size !== CIRCLE_JOIN_RECOMMENDATION_COUNT) {
-    throw new AppError('VALIDATION', '서로 다른 추천자를 선택해 주세요.');
+    throw new AppError('VALIDATION', 'Choose different recommenders.');
   }
   if (unique.has(applicantId)) {
-    throw new AppError('VALIDATION', '자기 자신을 추천자로 선택할 수 없어요.');
+    throw new AppError('VALIDATION', 'You can’t recommend yourself.');
   }
   for (const id of recommenderIds) {
     if (!(await isCircleMember(circleId, id))) {
-      throw new AppError('VALIDATION', '추천자는 서클 멤버여야 해요.');
+      throw new AppError('VALIDATION', 'Recommenders must be circle members.');
     }
     if (memory.blocks.some((b) => b.blockerId === id && b.blockedId === applicantId)) {
-      throw new AppError('FORBIDDEN', '차단 관계의 멤버는 추천자로 선택할 수 없어요.');
+      throw new AppError('FORBIDDEN', 'Blocked members can’t be recommenders.');
     }
   }
 
@@ -419,7 +419,7 @@ export async function createJoinRequest(
   return request;
 }
 
-/** §7 승인 함수 미러 — 추천 삽입 후 3명이면 멤버십 삽입을 한 트랜잭션처럼 처리 */
+/** §7 approve mirror — insert recommendation then membership in one logical txn */
 export async function decideRecommendation(
   requestId: string,
   recommenderId: string,
@@ -429,17 +429,17 @@ export async function decideRecommendation(
   const rec = memory.recommendations.find(
     (r) => r.requestId === requestId && r.recommenderId === recommenderId,
   );
-  if (!rec) throw new AppError('NOT_FOUND', '추천 요청을 찾을 수 없어요.');
+  if (!rec) throw new AppError('NOT_FOUND', 'Recommendation request not found.');
   if (rec.decision !== 'pending' && rec.decision !== 'later') {
-    throw new AppError('CONFLICT', '이미 응답했어요.');
+    throw new AppError('CONFLICT', 'You already responded.');
   }
 
   const request = memory.joinRequests.find((r) => r.id === requestId);
   if (!request || request.status !== 'pending') {
-    throw new AppError('CONFLICT', '이미 처리된 신청이에요.');
+    throw new AppError('CONFLICT', 'This request was already handled.');
   }
   if (!(await isCircleMember(request.circleId, recommenderId))) {
-    throw new AppError('FORBIDDEN', '서클 멤버만 추천할 수 있어요.');
+    throw new AppError('FORBIDDEN', 'Only circle members can recommend.');
   }
 
   rec.decision = decision;
@@ -457,7 +457,7 @@ export async function decideRecommendation(
     return request;
   }
 
-  // 한 번만 가입
+  // Join at most once
   if (await isCircleMember(request.circleId, request.applicantId)) {
     request.status = 'approved';
     await persist();
@@ -495,7 +495,7 @@ export async function upsertDiary(input: {
   clientRequestId?: string;
 }): Promise<DiaryEntry> {
   await loadLocalDb();
-  const timezone = input.timezone ?? 'Asia/Seoul';
+  const timezone = input.timezone ?? DEFAULT_TIMEZONE;
   const entryDate = todayInTz(timezone);
   const existing = memory.diary.find((d) => d.userId === input.userId && d.entryDate === entryDate);
 

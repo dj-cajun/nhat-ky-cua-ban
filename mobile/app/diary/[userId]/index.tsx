@@ -26,6 +26,7 @@ import {
   type Profile,
 } from '@/types/domain';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function DiaryScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -79,6 +80,7 @@ export default function DiaryScreen() {
       track('diary_entry_saved', {
         entry_has_photo: false,
         entry_has_music: false,
+        market: 'US',
       });
     } catch (e) {
       setError(toAppError(e).message);
@@ -91,18 +93,18 @@ export default function DiaryScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>← 뒤로</Text>
-        </Pressable>
+        <Text style={styles.back}>{en.diary.back}</Text>
+      </Pressable>
         <Text style={styles.title}>{owner.displayName}</Text>
         <Text style={styles.mood}>
-          {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : '오늘의 기분 없음'}
+          {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : en.diary.noMood}
         </Text>
 
         {blocked ? (
-          <Text style={styles.empty}>이 기록은 공개되지 않았어요.</Text>
+          <Text style={styles.empty}>{en.diary.privateBlocked}</Text>
         ) : editing && isMine ? (
           <View>
-            <Text style={styles.label}>기분</Text>
+            <Text style={styles.label}>{en.diary.mood}</Text>
             <View style={styles.moodRow}>
               {DIARY_MOODS.map((m) => (
                 <Pressable
@@ -115,7 +117,7 @@ export default function DiaryScreen() {
               ))}
             </View>
             <Text style={styles.label}>
-              10자 기록 ({ten.length}/{MAX_TEN_CHAR})
+              {en.diary.tenChar} ({ten.length}/{MAX_TEN_CHAR})
             </Text>
             <TextInput
               value={ten}
@@ -124,7 +126,7 @@ export default function DiaryScreen() {
               style={styles.input}
               placeholderTextColor={colors.soft}
             />
-            <Text style={styles.label}>짧은 글</Text>
+            <Text style={styles.label}>{en.diary.shortText}</Text>
             <TextInput
               value={shortText}
               onChangeText={setShortText}
@@ -135,41 +137,41 @@ export default function DiaryScreen() {
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Pressable style={styles.btn} onPress={() => void save()}>
-              <Text style={styles.btnText}>저장</Text>
+              <Text style={styles.btnText}>{en.diary.save}</Text>
             </Pressable>
           </View>
         ) : (
           <View>
             {entry?.tenCharText ? (
               <View style={styles.card}>
-                <Text style={styles.label}>10자 기록</Text>
+                <Text style={styles.label}>{en.diary.tenChar}</Text>
                 <Text style={styles.ten}>{entry.tenCharText}</Text>
               </View>
             ) : null}
             {entry?.shortText ? (
               <View style={styles.card}>
-                <Text style={styles.label}>짧은 글</Text>
+                <Text style={styles.label}>{en.diary.shortText}</Text>
                 <Text style={styles.body}>{entry.shortText}</Text>
               </View>
             ) : null}
-            {!entry ? <Text style={styles.empty}>아직 오늘 기록이 없어요.</Text> : null}
+            {!entry ? <Text style={styles.empty}>{en.diary.emptyToday}</Text> : null}
           </View>
         )}
 
         {isMine && !editing ? (
           <Pressable style={styles.btn} onPress={() => setEditing(true)}>
-            <Text style={styles.btnText}>오늘 수정</Text>
+            <Text style={styles.btnText}>{en.diary.editToday}</Text>
           </Pressable>
         ) : null}
 
         <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/guestbook`)}>
-          <Text>방명록</Text>
+          <Text>{en.diary.guestbook}</Text>
         </Pressable>
         <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/calendar`)}>
-          <Text>과거 기록</Text>
+          <Text>{en.diary.past}</Text>
         </Pressable>
         <Pressable style={styles.link} onPress={() => router.push(`/diary/${userId}/album`)}>
-          <Text>사진첩</Text>
+          <Text>{en.diary.album}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

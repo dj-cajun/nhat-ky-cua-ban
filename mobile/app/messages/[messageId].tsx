@@ -1,11 +1,12 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function MessageDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>쪽지 상세</Text>
+      <Text style={styles.title}>{en.messages.detail}</Text>
     </SafeAreaView>
   );
 }

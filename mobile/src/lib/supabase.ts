@@ -8,8 +8,8 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 export const isSupabaseConfigured = Boolean(url && anonKey && !url.includes('your-project'));
 
 /**
- * 앱에는 anon/publishable key만 둔다.
- * service role / Spotify secret / APNs 키는 Edge Function 환경변수에만.
+ * App may only ship anon/publishable keys.
+ * Service role / Spotify secret / APNs keys stay in Edge Function env.
  */
 export const supabase = createClient(url || 'http://127.0.0.1:54321', anonKey || 'public-anon-key', {
   auth: {

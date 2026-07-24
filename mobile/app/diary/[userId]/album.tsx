@@ -1,14 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function DiaryAlbumScreen() {
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>사진첩</Text>
-      <Text style={styles.sub}>
-        썸네일 목록 → 상세에서만 큰 이미지. EXIF 제거 · Storage 경로 userId=auth.uid() 검사.
-      </Text>
+      <Text style={styles.title}>{en.album.title}</Text>
+      <Text style={styles.sub}>{en.album.sub}</Text>
     </SafeAreaView>
   );
 }

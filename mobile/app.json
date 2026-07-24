@@ -1,19 +1,27 @@
 {
   "expo": {
-    "name": "너의 다이어리",
-    "slug": "nhat-ky-cua-ban",
+    "name": "Your Diary",
+    "slug": "your-diary",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "nhatky",
+    "scheme": "yourdiary",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "locales": {
+      "en": "./locales/en.json"
+    },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.nhatky.diary"
+      "bundleIdentifier": "com.yourdiary.app",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleDevelopmentRegion": "en"
+      },
+      "usesAppleSignIn": true
     },
     "android": {
-      "package": "com.nhatky.diary",
+      "package": "com.yourdiary.app",
       "adaptiveIcon": {
         "backgroundColor": "#F7F4EF",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -32,6 +40,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "market": "US",
+      "defaultLocale": "en-US",
+      "defaultTimezone": "America/New_York"
     }
   }
 }

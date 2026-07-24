@@ -12,6 +12,7 @@ import { signUpLocal } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -19,62 +20,68 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.brand}>너의 다이어리</Text>
-      <Text style={styles.title}>로그인 방식을 선택하세요</Text>
-      <Text style={styles.sub}>
-        세 사람의 신뢰로 열리는 작은 서클에서, 아는 사람의 하루를 찾아갑니다.
-      </Text>
+      <Text style={styles.brand}>{en.brand}</Text>
+      <Text style={styles.title}>{en.auth.chooseSignIn}</Text>
+      <Text style={styles.sub}>{en.tagline}</Text>
 
-      <Pressable style={[styles.btn, styles.ghost]} onPress={() => setError('Apple 로그인은 개발 빌드에서 연결됩니다.')}>
-        <Text style={styles.ghostText}>Apple로 계속</Text>
-        <Text style={styles.badge}>준비 중</Text>
+      {/* US App Store: Apple first when third-party login is offered */}
+      <Pressable
+        style={styles.btn}
+        onPress={() => setError(en.auth.appleNote)}
+      >
+        <Text style={styles.btnText}>{en.auth.apple}</Text>
       </Pressable>
-      <Pressable style={[styles.btn, styles.ghost]} onPress={() => setError('Google 로그인은 Android 출시 시 추가됩니다.')}>
-        <Text style={styles.ghostText}>Google로 계속</Text>
-        <Text style={styles.badge}>준비 중</Text>
+
+      <Pressable
+        style={[styles.btn, styles.ghost]}
+        onPress={() => setError(en.auth.googleNote)}
+      >
+        <Text style={styles.ghostText}>{en.auth.google}</Text>
+        <Text style={styles.badge}>{en.auth.comingSoon}</Text>
       </Pressable>
 
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="email@example.com"
+        placeholder="name@email.com"
         autoCapitalize="none"
         keyboardType="email-address"
         style={styles.input}
         placeholderTextColor={colors.soft}
       />
       <Pressable
-        style={styles.btn}
+        style={[styles.btn, styles.ghost]}
         onPress={() => {
           if (!email.includes('@')) {
-            setError('올바른 이메일을 입력해 주세요.');
+            setError(en.auth.invalidEmail);
             return;
           }
           router.push({ pathname: '/(auth)/onboarding', params: { email } });
         }}
       >
-        <Text style={styles.btnText}>이메일로 계속</Text>
+        <Text style={styles.ghostText}>{en.auth.email}</Text>
       </Pressable>
 
       <Pressable
         style={[styles.btn, styles.demo]}
         onPress={async () => {
           try {
-            await signUpLocal('나');
-            track('circle_creation_started', { via: 'demo_shortcut' });
+            await signUpLocal('Alex');
+            track('circle_creation_started', { via: 'demo_shortcut', market: 'US' });
             router.replace('/(tabs)/universe');
           } catch (e) {
             setError(toAppError(e).message);
           }
         }}
       >
-        <Text style={styles.btnText}>데모로 바로 시작</Text>
+        <Text style={styles.btnText}>{en.auth.demo}</Text>
       </Pressable>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Link href="/(auth)/sign-up" style={styles.link}>
-        계정이 없나요? 가입
+        {en.auth.noAccount}
       </Link>
+      <Text style={styles.market}>United States · English</Text>
     </SafeAreaView>
   );
 }
@@ -96,7 +103,7 @@ const styles = StyleSheet.create({
   },
   btnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   ghost: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line },
-  ghostText: { color: colors.soft, fontSize: 14 },
+  ghostText: { color: colors.ink, fontSize: 14 },
   badge: { color: colors.soft, fontSize: 11 },
   demo: { marginTop: 8 },
   input: {
@@ -111,4 +118,5 @@ const styles = StyleSheet.create({
   },
   error: { marginTop: 12, color: colors.warn, fontSize: 13 },
   link: { marginTop: 20, color: colors.muted, fontSize: 13 },
+  market: { marginTop: 12, fontSize: 11, color: colors.soft },
 });

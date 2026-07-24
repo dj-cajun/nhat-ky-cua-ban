@@ -11,6 +11,7 @@ import {
 } from '@/features/local/repository';
 import type { Circle, Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function CircleHomeScreen() {
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
@@ -47,10 +48,10 @@ export default function CircleHomeScreen() {
   if (forbidden) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.title}>접근할 수 없어요</Text>
-        <Text style={styles.sub}>서클 멤버만 볼 수 있습니다.</Text>
+        <Text style={styles.title}>{en.circle.forbiddenTitle}</Text>
+        <Text style={styles.sub}>{en.circle.forbiddenSub}</Text>
         <Pressable onPress={() => router.replace('/(tabs)/universe')}>
-          <Text style={styles.back}>← 우주로</Text>
+          <Text style={styles.back}>{en.circle.toUniverse}</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -61,7 +62,7 @@ export default function CircleHomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.replace('/(tabs)/universe')}>
-        <Text style={styles.back}>← 우주</Text>
+        <Text style={styles.back}>{en.circle.backUniverse}</Text>
       </Pressable>
       <View style={styles.header}>
         <View style={[styles.badge, { backgroundColor: circle.color }]}>
@@ -69,11 +70,11 @@ export default function CircleHomeScreen() {
         </View>
         <View>
           <Text style={styles.title}>{circle.name}</Text>
-          <Text style={styles.sub}>멤버 {members.length}</Text>
+          <Text style={styles.sub}>{en.circle.memberCount(members.length)}</Text>
         </View>
       </View>
 
-      <Text style={styles.section}>멤버</Text>
+      <Text style={styles.section}>{en.circle.members}</Text>
       <View style={styles.grid}>
         {members.map((m) => (
           <Pressable
@@ -85,24 +86,24 @@ export default function CircleHomeScreen() {
               <Text>{(m.profile?.displayName ?? '?').slice(0, 1)}</Text>
             </View>
             <Text style={styles.memberName} numberOfLines={1}>
-              {m.profile?.displayName ?? '멤버'}
+              {m.profile?.displayName ?? 'Member'}
             </Text>
-            {m.isPioneer ? <Text style={styles.pioneer}>개척자</Text> : null}
+            {m.isPioneer ? <Text style={styles.pioneer}>{en.circle.pioneer}</Text> : null}
           </Pressable>
         ))}
       </View>
 
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/settings`)}>
-        <Text style={styles.linkText}>서클 설정</Text>
+        <Text style={styles.linkText}>{en.circle.settings}</Text>
       </Pressable>
       <Pressable style={styles.link} onPress={() => router.push(`/circles/${circleId}/notice`)}>
-        <Text style={styles.linkText}>공지·투표</Text>
+        <Text style={styles.linkText}>{en.circle.noticePoll}</Text>
       </Pressable>
       <Pressable
         style={styles.link}
         onPress={() => router.push(`/circles/${circleId}/anonymous-board`)}
       >
-        <Text style={styles.linkText}>가명 게시판</Text>
+        <Text style={styles.linkText}>{en.circle.anonymousBoard}</Text>
       </Pressable>
     </SafeAreaView>
   );

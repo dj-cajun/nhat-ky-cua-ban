@@ -13,6 +13,7 @@ import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import type { Profile } from '@/types/domain';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function CreateCircleScreen() {
   const [me, setMe] = useState<Profile | null>(null);
@@ -45,20 +46,19 @@ export default function CreateCircleScreen() {
     if (!me) return;
     setError('');
     if (!name.trim()) {
-      setError('서클 이름을 입력해 주세요.');
+      setError(en.circle.nameRequired);
       return;
     }
     if (picked.length !== 2) {
-      setError('함께 개척할 두 사람을 선택해 주세요.');
+      setError(en.circle.pickRequired);
       return;
     }
     try {
-      track('circle_creation_started');
+      track('circle_creation_started', { market: 'US' });
       const { draftId } = await proposeCircleDraft(me.id, name, [picked[0], picked[1]]);
-      // 데모: 서버 open_circle_from_draft 조건을 통과하도록 두 초대 수락
       const circle = await demoAcceptAll(draftId);
       await updateCircleDesign(circle.id, me.id, { name: name.trim() });
-      track('circle_creation_completed', { circle_size_bucket: '3-5' });
+      track('circle_creation_completed', { circle_size_bucket: '3-5', market: 'US' });
       router.replace(`/circles/${circle.id}`);
     } catch (e) {
       setError(toAppError(e).message);
@@ -68,21 +68,21 @@ export default function CreateCircleScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>← 취소</Text>
+        <Text style={styles.back}>{en.circle.cancel}</Text>
       </Pressable>
-      <Text style={styles.title}>서클 만들기</Text>
-      <Text style={styles.sub}>한 명이 혼자 열 수 없어요. 두 명이 모두 수락해야 열립니다.</Text>
+      <Text style={styles.title}>{en.circle.createTitle}</Text>
+      <Text style={styles.sub}>{en.circle.createSub}</Text>
 
-      <Text style={styles.label}>임시 이름</Text>
+      <Text style={styles.label}>{en.circle.tempName}</Text>
       <TextInput
         value={name}
         onChangeText={setName}
         style={styles.input}
-        placeholder="예: 금요일 스터디"
+        placeholder={en.circle.namePlaceholder}
         placeholderTextColor={colors.soft}
       />
 
-      <Text style={styles.label}>함께 개척할 두 사람 ({picked.length}/2)</Text>
+      <Text style={styles.label}>{en.circle.pickTwo(picked.length)}</Text>
       <View style={{ gap: 8 }}>
         {directory.slice(0, 5).map((p) => {
           const on = picked.includes(p.id);
@@ -101,9 +101,9 @@ export default function CreateCircleScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.btn} onPress={() => void submit()}>
-        <Text style={styles.btnText}>개척 요청 보내기</Text>
+        <Text style={styles.btnText}>{en.circle.sendInvites}</Text>
       </Pressable>
-      <Text style={styles.hint}>데모에서는 두 친구가 즉시 수락하고 서버 개설 규칙을 통과합니다.</Text>
+      <Text style={styles.hint}>{en.circle.demoHint}</Text>
     </SafeAreaView>
   );
 }

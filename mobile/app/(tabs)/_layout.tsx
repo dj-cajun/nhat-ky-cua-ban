@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
@@ -25,22 +26,24 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="universe"
         options={{
-          title: '내 우주',
-          tabBarLabel: ({ focused }) => <TabLabel label="내 우주" focused={focused} />,
+          title: en.tabs.universe,
+          tabBarLabel: ({ focused }) => <TabLabel label={en.tabs.universe} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: '알림',
-          tabBarLabel: ({ focused }) => <TabLabel label="알림" focused={focused} />,
+          title: en.tabs.notifications,
+          tabBarLabel: ({ focused }) => (
+            <TabLabel label={en.tabs.notifications} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="my-diary"
         options={{
-          title: '다이어리',
-          tabBarLabel: ({ focused }) => <TabLabel label="다이어리" focused={focused} />,
+          title: en.tabs.diary,
+          tabBarLabel: ({ focused }) => <TabLabel label={en.tabs.diary} focused={focused} />,
         }}
       />
     </Tabs>

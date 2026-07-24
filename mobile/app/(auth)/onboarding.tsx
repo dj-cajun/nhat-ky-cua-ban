@@ -6,6 +6,7 @@ import { signUpLocal } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function OnboardingScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
@@ -15,16 +16,16 @@ export default function OnboardingScreen() {
 
   const finish = async () => {
     if (!agreed) {
-      setError('약관에 동의해 주세요.');
+      setError(en.onboarding.termsRequired);
       return;
     }
     if (!displayName.trim()) {
-      setError('이름을 입력해 주세요.');
+      setError(en.onboarding.nameRequired);
       return;
     }
     try {
       await signUpLocal(displayName.trim());
-      track('diary_entry_saved', { onboarding: true, has_email: Boolean(email) });
+      track('diary_entry_saved', { onboarding: true, has_email: Boolean(email), market: 'US' });
       router.replace('/(tabs)/universe');
     } catch (e) {
       setError(toAppError(e).message);
@@ -33,28 +34,28 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>나를 소개해 주세요</Text>
-      <Text style={styles.sub}>가입 직후 서클이 없어도 개인 다이어리를 쓸 수 있어요.</Text>
+      <Text style={styles.title}>{en.onboarding.title}</Text>
+      <Text style={styles.sub}>{en.onboarding.sub}</Text>
 
-      <Text style={styles.label}>이름 또는 활동명</Text>
+      <Text style={styles.label}>{en.onboarding.displayName}</Text>
       <TextInput
         value={displayName}
         onChangeText={setDisplayName}
         maxLength={24}
         style={styles.input}
-        placeholder="예: 민아"
+        placeholder={en.onboarding.placeholder}
         placeholderTextColor={colors.soft}
       />
 
       <View style={styles.row}>
         <Switch value={agreed} onValueChange={setAgreed} />
-        <Text style={styles.terms}>서비스 약관 및 개인정보 처리에 동의합니다</Text>
+        <Text style={styles.terms}>{en.onboarding.terms}</Text>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.btn} onPress={() => void finish()}>
-        <Text style={styles.btnText}>내 다이어리 만들기</Text>
+        <Text style={styles.btnText}>{en.onboarding.createDiary}</Text>
       </Pressable>
     </SafeAreaView>
   );

@@ -1,15 +1,14 @@
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { en } from '@/i18n/en';
 
 export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.title}>알림</Text>
-      <Text style={styles.sub}>
-        개척 요청 · 추천 요청 · 공지 · 쪽지만 표시합니다. 방문·조회수 알림은 보내지 않아요.
-      </Text>
-      <Text style={styles.empty}>아직 알림이 없어요.</Text>
+      <Text style={styles.title}>{en.notifications.title}</Text>
+      <Text style={styles.sub}>{en.notifications.sub}</Text>
+      <Text style={styles.empty}>{en.notifications.empty}</Text>
     </SafeAreaView>
   );
 }
