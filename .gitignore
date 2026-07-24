@@ -12,7 +12,11 @@ www/
 
 # env
 .env
-.env*.local
+.env.local
+.env.*.local
+!.env.example
+!mobile/.env.example
+
 
 # debug
 npm-debug.log*
