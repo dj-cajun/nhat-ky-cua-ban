@@ -97,23 +97,27 @@ export interface CirclePostRecord {
   type: 'notice' | 'poll';
   title: string;
   body: string;
-  status: 'active' | 'closed' | 'hidden';
+  status: 'active' | 'closed' | 'cancelled' | 'hidden';
   closesAt: string;
   createdBy: string;
   createdAt: string;
+  closedAt?: string;
 }
 
 interface PollOptionRecord {
   id: string;
   postId: string;
   label: string;
+  sortOrder: number;
 }
 
 interface ResponseRecord {
   postId: string;
   userId: string;
+  responseType: 'acknowledged' | 'poll_option';
   optionId?: string;
   respondedAt: string;
+  updatedAt: string;
 }
 
 export interface ReportRecord {
@@ -176,8 +180,21 @@ export async function loadLocalDb(): Promise<void> {
   if (raw) {
     memory = { ...structuredClone(empty), ...(JSON.parse(raw) as Partial<LocalDb>) };
     memory.posts ??= [];
-    memory.pollOptions ??= [];
-    memory.responses ??= [];
+    memory.pollOptions = (memory.pollOptions ?? []).map((o, i) => ({
+      id: o.id,
+      postId: o.postId,
+      label: o.label,
+      sortOrder: typeof o.sortOrder === 'number' ? o.sortOrder : i + 1,
+    }));
+    memory.responses = (memory.responses ?? []).map((r) => ({
+      postId: r.postId,
+      userId: r.userId,
+      responseType:
+        r.responseType ?? (r.optionId ? ('poll_option' as const) : ('acknowledged' as const)),
+      optionId: r.optionId,
+      respondedAt: r.respondedAt,
+      updatedAt: r.updatedAt ?? r.respondedAt,
+    }));
     memory.reports ??= [];
     memory.blocks ??= [];
     memory.notifications ??= [];
@@ -1019,7 +1036,22 @@ export async function listBlocks(blockerId: string): Promise<string[]> {
   return memory.blocks.filter((b) => b.blockerId === blockerId).map((b) => b.blockedId);
 }
 
-/** One active post per circle (mirrors partial unique index) */
+const POST_TITLE_MAX = 80;
+const POST_BODY_MAX = 300;
+const OPTION_MAX = 40;
+const MIN_ACTIVE_MS = 10 * 60 * 1000;
+const MAX_ACTIVE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export async function canCreateCirclePost(circleId: string, userId: string): Promise<boolean> {
+  await loadLocalDb();
+  const member = memory.members.find(
+    (m) => m.circleId === circleId && m.userId === userId && m.status === 'active',
+  );
+  if (!member) return false;
+  return member.role === 'admin' || member.role === 'pioneer' || member.isPioneer;
+}
+
+/** One active post per circle (mirrors partial unique index + create_circle_post RPC) */
 export async function createCirclePost(input: {
   circleId: string;
   createdBy: string;
@@ -1033,31 +1065,66 @@ export async function createCirclePost(input: {
   if (!(await isCircleMember(input.circleId, input.createdBy))) {
     throw new AppError('FORBIDDEN', 'Only members can post.');
   }
-  const member = memory.members.find(
-    (m) => m.circleId === input.circleId && m.userId === input.createdBy && m.status === 'active',
-  );
-  if (!member || (member.role !== 'admin' && !member.isPioneer)) {
+  if (!(await canCreateCirclePost(input.circleId, input.createdBy))) {
     throw new AppError('FORBIDDEN', 'Only admins can create notices or polls.');
   }
-  if (!input.title.trim()) {
-    throw new AppError('VALIDATION', 'Enter a title.');
+
+  const title = input.title.trim();
+  if (title.length < 1 || title.length > POST_TITLE_MAX) {
+    throw new AppError('VALIDATION', 'Title must be 1–80 characters.');
   }
-  if (new Date(input.closesAt).getTime() <= Date.now()) {
+  const body = input.body?.trim() ?? '';
+  if (body.length > POST_BODY_MAX) {
+    throw new AppError('VALIDATION', 'Body must be at most 300 characters.');
+  }
+
+  const closes = new Date(input.closesAt).getTime();
+  const t = Date.now();
+  if (!Number.isFinite(closes) || closes <= t) {
     throw new AppError('VALIDATION', 'Choose an end time in the future.');
   }
-  const active = memory.posts.find(
-    (p) =>
+  if (closes < t + MIN_ACTIVE_MS) {
+    throw new AppError('VALIDATION', 'Active period must be at least 10 minutes.');
+  }
+  if (closes > t + MAX_ACTIVE_MS) {
+    throw new AppError('VALIDATION', 'Active period cannot exceed 7 days.');
+  }
+
+  // Expire lingering active rows (mirror 013)
+  for (const p of memory.posts) {
+    if (
       p.circleId === input.circleId &&
       p.status === 'active' &&
-      new Date(p.closesAt).getTime() > Date.now(),
+      new Date(p.closesAt).getTime() <= t
+    ) {
+      p.status = 'closed';
+      p.closedAt = now();
+    }
+  }
+
+  const active = memory.posts.find(
+    (p) => p.circleId === input.circleId && p.status === 'active',
   );
   if (active) {
     throw new AppError('CONFLICT', 'This circle already has an active notice or poll.');
   }
-  if (input.type === 'poll') {
+
+  if (input.type === 'notice') {
+    if ((input.options ?? []).some((o) => o.trim())) {
+      throw new AppError('VALIDATION', 'Notices cannot have poll options.');
+    }
+  } else {
     const opts = (input.options ?? []).map((o) => o.trim()).filter(Boolean);
     if (opts.length < 2 || opts.length > 4) {
       throw new AppError('VALIDATION', 'Polls need 2–4 options.');
+    }
+    if (new Set(opts).size !== opts.length) {
+      throw new AppError('VALIDATION', 'Poll options must be unique.');
+    }
+    for (const label of opts) {
+      if (label.length < 1 || label.length > OPTION_MAX) {
+        throw new AppError('VALIDATION', 'Each option must be 1–40 characters.');
+      }
     }
   }
 
@@ -1065,8 +1132,8 @@ export async function createCirclePost(input: {
     id: uid(),
     circleId: input.circleId,
     type: input.type,
-    title: input.title.trim(),
-    body: input.body?.trim() ?? '',
+    title,
+    body,
     status: 'active',
     closesAt: input.closesAt,
     createdBy: input.createdBy,
@@ -1075,10 +1142,31 @@ export async function createCirclePost(input: {
   memory.posts.push(post);
 
   if (input.type === 'poll') {
+    let sort = 0;
     for (const label of input.options ?? []) {
       if (!label.trim()) continue;
-      memory.pollOptions.push({ id: uid(), postId: post.id, label: label.trim() });
+      sort += 1;
+      memory.pollOptions.push({
+        id: uid(),
+        postId: post.id,
+        label: label.trim(),
+        sortOrder: sort,
+      });
     }
+  }
+
+  // One-shot notify other members (no repeat nag)
+  for (const m of memory.members) {
+    if (m.circleId !== input.circleId || m.status !== 'active' || m.userId === input.createdBy) {
+      continue;
+    }
+    memory.notifications.push({
+      id: uid(),
+      userId: m.userId,
+      eventType: 'circle_post_created',
+      payload: { postId: post.id, circleId: input.circleId, postType: input.type },
+      createdAt: now(),
+    });
   }
 
   await persist();
@@ -1102,7 +1190,90 @@ export async function listPollOptions(postId: string): Promise<PollOptionRecord[
   return memory.pollOptions.filter((o) => o.postId === postId);
 }
 
-/** Persist response first; UI may turn orange only after success */
+function assertPostOpen(post: CirclePostRecord | undefined): asserts post is CirclePostRecord {
+  if (!post || post.status !== 'active' || new Date(post.closesAt).getTime() <= Date.now()) {
+    throw new AppError('CONFLICT', 'This notice or poll just ended.');
+  }
+}
+
+/** Mirror acknowledge_circle_notice — idempotent */
+export async function acknowledgeCircleNotice(input: {
+  postId: string;
+  userId: string;
+}): Promise<{ responded: true; postId: string }> {
+  await loadLocalDb();
+  const post = memory.posts.find((p) => p.id === input.postId);
+  assertPostOpen(post);
+  if (post.type !== 'notice') {
+    throw new AppError('VALIDATION', 'Not a notice.');
+  }
+  if (!(await isCircleMember(post.circleId, input.userId))) {
+    throw new AppError('FORBIDDEN', 'Only members can respond.');
+  }
+
+  const existing = memory.responses.find(
+    (r) => r.postId === input.postId && r.userId === input.userId,
+  );
+  if (existing) {
+    existing.updatedAt = now();
+    existing.responseType = 'acknowledged';
+    existing.optionId = undefined;
+    await persist();
+    return { responded: true, postId: input.postId };
+  }
+
+  memory.responses.push({
+    postId: input.postId,
+    userId: input.userId,
+    responseType: 'acknowledged',
+    respondedAt: now(),
+    updatedAt: now(),
+  });
+  await persist();
+  return { responded: true, postId: input.postId };
+}
+
+/** Mirror respond_circle_poll — changeable before close */
+export async function respondCirclePoll(input: {
+  postId: string;
+  userId: string;
+  optionId: string;
+}): Promise<{ responded: true; postId: string; optionId: string }> {
+  await loadLocalDb();
+  const post = memory.posts.find((p) => p.id === input.postId);
+  assertPostOpen(post);
+  if (post.type !== 'poll') {
+    throw new AppError('VALIDATION', 'Not a poll.');
+  }
+  if (!(await isCircleMember(post.circleId, input.userId))) {
+    throw new AppError('FORBIDDEN', 'Only members can respond.');
+  }
+  if (!memory.pollOptions.some((o) => o.id === input.optionId && o.postId === post.id)) {
+    throw new AppError('VALIDATION', 'Invalid option.');
+  }
+
+  const existing = memory.responses.find(
+    (r) => r.postId === input.postId && r.userId === input.userId,
+  );
+  if (existing) {
+    existing.optionId = input.optionId;
+    existing.responseType = 'poll_option';
+    existing.updatedAt = now();
+  } else {
+    memory.responses.push({
+      postId: input.postId,
+      userId: input.userId,
+      responseType: 'poll_option',
+      optionId: input.optionId,
+      respondedAt: now(),
+      updatedAt: now(),
+    });
+  }
+  await persist();
+  return { responded: true, postId: input.postId, optionId: input.optionId };
+}
+
+/** @deprecated Prefer acknowledgeCircleNotice / respondCirclePoll */
 export async function respondToPost(input: {
   postId: string;
   userId: string;
@@ -1110,33 +1281,21 @@ export async function respondToPost(input: {
 }): Promise<ResponseRecord> {
   await loadLocalDb();
   const post = memory.posts.find((p) => p.id === input.postId);
-  if (!post || post.status !== 'active' || new Date(post.closesAt).getTime() <= Date.now()) {
-    throw new AppError('CONFLICT', 'This notice or poll is closed.');
+  assertPostOpen(post);
+  if (post.type === 'notice') {
+    await acknowledgeCircleNotice({ postId: input.postId, userId: input.userId });
+  } else {
+    if (!input.optionId) throw new AppError('VALIDATION', 'Pick an option.');
+    await respondCirclePoll({
+      postId: input.postId,
+      userId: input.userId,
+      optionId: input.optionId,
+    });
   }
-  if (!(await isCircleMember(post.circleId, input.userId))) {
-    throw new AppError('FORBIDDEN', 'Only members can respond.');
-  }
-  if (post.type === 'poll') {
-    if (!input.optionId) {
-      throw new AppError('VALIDATION', 'Pick an option.');
-    }
-    if (!memory.pollOptions.some((o) => o.id === input.optionId && o.postId === post.id)) {
-      throw new AppError('VALIDATION', 'Invalid option.');
-    }
-  }
-
-  memory.responses = memory.responses.filter(
-    (r) => !(r.postId === input.postId && r.userId === input.userId),
-  );
-  const response: ResponseRecord = {
-    postId: input.postId,
-    userId: input.userId,
-    optionId: input.optionId,
-    respondedAt: now(),
-  };
-  memory.responses.push(response);
-  await persist();
-  return response;
+  const row = memory.responses.find(
+    (r) => r.postId === input.postId && r.userId === input.userId,
+  )!;
+  return row;
 }
 
 export async function hasResponded(postId: string, userId: string): Promise<boolean> {
@@ -1144,29 +1303,103 @@ export async function hasResponded(postId: string, userId: string): Promise<bool
   return memory.responses.some((r) => r.postId === postId && r.userId === userId);
 }
 
+/**
+ * Demo-only helper. Do not use for client badge UI — response user lists must not leak.
+ * Prefer Presence responded + current post id.
+ */
 export async function listRespondedUserIds(postId: string): Promise<string[]> {
   await loadLocalDb();
   return memory.responses.filter((r) => r.postId === postId).map((r) => r.userId);
 }
 
-/** Aggregates only — never returns who picked what */
-export async function getPollSummary(
+/** Mirror get_circle_post_summary — aggregates only; poll counts after respond */
+export async function getCirclePostSummary(
   postId: string,
   viewerId: string,
-): Promise<{ totalResponded: number; options: { id: string; label: string; count: number }[] }> {
+): Promise<{
+  postId: string;
+  postType: 'notice' | 'poll';
+  status: string;
+  isActive: boolean;
+  totalResponded: number | null;
+  currentUserResponded: boolean;
+  currentUserOptionId: string | null;
+  options: { id: string; label: string; count: number | null; sortOrder: number }[];
+}> {
   await loadLocalDb();
   const post = memory.posts.find((p) => p.id === postId);
-  if (!post) throw new AppError('NOT_FOUND', 'Poll not found.');
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found.');
   if (!(await isCircleMember(post.circleId, viewerId))) {
     throw new AppError('FORBIDDEN', 'Only members can view results.');
   }
-  const options = memory.pollOptions.filter((o) => o.postId === postId);
+
+  const isActive = post.status === 'active' && new Date(post.closesAt).getTime() > Date.now();
+  const mine = memory.responses.find((r) => r.postId === postId && r.userId === viewerId);
+  const total = memory.responses.filter((r) => r.postId === postId).length;
+  const options = memory.pollOptions
+    .filter((o) => o.postId === postId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  if (post.type === 'notice') {
+    return {
+      postId,
+      postType: 'notice',
+      status: post.status,
+      isActive,
+      totalResponded: total,
+      currentUserResponded: Boolean(mine),
+      currentUserOptionId: null,
+      options: [],
+    };
+  }
+
+  if (!mine && isActive) {
+    return {
+      postId,
+      postType: 'poll',
+      status: post.status,
+      isActive,
+      totalResponded: null,
+      currentUserResponded: false,
+      currentUserOptionId: null,
+      options: options.map((o) => ({
+        id: o.id,
+        label: o.label,
+        count: null,
+        sortOrder: o.sortOrder,
+      })),
+    };
+  }
+
   return {
-    totalResponded: memory.responses.filter((r) => r.postId === postId).length,
+    postId,
+    postType: 'poll',
+    status: post.status,
+    isActive,
+    totalResponded: total,
+    currentUserResponded: Boolean(mine),
+    currentUserOptionId: mine?.optionId ?? null,
     options: options.map((o) => ({
       id: o.id,
       label: o.label,
       count: memory.responses.filter((r) => r.optionId === o.id).length,
+      sortOrder: o.sortOrder,
+    })),
+  };
+}
+
+/** @deprecated Prefer getCirclePostSummary */
+export async function getPollSummary(
+  postId: string,
+  viewerId: string,
+): Promise<{ totalResponded: number; options: { id: string; label: string; count: number }[] }> {
+  const summary = await getCirclePostSummary(postId, viewerId);
+  return {
+    totalResponded: summary.totalResponded ?? 0,
+    options: summary.options.map((o) => ({
+      id: o.id,
+      label: o.label,
+      count: o.count ?? 0,
     })),
   };
 }
@@ -1178,10 +1411,19 @@ export async function closePost(postId: string, actorId: string): Promise<void> 
   const member = memory.members.find(
     (m) => m.circleId === post.circleId && m.userId === actorId && m.status === 'active',
   );
-  if (!member || (member.role !== 'admin' && !member.isPioneer)) {
-    throw new AppError('FORBIDDEN', 'Only admins can close this.');
+  if (!member) throw new AppError('FORBIDDEN', 'Only members can close this.');
+  const allowed =
+    post.createdBy === actorId ||
+    member.role === 'admin' ||
+    member.role === 'pioneer' ||
+    member.isPioneer;
+  if (!allowed) {
+    throw new AppError('FORBIDDEN', 'Only the author or admins can close this.');
   }
-  post.status = 'closed';
+  if (post.status === 'active') {
+    post.status = 'closed';
+    post.closedAt = now();
+  }
   await persist();
 }
 

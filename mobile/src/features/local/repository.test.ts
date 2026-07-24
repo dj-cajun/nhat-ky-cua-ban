@@ -23,7 +23,7 @@ import {
   DEMO_JOIN_IDS,
   ensureDemoJoinApplicant,
   getJoinProgress,
-  getPollSummary,
+  getCirclePostSummary,
   hasResponded,
   isBlockedBetween,
   isCircleMember,
@@ -31,6 +31,7 @@ import {
   listPollOptions,
   openCircleFromDraft,
   proposeCircleDraft,
+  respondCirclePoll,
   respondDraftInvite,
   respondToPost,
   blockUser,
@@ -271,7 +272,7 @@ describe('notices and polls', () => {
 
   it('allows only one active post per circle', async () => {
     const { me, circle } = await openDemoCircle();
-    const closesAt = new Date(Date.now() + 60_000).toISOString();
+    const closesAt = new Date(Date.now() + 11 * 60_000).toISOString();
     await createCirclePost({
       circleId: circle.id,
       createdBy: me.id,
@@ -291,9 +292,9 @@ describe('notices and polls', () => {
     ).rejects.toThrow(/already has an active/);
   });
 
-  it('returns poll totals without revealing who voted what', async () => {
+  it('hides poll counts until the viewer responds, then hides voter ids', async () => {
     const { me, circle } = await openDemoCircle();
-    const closesAt = new Date(Date.now() + 60_000).toISOString();
+    const closesAt = new Date(Date.now() + 11 * 60_000).toISOString();
     const post = await createCirclePost({
       circleId: circle.id,
       createdBy: me.id,
@@ -303,11 +304,21 @@ describe('notices and polls', () => {
       options: ['Yes', 'No'],
     });
     const options = await listPollOptions(post.id);
+
+    const before = await getCirclePostSummary(post.id, me.id);
+    expect(before.currentUserResponded).toBe(false);
+    expect(before.totalResponded).toBeNull();
+    expect(before.options.every((o) => o.count === null)).toBe(true);
+
     await respondToPost({ postId: post.id, userId: me.id, optionId: options[0].id });
     expect(await hasResponded(post.id, me.id)).toBe(true);
 
-    const summary = await getPollSummary(post.id, me.id);
+    // Change vote before close
+    await respondCirclePoll({ postId: post.id, userId: me.id, optionId: options[1].id });
+
+    const summary = await getCirclePostSummary(post.id, me.id);
     expect(summary.totalResponded).toBe(1);
+    expect(summary.currentUserOptionId).toBe(options[1].id);
     expect(summary.options.map((o) => o.count).sort()).toEqual([0, 1]);
     expect(JSON.stringify(summary)).not.toContain(me.id);
   });

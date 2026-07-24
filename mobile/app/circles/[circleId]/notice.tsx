@@ -1,5 +1,5 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -10,93 +10,88 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  closeCirclePost,
   createCirclePost,
-  getActivePost,
-  getPollSummary,
-  getSessionProfile,
-  hasResponded,
-  isCircleMember,
-  listPollOptions,
-  respondToPost,
-  type CirclePostRecord,
-} from '@/features/local/repository';
+} from '@/features/circle-posts/circle-post.service';
+import { defaultClosesAt } from '@/features/circle-posts/circle-post.validation';
+import { useActiveCirclePost } from '@/features/circle-posts/use-active-circle-post';
+import { useCirclePostResponse } from '@/features/circle-posts/use-circle-post-response';
+import { getSessionProfile, isCircleMember } from '@/features/local/repository';
+import { circlePresenceService } from '@/features/presence/circle-presence.service';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
-import { usePresenceStore } from '@/stores/presence';
 import { colors } from '@/constants/theme';
 import { en } from '@/i18n/en';
+import type { CirclePostSummary } from '@/features/circle-posts/circle-post.types';
 
 export default function NoticeScreen() {
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [userId, setUserId] = useState<string | null>(null);
-  const [post, setPost] = useState<CirclePostRecord | null>(null);
-  const [options, setOptions] = useState<{ id: string; label: string }[]>([]);
-  const [summary, setSummary] = useState<{
-    totalResponded: number;
-    options: { id: string; label: string; count: number }[];
-  } | null>(null);
-  const [done, setDone] = useState(false);
   const [mode, setMode] = useState<'view' | 'notice' | 'poll'>('view');
   const [title, setTitle] = useState('');
   const [opt1, setOpt1] = useState('');
   const [opt2, setOpt2] = useState('');
   const [opt3, setOpt3] = useState('');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [error, setError] = useState('');
-  const markResponded = usePresenceStore((s) => s.markResponded);
-  const enter = usePresenceStore((s) => s.enter);
+  const [createError, setCreateError] = useState('');
 
-  const reload = useCallback(async () => {
-    const me = await getSessionProfile();
-    if (!me || !circleId) {
-      router.replace('/(auth)/sign-in');
-      return;
-    }
-    if (!(await isCircleMember(circleId, me.id))) {
-      router.replace('/(tabs)/universe');
-      return;
-    }
-    setUserId(me.id);
-    const active = await getActivePost(circleId);
-    setPost(active);
-    enter(circleId, me.id, active?.id ?? null);
-    if (active) {
-      const responded = await hasResponded(active.id, me.id);
-      setDone(responded);
-      if (responded) {
-        markResponded(circleId, me.id, active.id);
-      }
-      if (active.type === 'poll') {
-        setOptions(await listPollOptions(active.id));
-        setSummary(await getPollSummary(active.id, me.id));
-      } else {
-        setOptions([]);
-        setSummary(null);
-      }
-    } else {
-      setDone(false);
-      setOptions([]);
-      setSummary(null);
-    }
-  }, [circleId, enter, markResponded]);
+  const { post, options, summary, canCreate, reload } = useActiveCirclePost(circleId, userId);
+  const [liveSummary, setLiveSummary] = useState<CirclePostSummary | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
+    setLiveSummary(summary);
+    setSelectedOption(summary?.currentUserOptionId ?? null);
+  }, [summary]);
+
+  const { acknowledge, vote, error, pending } = useCirclePostResponse({
+    userId,
+    post,
+    onSummary: (s) => {
+      setLiveSummary(s);
       void reload();
-    }, [reload]),
-  );
+    },
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const me = await getSessionProfile();
+      if (!me || !circleId) {
+        router.replace('/(auth)/sign-in');
+        return;
+      }
+      if (!(await isCircleMember(circleId, me.id))) {
+        router.replace('/(tabs)/universe');
+        return;
+      }
+      if (!cancelled) setUserId(me.id);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [circleId]);
+
+  useEffect(() => {
+    if (!userId || !circleId) return;
+    void circlePresenceService.join({
+      circleId,
+      userId,
+      isMember: true,
+      activePostId: post?.id ?? null,
+      state: liveSummary?.currentUserResponded && post?.id ? 'responded' : 'present',
+    });
+  }, [userId, circleId, post?.id, liveSummary?.currentUserResponded]);
 
   const create = async (type: 'notice' | 'poll') => {
     if (!userId || !circleId) return;
-    setError('');
+    setCreateError('');
     try {
-      const closesAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       const created = await createCirclePost({
         circleId,
         createdBy: userId,
         type,
         title,
-        closesAt,
+        closesAt: defaultClosesAt(),
         options: type === 'poll' ? [opt1, opt2, opt3].filter(Boolean) : undefined,
       });
       track('notice_created', { type, market: 'US' });
@@ -105,30 +100,31 @@ export default function NoticeScreen() {
       setOpt1('');
       setOpt2('');
       setOpt3('');
-      enter(circleId, userId, created.id);
+      await circlePresenceService.trackPresent(created.id);
       await reload();
     } catch (e) {
-      setError(toAppError(e).message);
+      setCreateError(toAppError(e).message);
     }
   };
 
-  const respond = async () => {
+  const close = async () => {
     if (!userId || !post) return;
-    setError('');
+    setCreateError('');
     try {
-      // DB first, then orange presence
-      await respondToPost({
-        postId: post.id,
-        userId,
-        optionId: post.type === 'poll' ? selectedOption ?? undefined : undefined,
-      });
-      markResponded(post.circleId, userId, post.id);
-      track('notice_responded', { type: post.type, market: 'US' });
+      await closeCirclePost(post.id, userId);
+      await circlePresenceService.trackPresent(null);
       await reload();
     } catch (e) {
-      setError(toAppError(e).message);
+      setCreateError(toAppError(e).message);
     }
   };
+
+  const done = Boolean(liveSummary?.currentUserResponded);
+  const showPollCounts =
+    post?.type === 'poll' &&
+    liveSummary &&
+    (done || liveSummary.isActive === false) &&
+    liveSummary.totalResponded != null;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -145,55 +141,80 @@ export default function NoticeScreen() {
             <Text style={styles.postTitle}>{post.title}</Text>
             {post.body ? <Text style={styles.body}>{post.body}</Text> : null}
 
-            {post.type === 'poll' && !done ? (
-              <View style={{ marginTop: 12, gap: 8 }}>
-                {options.map((o) => (
+            {post.type === 'notice' ? (
+              <>
+                {!done ? (
                   <Pressable
-                    key={o.id}
-                    onPress={() => setSelectedOption(o.id)}
-                    style={[styles.option, selectedOption === o.id && styles.optionOn]}
+                    style={styles.btn}
+                    onPress={() => void acknowledge()}
+                    disabled={pending}
                   >
-                    <Text style={{ color: selectedOption === o.id ? '#fff' : colors.ink }}>
-                      {o.label}
-                    </Text>
+                    <Text style={styles.btnText}>{en.circle.acknowledge}</Text>
                   </Pressable>
-                ))}
-              </View>
-            ) : null}
-
-            {post.type === 'poll' && summary ? (
-              <View style={{ marginTop: 14 }}>
-                <Text style={styles.label}>{en.circle.results}</Text>
-                <Text style={styles.meta}>{en.circle.totalResponded(summary.totalResponded)}</Text>
-                {summary.options.map((o) => (
-                  <Text key={o.id} style={styles.body}>
-                    {o.label}: {o.count}
+                ) : (
+                  <Text style={styles.done}>{en.circle.acknowledged}</Text>
+                )}
+                {liveSummary?.totalResponded != null ? (
+                  <Text style={styles.meta}>
+                    {en.circle.totalResponded(liveSummary.totalResponded)}
                   </Text>
-                ))}
-              </View>
-            ) : null}
-
-            {!done ? (
-              <Pressable
-                style={styles.btn}
-                onPress={() => void respond()}
-                disabled={post.type === 'poll' && !selectedOption}
-              >
-                <Text style={styles.btnText}>
-                  {post.type === 'notice' ? en.circle.acknowledge : en.circle.vote}
-                </Text>
-              </Pressable>
+                ) : null}
+              </>
             ) : (
-              <Text style={styles.done}>
-                {post.type === 'notice' ? en.circle.acknowledged : en.circle.voted}
-              </Text>
+              <>
+                <View style={{ marginTop: 12, gap: 8 }}>
+                  {options.map((o) => (
+                    <Pressable
+                      key={o.id}
+                      onPress={() => {
+                        setSelectedOption(o.id);
+                        void vote(o.id);
+                      }}
+                      disabled={pending}
+                      style={[
+                        styles.option,
+                        (selectedOption === o.id ||
+                          liveSummary?.currentUserOptionId === o.id) &&
+                          styles.optionOn,
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            selectedOption === o.id ||
+                            liveSummary?.currentUserOptionId === o.id
+                              ? '#fff'
+                              : colors.ink,
+                        }}
+                      >
+                        {o.label}
+                        {showPollCounts && o.id
+                          ? ` · ${liveSummary?.options.find((x) => x.id === o.id)?.count ?? 0}`
+                          : ''}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {done ? <Text style={styles.done}>{en.circle.voted}</Text> : null}
+                {showPollCounts ? (
+                  <Text style={styles.meta}>
+                    {en.circle.totalResponded(liveSummary!.totalResponded!)}
+                  </Text>
+                ) : null}
+              </>
             )}
+
+            {canCreate ? (
+              <Pressable style={styles.secondary} onPress={() => void close()}>
+                <Text>{en.circle.closePost}</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <Text style={styles.empty}>{en.circle.noActive}</Text>
         )}
 
-        {mode === 'view' && !post ? (
+        {mode === 'view' && !post && canCreate ? (
           <View style={{ marginTop: 16, gap: 8 }}>
             <Pressable style={styles.secondary} onPress={() => setMode('notice')}>
               <Text>{en.circle.noticeCreate}</Text>
@@ -250,7 +271,9 @@ export default function NoticeScreen() {
           </View>
         )}
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error || createError ? (
+          <Text style={styles.error}>{error || createError}</Text>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -273,7 +296,7 @@ const styles = StyleSheet.create({
   postTitle: { fontSize: 18, fontWeight: '600', color: colors.ink },
   body: { marginTop: 6, color: colors.ink, lineHeight: 20 },
   label: { fontSize: 11, color: colors.accent, marginBottom: 6 },
-  meta: { color: colors.soft, marginBottom: 6 },
+  meta: { color: colors.soft, marginTop: 10, marginBottom: 6 },
   option: {
     borderWidth: 1,
     borderColor: colors.line,
@@ -292,6 +315,7 @@ const styles = StyleSheet.create({
   done: { marginTop: 14, color: colors.orange, fontSize: 13 },
   empty: { color: colors.soft, marginTop: 8 },
   secondary: {
+    marginTop: 12,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.card,

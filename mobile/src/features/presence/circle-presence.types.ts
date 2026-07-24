@@ -1,9 +1,13 @@
-/** Phase 5 — circle Presence types (minimal payload) */
+/** Phase 5–6 — circle Presence types */
+
+export type CirclePresenceState = 'present' | 'responded';
 
 export type CirclePresencePayload = {
   userId: string;
   circleId: string;
-  state: 'present';
+  /** Current active post this session claims; null when quiet */
+  activePostId: string | null;
+  state: CirclePresenceState;
   sessionId: string;
 };
 
@@ -12,6 +16,9 @@ export type CirclePresenceMap = Record<
   {
     userId: string;
     sessionCount: number;
+    /** Aggregated: responded wins over present when any session matches */
+    state: CirclePresenceState;
+    activePostId: string | null;
   }
 >;
 

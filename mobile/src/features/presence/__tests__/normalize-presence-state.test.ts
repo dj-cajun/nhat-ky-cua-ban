@@ -26,9 +26,27 @@ describe('circle topic', () => {
 describe('normalizePresenceState', () => {
   it('counts multiple sessions for one user as one present badge', () => {
     const sessions: CirclePresencePayload[] = [
-      { userId: 'a', circleId: 'c', state: 'present', sessionId: '1' },
-      { userId: 'a', circleId: 'c', state: 'present', sessionId: '2' },
-      { userId: 'b', circleId: 'c', state: 'present', sessionId: '3' },
+      {
+        userId: 'a',
+        circleId: 'c',
+        activePostId: null,
+        state: 'present',
+        sessionId: '1',
+      },
+      {
+        userId: 'a',
+        circleId: 'c',
+        activePostId: null,
+        state: 'present',
+        sessionId: '2',
+      },
+      {
+        userId: 'b',
+        circleId: 'c',
+        activePostId: null,
+        state: 'present',
+        sessionId: '3',
+      },
     ];
     const map = normalizePresenceState(sessions);
     expect(map.a.sessionCount).toBe(2);
@@ -37,30 +55,48 @@ describe('normalizePresenceState', () => {
     expect(isPresentInMap(map, 'z')).toBe(false);
   });
 
-  it('ignores non-present states in phase 5', () => {
+  it('any responded session wins for multi-device (orange priority)', () => {
     const map = normalizePresenceState([
       {
         userId: 'a',
         circleId: 'c',
+        activePostId: 'post-1',
         state: 'present',
-        sessionId: '1',
+        sessionId: 'phone',
       },
       {
-        userId: 'b',
+        userId: 'a',
         circleId: 'c',
-        // @ts-expect-error phase 6 only
+        activePostId: 'post-1',
         state: 'responded',
-        sessionId: '2',
+        sessionId: 'tablet',
       },
     ]);
-    expect(map.a).toBeTruthy();
-    expect(map.b).toBeUndefined();
+    expect(map.a.state).toBe('responded');
+    expect(map.a.activePostId).toBe('post-1');
+    expect(map.a.sessionCount).toBe(2);
   });
 
   it('normalizes Realtime presenceState shape', () => {
     const raw = {
-      'sess-1': [{ userId: 'u1', circleId: 'c', state: 'present' as const, sessionId: 'sess-1' }],
-      'sess-2': [{ userId: 'u1', circleId: 'c', state: 'present' as const, sessionId: 'sess-2' }],
+      'sess-1': [
+        {
+          userId: 'u1',
+          circleId: 'c',
+          activePostId: null,
+          state: 'present' as const,
+          sessionId: 'sess-1',
+        },
+      ],
+      'sess-2': [
+        {
+          userId: 'u1',
+          circleId: 'c',
+          activePostId: null,
+          state: 'present' as const,
+          sessionId: 'sess-2',
+        },
+      ],
     };
     const map = normalizePresenceState(raw);
     expect(map.u1.sessionCount).toBe(2);

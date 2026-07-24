@@ -7,9 +7,9 @@ import {
   getCircle,
   getProfile,
   getSessionProfile,
+  hasResponded,
   isCircleMember,
   listCircleMembers,
-  listRespondedUserIds,
 } from '@/features/local/repository';
 import { useCirclePresence } from '@/features/presence/use-circle-presence';
 import type { Circle, Profile } from '@/types/domain';
@@ -26,12 +26,14 @@ export default function CircleHomeScreen() {
   const [forbidden, setForbidden] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [activePostId, setActivePostId] = useState<string | null>(null);
-  const [respondedIds, setRespondedIds] = useState<Set<string>>(new Set());
+  const [selfResponded, setSelfResponded] = useState(false);
 
-  const { isPresent, connection } = useCirclePresence({
+  const { badgeFor, connection } = useCirclePresence({
     circleId,
     userId: meId,
     isMember: isMember && !forbidden,
+    activePostId,
+    selfResponded,
   });
 
   const reload = useCallback(async () => {
@@ -62,9 +64,9 @@ export default function CircleHomeScreen() {
     const active = await getActivePost(circleId);
     setActivePostId(active?.id ?? null);
     if (active) {
-      setRespondedIds(new Set(await listRespondedUserIds(active.id)));
+      setSelfResponded(await hasResponded(active.id, me.id));
     } else {
-      setRespondedIds(new Set());
+      setSelfResponded(false);
     }
   }, [circleId]);
 
@@ -110,9 +112,8 @@ export default function CircleHomeScreen() {
       <Text style={styles.section}>{en.circle.members}</Text>
       <View style={styles.grid}>
         {members.map((m) => {
-          // Phase 5: green = in this circle space (Presence). Orange from DB responses until phase 6.
-          const orange = Boolean(activePostId && respondedIds.has(m.userId));
-          const green = !orange && isPresent(m.userId);
+          // Presence + current-post responded (from Presence payload after DB). No presence → no badge.
+          const badge = badgeFor(m.userId);
           return (
             <Pressable
               key={m.userId}
@@ -129,14 +130,18 @@ export default function CircleHomeScreen() {
               <View
                 style={[
                   styles.statusDot,
-                  orange
+                  badge === 'orange'
                     ? { backgroundColor: colors.orange }
-                    : green
+                    : badge === 'green'
                       ? { backgroundColor: colors.green }
                       : { backgroundColor: 'transparent' },
                 ]}
                 accessibilityLabel={
-                  orange ? en.circle.respondedBadge : green ? en.circle.present : undefined
+                  badge === 'orange'
+                    ? en.circle.respondedBadge
+                    : badge === 'green'
+                      ? en.circle.present
+                      : undefined
                 }
               />
             </Pressable>
