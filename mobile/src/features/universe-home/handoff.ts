@@ -23,10 +23,15 @@ export const INTRO_HANDOFF = {
     /** Diameter as fraction of **video** width (not necessarily viewport width) */
     diameterRatio: 0.42,
     /**
+     * Live 2D/3D hard disc reads larger than the soft video orb.
+     * Scale cover-matched diameter by this before drawing the live sphere.
+     */
+    liveOpticalScale: 0.88,
+    /**
      * Settled home diameter as fraction of **viewport** width.
      * Smaller than the cover-matched intro orb → shrink effect after handoff.
      */
-    homeDiameterRatio: 0.34,
+    homeDiameterRatio: 0.26,
     color: '#F0C36A',
     glow: '#FFE6A8',
     core: '#FFF6D6',

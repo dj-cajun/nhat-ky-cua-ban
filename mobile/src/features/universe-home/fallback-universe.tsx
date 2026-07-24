@@ -12,10 +12,10 @@ import { useEffect, useMemo } from 'react';
 import { Pressable, Text, useWindowDimensions } from 'react-native';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { INTRO_HANDOFF } from './handoff';
-import { resolveHandoffLayout, resolveSettleScale } from './handoff-layout';
+import { resolveLiveHandoffLayout, resolveSettleScale } from './handoff-layout';
 
 /**
- * Web / GL-fail universe: crossfade at intro size, then shrink to home size.
+ * Web / GL-fail universe: crossfade at optically matched intro size, then shrink.
  */
 export function FallbackUniverse({
   profile,
@@ -36,7 +36,7 @@ export function FallbackUniverse({
   animateSettle?: boolean;
 }) {
   const { width, height } = useWindowDimensions();
-  const layout = resolveHandoffLayout(width, height);
+  const layout = resolveLiveHandoffLayout(width, height);
   const { diameter, left, top, cxPx, cyPx } = layout;
   const settleScale = resolveSettleScale(width, height);
 
@@ -112,7 +112,9 @@ export function FallbackUniverse({
     });
   }, [circles, width, cxPx, cyPx]);
 
-  const hit = diameter * 1.35;
+  // Keep glow tight so perceived size tracks the hard disc (not a bigger halo).
+  const glowPad = 0.12;
+  const hit = diameter * (1 + glowPad * 2);
 
   return (
     <View style={[styles.root, { width, height, backgroundColor: INTRO_HANDOFF.spaceBg }]}>
@@ -122,8 +124,8 @@ export function FallbackUniverse({
         style={[
           styles.sphereWrap,
           {
-            left: left - diameter * 0.175,
-            top: top - diameter * 0.175,
+            left: left - diameter * glowPad,
+            top: top - diameter * glowPad,
             width: hit,
             height: hit,
           },
@@ -261,7 +263,7 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: 'absolute',
-    opacity: 0.35,
+    opacity: 0.22,
   },
   sphere: {
     alignItems: 'center',

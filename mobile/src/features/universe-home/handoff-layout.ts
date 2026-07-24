@@ -19,19 +19,32 @@ export type HandoffLayout = {
   cy: number;
 };
 
+type LayoutOpts = {
+  /**
+   * Extra scale on diameter (center unchanged).
+   * Use `liveOpticalScale` for hard 2D/3D discs vs soft video limb.
+   */
+  opticalScale?: number;
+};
+
 /**
  * Pixel layout of the handoff sphere for the current viewport.
  *
- * Matches a 9:16 intro video drawn with `object-fit: cover`, so the live
- * 2D/3D sphere lands on the same pixels as the video’s final frame.
+ * Matches a 9:16 intro video drawn with `object-fit: cover`.
+ * Pass `opticalScale` for the live 2D/3D disc (video itself stays unscaled).
  */
-export function resolveHandoffLayout(width: number, height: number): HandoffLayout {
+export function resolveHandoffLayout(
+  width: number,
+  height: number,
+  opts?: LayoutOpts,
+): HandoffLayout {
   const w = Math.max(width, 1);
   const h = Math.max(height, 1);
   const viewAspect = w / h;
   const videoAspect = INTRO_VIDEO_ASPECT;
   const design = INTRO_HANDOFF.sphere.diameterRatio;
   const designCy = INTRO_HANDOFF.sphere.cy;
+  const optical = opts?.opticalScale ?? 1;
 
   let diameterRatio: number;
   let cy: number;
@@ -45,6 +58,8 @@ export function resolveHandoffLayout(width: number, height: number): HandoffLayo
     diameterRatio = design;
     cy = 0.5 + (designCy - 0.5) * (viewAspect / videoAspect);
   }
+
+  diameterRatio *= optical;
 
   const diameter = diameterRatio * w;
   const cxPx = INTRO_HANDOFF.sphere.cx * w;
@@ -63,12 +78,19 @@ export function resolveHandoffLayout(width: number, height: number): HandoffLayo
   };
 }
 
+/** Live 2D/3D layout — cover match with optical shrink vs soft video orb. */
+export function resolveLiveHandoffLayout(width: number, height: number): HandoffLayout {
+  return resolveHandoffLayout(width, height, {
+    opticalScale: INTRO_HANDOFF.sphere.liveOpticalScale,
+  });
+}
+
 /**
- * Scale factor from cover-matched intro diameter → settled home diameter.
+ * Scale factor from live intro diameter → settled home diameter.
  * Always ≤ 1 (shrink). Same center — apply as a uniform scale.
  */
 export function resolveSettleScale(width: number, height: number): number {
-  const intro = resolveHandoffLayout(width, height);
+  const intro = resolveLiveHandoffLayout(width, height);
   const homeDiameter = INTRO_HANDOFF.sphere.homeDiameterRatio * Math.max(width, 1);
   if (intro.diameter <= 0) return 1;
   return Math.min(1, homeDiameter / intro.diameter);
@@ -102,14 +124,14 @@ export function resolveSphere3D(opts: {
   return { radius, y };
 }
 
-/** Intro (cover-matched) world radius + Y. */
+/** Live intro (cover + optical) world radius + Y. */
 export function resolveHandoffSphere3D(opts: {
   viewportWidth: number;
   viewportHeight: number;
   cameraZ: number;
   fovDeg: number;
 }): { radius: number; y: number } {
-  const layout = resolveHandoffLayout(opts.viewportWidth, opts.viewportHeight);
+  const layout = resolveLiveHandoffLayout(opts.viewportWidth, opts.viewportHeight);
   return resolveSphere3D({
     ...opts,
     diameterRatio: layout.diameterRatio,

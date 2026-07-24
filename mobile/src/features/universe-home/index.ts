@@ -2,6 +2,7 @@ export { INTRO_HANDOFF, type IntroMode } from './handoff';
 export {
   INTRO_VIDEO_ASPECT,
   resolveHandoffLayout,
+  resolveLiveHandoffLayout,
   resolveHandoffSphere3D,
   resolveSettleScale,
   type HandoffLayout,
