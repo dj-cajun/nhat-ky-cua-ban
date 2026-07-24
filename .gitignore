@@ -35,3 +35,6 @@ test-results/
 next-env.d.ts
 .vercel
 .env*
+.expo/
+mobile/.expo/
+
