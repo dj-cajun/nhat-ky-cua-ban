@@ -10,11 +10,13 @@
 
 | 범주 | 내용 |
 |------|------|
-| 문서 | Zalo/학급 PRD·TRD·flows 등 → `docs/archive/zalo-demo/` |
+| 문서 | Zalo/학급 PRD·TRD·flows 등 (이후 **저장소에서 완전 삭제**) |
 | 웹 레거시 | 학교/Zalo 페이지·컴포넌트·lib·fixture·vi i18n |
 | 테스트 | class-founding / dotori / vote / zalo profile 등 낡은 unit |
 | asset | `public/photo-album-default.svg` (시드 전용) |
 | 패키지 | `zmp-sdk` · `zmp-ui` · `zmp-vite-plugin` · root `@supabase/supabase-js` · mobile `react-hook-form` / `@hookform/resolvers` |
+| Edge | `zalo-auth` 함수 삭제 |
+| 빌드 잔재 | `www/` (Zalo 미니앱 산출물, gitignore) |
 
 ## 유지
 
@@ -22,7 +24,7 @@
 - Expo **mobile** 제품 경로
 - `docs/your-diary/` 현행 지침
 - `tests/security/*` · `v1-store` · Playwright e2e
-- Supabase migrations `007~018` · Edge Functions (incl. legacy `zalo-auth` unused by product path)
+- Supabase migrations `007~018` · 제품 Edge Functions (`zalo-auth` 제외·삭제)
 
 ## 통합/정리
 

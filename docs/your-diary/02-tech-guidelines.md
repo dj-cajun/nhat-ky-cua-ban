@@ -18,10 +18,8 @@
 ```text
 mobile/          US 제품 UI
 supabase/        migrations 007+ · Edge Functions
-src/             legacy / v1 웹 프로토타입 (도메인 검증)
-docs/your-diary/ 현행 기획·지침 (이 폴더)
-docs/your-diary/ 현행 기획
-docs/archive/     구 Zalo 기획 (보관)
+src/             v1 웹 프로토타입 (도메인 검증)
+docs/your-diary/ 현행 기획·지침 (이 폴더만)
 ```
 
 ---

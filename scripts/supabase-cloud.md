@@ -28,4 +28,4 @@ supabase functions deploy search-spotify-tracks resolve-spotify-track set-diary-
 supabase functions deploy provision-profile publish-circle-response-event send-notification moderation-admin
 ```
 
-`zalo-auth` remains in the repo as a legacy function but is not part of the US circle product path.
+Do not deploy legacy `zalo-auth` — it was removed from this repository.
