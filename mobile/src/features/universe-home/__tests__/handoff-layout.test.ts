@@ -83,7 +83,7 @@ describe('resolveSettleScale', () => {
       (INTRO_HANDOFF.sphere.homeDiameterRatio * w) / intro.diameter,
       5,
     );
-    expect(INTRO_HANDOFF.sphere.homeDiameterRatio).toBeLessThan(0.3);
+    expect(INTRO_HANDOFF.sphere.homeDiameterRatio).toBeLessThan(0.18);
     expect(INTRO_HANDOFF.settleDurationSec).toBeGreaterThan(0);
   });
 });

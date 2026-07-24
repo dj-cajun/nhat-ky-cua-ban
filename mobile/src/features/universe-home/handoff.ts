@@ -29,9 +29,9 @@ export const INTRO_HANDOFF = {
     liveOpticalScale: 0.88,
     /**
      * Settled home diameter as fraction of **viewport** width.
-     * Smaller than the cover-matched intro orb → shrink effect after handoff.
+     * Small center orb; friends circles wrap it as a large pastel diagram.
      */
-    homeDiameterRatio: 0.26,
+    homeDiameterRatio: 0.13,
     color: '#F0C36A',
     glow: '#FFE6A8',
     core: '#FFF6D6',
