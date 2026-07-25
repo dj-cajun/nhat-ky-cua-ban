@@ -230,17 +230,18 @@ export function UniverseHome({
               paddingBottom: 16 + insets.bottom,
               paddingLeft: 16 + insets.left,
               paddingRight: 16 + insets.right,
-              pointerEvents: 'box-none',
+              // Web: CSS has no box-none — parent none + children auto.
+              pointerEvents: 'none',
             },
           ]}
         >
-          <View style={[styles.header, { pointerEvents: 'box-none' }]}>
+          <View style={[styles.header, { pointerEvents: 'none' }]}>
             <View>
               <Text style={styles.brand}>{t.universe.brand}</Text>
               <Text style={styles.title}>{t.universe.title}</Text>
             </View>
             <Pressable
-              style={styles.avatar}
+              style={[styles.avatar, { pointerEvents: 'auto' }]}
               onPress={onPressSelf}
               accessibilityRole="button"
               accessibilityLabel={profile.displayName}
@@ -250,12 +251,12 @@ export function UniverseHome({
           </View>
 
           {circles.length === 0 && introDone ? (
-            <View style={[styles.emptyWrap, { pointerEvents: 'box-none' }]}>
+            <View style={[styles.emptyWrap, { pointerEvents: 'none' }]}>
               <Text style={styles.emptyTitle}>{t.universe.emptyTitle}</Text>
               <Text style={styles.emptySub}>{t.universe.emptySub}</Text>
               {canCreate ? (
                 <Pressable
-                  style={styles.create}
+                  style={[styles.create, { pointerEvents: 'auto' }]}
                   onPress={onCreateCircle}
                   accessibilityRole="button"
                   accessibilityLabel={t.universe.createCircle}
@@ -268,7 +269,7 @@ export function UniverseHome({
 
           {circles.length > 0 && canCreate && introDone ? (
             <Pressable
-              style={styles.createFab}
+              style={[styles.createFab, { pointerEvents: 'auto' }]}
               onPress={onCreateCircle}
               accessibilityRole="button"
               accessibilityLabel={t.universe.createCircle}

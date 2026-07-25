@@ -133,11 +133,12 @@ export function FallbackUniverse({
         style={[
           StyleSheet.absoluteFill,
           diagramStyle,
-          { pointerEvents: revealPlanets ? 'box-none' : 'none' },
+          // Web: no CSS box-none — disable layer, re-enable press targets.
+          { pointerEvents: 'none' },
         ]}
       >
         {circleDisks.map((c) => (
-          <View key={c.circle.id} style={{ zIndex: c.z, pointerEvents: 'box-none' }}>
+          <View key={c.circle.id} style={{ zIndex: c.z, pointerEvents: 'none' }}>
             {/* Pastel-filled large circle wrapping A */}
             <Pressable
               onPress={() => onPressCircle(c.circle.id)}
@@ -153,6 +154,7 @@ export function FallbackUniverse({
                   borderRadius: c.ring,
                   backgroundColor: c.fill,
                   borderColor: c.border,
+                  pointerEvents: revealPlanets ? 'auto' : 'none',
                 },
               ]}
             />
@@ -165,6 +167,7 @@ export function FallbackUniverse({
                   left: c.labelX - 70,
                   top: c.labelY - 28,
                   width: 140,
+                  pointerEvents: revealPlanets ? 'auto' : 'none',
                 },
               ]}
               accessibilityRole="button"
