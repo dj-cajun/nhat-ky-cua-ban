@@ -426,6 +426,14 @@ export const ko = {
     schoolLink: '학교 인증 큐',
     approve: '승인',
     reject: '거절',
+    mixedTitle: '혼재 학교 서클',
+    mixedSub:
+      '서로 다른 학교 멤버가 섞인 서클을 탐지해요. 운영자가 정리할 때까지 쓰기를 멈추며, 멤버십은 자동으로 옮기지 않아요.',
+    mixedEmpty: '열린 혼재 사건이 없어요.',
+    mixedLink: '혼재 서클 큐',
+    mixedScan: '혼재 스캔',
+    mixedResolve: '정리 완료로 표시',
+    mixedFrozen: '쓰기 중지',
   },
 
   language: {

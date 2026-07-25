@@ -195,6 +195,23 @@ interface LocalDb {
   schoolMemberships: SchoolMembershipRow[];
   schoolVerificationRequests: SchoolVerificationRequestRow[];
   schoolInviteCodes: SchoolInviteCodeRow[];
+  /** B.1: local mirror of app_moderators — never imply all signed-in users */
+  operatorUserIds: string[];
+  circleSchoolIncidents: {
+    id: string;
+    circleId: string;
+    canonicalSchoolId: string;
+    status: 'open' | 'resolved' | 'cancelled';
+    autoWriteBlocked: boolean;
+    memberSnapshot: {
+      userId: string;
+      memberSchoolId?: string;
+      membershipStatus?: string;
+    }[];
+    detectedAt: string;
+    resolvedAt?: string;
+    resolveNote?: string;
+  }[];
 }
 
 export interface CirclePostRecord {
@@ -314,6 +331,8 @@ const empty: LocalDb = {
   schoolMemberships: [],
   schoolVerificationRequests: [],
   schoolInviteCodes: [],
+  operatorUserIds: [],
+  circleSchoolIncidents: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -381,6 +400,8 @@ export async function loadLocalDb(): Promise<void> {
     memory.schoolMemberships ??= [];
     memory.schoolVerificationRequests ??= [];
     memory.schoolInviteCodes ??= [];
+    memory.operatorUserIds ??= [];
+    memory.circleSchoolIncidents ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -527,14 +548,152 @@ export async function canAccessCircle(circleId: string, userId: string): Promise
   });
 }
 
+export async function circleWritesFrozen(circleId: string): Promise<boolean> {
+  await loadLocalDb();
+  return memory.circleSchoolIncidents.some(
+    (i) => i.circleId === circleId && i.status === 'open' && i.autoWriteBlocked,
+  );
+}
+
 export async function canWriteCircle(circleId: string, userId: string): Promise<boolean> {
   await loadLocalDb();
   const circle = memory.circles.find((c) => c.id === circleId);
   if (!circle?.schoolId) return false;
   if (!(await canAccessCircle(circleId, userId))) return false;
+  if (await circleWritesFrozen(circleId)) return false;
   const membership = membershipForUser(userId, circle.schoolId);
   const school = schoolById(circle.schoolId);
   return isVerifiedSchoolMember(membership, school);
+}
+
+/** Mirror get_my_operator_capabilities / is_app_moderator — server table only. */
+export async function getMyOperatorCapabilities(userId: string): Promise<{
+  isModerator: boolean;
+  role: 'moderator' | 'admin' | null;
+}> {
+  await loadLocalDb();
+  const ok = memory.operatorUserIds.includes(userId);
+  return { isModerator: ok, role: ok ? 'moderator' : null };
+}
+
+export async function grantAppModeratorForTests(userId: string): Promise<void> {
+  await loadLocalDb();
+  if (!memory.operatorUserIds.includes(userId)) {
+    memory.operatorUserIds.push(userId);
+    await persist();
+  }
+}
+
+export async function revokeAppModeratorForTests(userId: string): Promise<void> {
+  await loadLocalDb();
+  memory.operatorUserIds = memory.operatorUserIds.filter((id) => id !== userId);
+  await persist();
+}
+
+async function assertLocalModerator(userId: string): Promise<void> {
+  const caps = await getMyOperatorCapabilities(userId);
+  if (!caps.isModerator) {
+    throw new AppError('FORBIDDEN', 'Moderator only.');
+  }
+}
+
+export async function opsScanMixedSchoolCircles(actorId: string): Promise<{
+  opened: number;
+  updated: number;
+}> {
+  await loadLocalDb();
+  await assertLocalModerator(actorId);
+  let opened = 0;
+  let updated = 0;
+  for (const circle of memory.circles.filter((c) => c.status === 'open' && c.schoolId)) {
+    const foreign = memory.members
+      .filter((m) => m.circleId === circle.id && m.status === 'active')
+      .map((m) => {
+        const mem = primaryMembership(m.userId);
+        return {
+          userId: m.userId,
+          memberSchoolId: mem?.schoolId,
+          membershipStatus: mem?.status,
+        };
+      })
+      .filter(
+        (row) =>
+          row.memberSchoolId != null &&
+          row.memberSchoolId !== circle.schoolId,
+      );
+    if (foreign.length === 0) continue;
+    const existing = memory.circleSchoolIncidents.find(
+      (i) => i.circleId === circle.id && i.status === 'open',
+    );
+    if (!existing) {
+      memory.circleSchoolIncidents.push({
+        id: uid(),
+        circleId: circle.id,
+        canonicalSchoolId: circle.schoolId!,
+        status: 'open',
+        autoWriteBlocked: true,
+        memberSnapshot: foreign,
+        detectedAt: now(),
+      });
+      opened += 1;
+    } else {
+      existing.memberSnapshot = foreign;
+      existing.autoWriteBlocked = true;
+      updated += 1;
+    }
+  }
+  await persist();
+  return { opened, updated };
+}
+
+export async function opsListMixedSchoolCircles(actorId: string): Promise<
+  {
+    id: string;
+    circleId: string;
+    circleName: string;
+    canonicalSchoolId: string;
+    canonicalSchoolName: string;
+    autoWriteBlocked: boolean;
+    memberSnapshot: {
+      userId: string;
+      memberSchoolId?: string;
+      membershipStatus?: string;
+    }[];
+    detectedAt: string;
+  }[]
+> {
+  await loadLocalDb();
+  await assertLocalModerator(actorId);
+  return memory.circleSchoolIncidents
+    .filter((i) => i.status === 'open')
+    .map((i) => ({
+      id: i.id,
+      circleId: i.circleId,
+      circleName: memory.circles.find((c) => c.id === i.circleId)?.name ?? i.circleId,
+      canonicalSchoolId: i.canonicalSchoolId,
+      canonicalSchoolName:
+        schoolById(i.canonicalSchoolId)?.displayName ?? i.canonicalSchoolId,
+      autoWriteBlocked: i.autoWriteBlocked,
+      memberSnapshot: i.memberSnapshot,
+      detectedAt: i.detectedAt,
+    }));
+}
+
+export async function opsResolveMixedSchoolCircle(input: {
+  actorId: string;
+  incidentId: string;
+  note?: string;
+}): Promise<void> {
+  await loadLocalDb();
+  await assertLocalModerator(input.actorId);
+  const inc = memory.circleSchoolIncidents.find((i) => i.id === input.incidentId);
+  if (!inc) throw new AppError('NOT_FOUND', 'Incident not found.');
+  if (inc.status !== 'open') throw new AppError('CONFLICT', 'Already resolved.');
+  inc.status = 'resolved';
+  inc.autoWriteBlocked = false;
+  inc.resolvedAt = now();
+  inc.resolveNote = input.note;
+  await persist();
 }
 
 /** Mirror submit_school_invite_code — pending only, never auto-verified. */
@@ -599,8 +758,8 @@ export async function getMySchoolMembership(userId: string): Promise<{
   };
 }
 
-/** Demo ops: any signed-in caller may review (mirrors ops.reports demo). */
-export async function opsListSchoolVerificationRequests(): Promise<
+/** Ops: requires local operator role (mirror app_moderators). */
+export async function opsListSchoolVerificationRequests(actorId: string): Promise<
   {
     id: string;
     schoolId: string;
@@ -612,6 +771,7 @@ export async function opsListSchoolVerificationRequests(): Promise<
   }[]
 > {
   await loadLocalDb();
+  await assertLocalModerator(actorId);
   return memory.schoolVerificationRequests
     .filter((r) => r.status === 'pending')
     .map((r) => ({
@@ -626,11 +786,13 @@ export async function opsListSchoolVerificationRequests(): Promise<
 }
 
 export async function opsReviewSchoolVerification(input: {
+  actorId: string;
   requestId: string;
   decision: 'approved' | 'rejected';
   note?: string;
 }): Promise<void> {
   await loadLocalDb();
+  await assertLocalModerator(input.actorId);
   const req = memory.schoolVerificationRequests.find((r) => r.id === input.requestId);
   if (!req) throw new AppError('NOT_FOUND', 'Request not found.');
   if (req.status !== 'pending') throw new AppError('CONFLICT', 'Already reviewed.');

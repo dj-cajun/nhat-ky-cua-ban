@@ -197,6 +197,32 @@ describe('phase-11 deep link + errors + flags + retry + logger', () => {
     expect(me.id).toBeTruthy();
   });
 
+  it('blocks cross-school join deep links even with known circle id', async () => {
+    const {
+      demoAcceptAll,
+      proposeCircleDraft,
+      setSchoolMembershipStatusForTests,
+    } = await import('@/features/local/repository');
+    const { OTHER_SCHOOL_ID } = await import('@/features/local/school');
+    const host = await signUpLocal('Host');
+    const { draftId } = await proposeCircleDraft(host.id, 'Beta', [
+      '00000000-0000-4000-8000-0000000000a1',
+      '00000000-0000-4000-8000-0000000000b2',
+    ]);
+    const circle = await demoAcceptAll(draftId);
+    const attacker = await signUpLocal('Attacker');
+    await setSchoolMembershipStatusForTests({
+      userId: attacker.id,
+      schoolId: OTHER_SCHOOL_ID,
+      status: 'verified',
+    });
+    const { switchToUser } = await import('@/features/session/session-lifecycle');
+    await switchToUser(attacker.id);
+    const result = await resolveDeepLink({ kind: 'join', circleId: circle.id });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('NOT_FOUND');
+  });
+
   it('maps network failures to OFFLINE without leaking SQL', () => {
     const err = toAppError(new Error('permission denied for relation diary_entries'));
     expect(err.code).toBe('FORBIDDEN');

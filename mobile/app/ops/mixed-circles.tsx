@@ -15,9 +15,10 @@ import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
 /**
- * School verification queue — operator role from server/local moderator table only.
+ * Mixed-school circle ops queue (B.1).
+ * Detect → freeze writes → manual resolve. Never auto-rewrites memberships.
  */
-export default function OpsSchoolVerificationsScreen() {
+export default function OpsMixedCirclesScreen() {
   const t = useMessages();
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -26,10 +27,11 @@ export default function OpsSchoolVerificationsScreen() {
   const [rows, setRows] = useState<
     {
       id: string;
-      schoolName: string;
-      userId: string;
-      method: string;
-      createdAt: string;
+      circleName: string;
+      canonicalSchoolName: string;
+      autoWriteBlocked: boolean;
+      foreignCount: number;
+      detectedAt: string;
     }[]
   >([]);
 
@@ -49,14 +51,15 @@ export default function OpsSchoolVerificationsScreen() {
         return;
       }
       setForbidden(false);
-      const list = await opsService.listSchoolVerifications(me.id);
+      const list = await opsService.listMixedSchoolCircles(me.id);
       setRows(
         list.map((r) => ({
           id: r.id,
-          schoolName: r.schoolName,
-          userId: r.userId,
-          method: r.method,
-          createdAt: r.createdAt,
+          circleName: r.circleName,
+          canonicalSchoolName: r.canonicalSchoolName,
+          autoWriteBlocked: r.autoWriteBlocked,
+          foreignCount: r.memberSnapshot.length,
+          detectedAt: r.detectedAt,
         })),
       );
     } catch (e) {
@@ -74,14 +77,23 @@ export default function OpsSchoolVerificationsScreen() {
     }, [reload]),
   );
 
-  const decide = async (requestId: string, decision: 'approved' | 'rejected') => {
+  const scan = async () => {
     if (!actorId) return;
-    setError('');
     try {
-      await opsService.reviewSchoolVerification({
+      await opsService.scanMixedSchoolCircles(actorId);
+      await reload();
+    } catch (e) {
+      setError(toAppError(e).message);
+    }
+  };
+
+  const resolve = async (incidentId: string) => {
+    if (!actorId) return;
+    try {
+      await opsService.resolveMixedSchoolCircle({
         actorId,
-        requestId,
-        decision,
+        incidentId,
+        note: 'manual_ops_resolve',
       });
       await reload();
     } catch (e) {
@@ -116,33 +128,30 @@ export default function OpsSchoolVerificationsScreen() {
       <Pressable onPress={() => router.back()} accessibilityRole="button">
         <Text style={styles.back}>{t.ops.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{t.ops.schoolTitle}</Text>
-      <Text style={styles.sub}>{t.ops.schoolSub}</Text>
+      <Text style={styles.title}>{t.ops.mixedTitle}</Text>
+      <Text style={styles.sub}>{t.ops.mixedSub}</Text>
+      <Pressable style={styles.scan} onPress={() => void scan()} accessibilityRole="button">
+        <Text style={styles.scanText}>{t.ops.mixedScan}</Text>
+      </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {rows.length === 0 ? (
-          <AppEmptyState title={t.ops.schoolEmpty} />
+          <AppEmptyState title={t.ops.mixedEmpty} />
         ) : (
           rows.map((r) => (
             <View key={r.id} style={styles.card}>
-              <Text style={styles.school}>{r.schoolName}</Text>
-              <Text style={styles.meta}>user {r.userId.slice(0, 8)} · {r.method}</Text>
-              <View style={styles.row}>
-                <Pressable
-                  style={styles.approve}
-                  onPress={() => void decide(r.id, 'approved')}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.approveText}>{t.ops.approve}</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.reject}
-                  onPress={() => void decide(r.id, 'rejected')}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.rejectText}>{t.ops.reject}</Text>
-                </Pressable>
-              </View>
+              <Text style={styles.name}>{r.circleName}</Text>
+              <Text style={styles.meta}>
+                {r.canonicalSchoolName} · foreign {r.foreignCount}
+                {r.autoWriteBlocked ? ` · ${t.ops.mixedFrozen}` : ''}
+              </Text>
+              <Pressable
+                style={styles.resolve}
+                onPress={() => void resolve(r.id)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.resolveText}>{t.ops.mixedResolve}</Text>
+              </Pressable>
             </View>
           ))
         )}
@@ -155,7 +164,19 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, padding: 16 },
   back: { color: colors.muted, marginBottom: 12, minHeight: 44 },
   title: { fontSize: 22, fontWeight: '600', color: colors.ink },
-  sub: { marginTop: 6, marginBottom: 16, color: colors.muted, lineHeight: 20 },
+  sub: { marginTop: 6, marginBottom: 12, color: colors.muted, lineHeight: 20 },
+  scan: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+    padding: 12,
+    minHeight: 44,
+    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanText: { color: colors.ink, fontWeight: '600' },
   error: { color: colors.warn, marginBottom: 8 },
   card: {
     borderWidth: 1,
@@ -165,26 +186,15 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
-  school: { color: colors.ink, fontWeight: '600', fontSize: 16 },
+  name: { color: colors.ink, fontWeight: '600', fontSize: 16 },
   meta: { marginTop: 4, color: colors.muted, fontSize: 12 },
-  row: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  approve: {
-    flex: 1,
+  resolve: {
+    marginTop: 12,
     minHeight: 44,
     borderRadius: 12,
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  approveText: { color: colors.bg, fontWeight: '600' },
-  reject: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.warn,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rejectText: { color: colors.warn, fontWeight: '600' },
+  resolveText: { color: colors.bg, fontWeight: '600' },
 });

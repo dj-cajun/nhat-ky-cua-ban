@@ -15,8 +15,7 @@ import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
 /**
- * Minimal beta ops console (demo: any signed-in user acting as moderator).
- * Production must gate with is_app_moderator server-side.
+ * Reports ops console — gated by app_moderators / local operatorUserIds.
  */
 export default function OpsReportsScreen() {
   const t = useMessages();
@@ -45,14 +44,16 @@ export default function OpsReportsScreen() {
         return;
       }
       setAdminId(me.id);
-      // Demo: treat signed-in user as moderator. Real builds check Edge/RPC.
-      const isModerator = true;
-      if (!isModerator) {
+      const caps = await opsService.getCapabilities(me.id);
+      if (!caps.isModerator) {
         setForbidden(true);
         return;
       }
       setForbidden(false);
-      const list = await opsService.listReports({ adminId: me.id, isModerator: true });
+      const list = await opsService.listReports({
+        adminId: me.id,
+        isModerator: true,
+      });
       setRows(
         list.map((r) => ({
           id: r.id,
@@ -81,6 +82,11 @@ export default function OpsReportsScreen() {
   const hide = async (targetType: string, targetId: string) => {
     if (!adminId) return;
     try {
+      const caps = await opsService.getCapabilities(adminId);
+      if (!caps.isModerator) {
+        setForbidden(true);
+        return;
+      }
       await opsService.hideContent({
         adminId,
         isModerator: true,

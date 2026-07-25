@@ -1,6 +1,7 @@
 import { AppError } from '@/types/domain';
 import {
   getCircle,
+  getCircleInvitePreview,
   getSessionProfile,
   isBlockedBetween,
   isCircleMember,
@@ -59,9 +60,18 @@ export async function resolveDeepLink(target: DeepLinkTarget): Promise<DeepLinkR
           return { ok: true, href: `/circles/${target.circleId}/notice` };
         }
         if (target.kind === 'join') {
+          // Invite link must not bypass school boundary (preview = same-school access)
+          const preview = await getCircleInvitePreview(target.circleId, me.id);
+          if (!preview) {
+            throw new AppError('NOT_FOUND', 'This content is no longer available.');
+          }
           return { ok: true, href: `/circles/${target.circleId}/join` };
         }
         return { ok: true, href: `/circles/${target.circleId}` };
+      }
+      case 'report': {
+        // Ops deep link: destination still re-checks operator role on screen load
+        return { ok: true, href: '/ops/reports' };
       }
       case 'diary': {
         if (!target.userId) throw new AppError('NOT_FOUND', 'Missing diary.');
@@ -79,9 +89,6 @@ export async function resolveDeepLink(target: DeepLinkTarget): Promise<DeepLinkR
           throw new AppError('NOT_FOUND', 'Missing recommendation.');
         }
         return { ok: true, href: `/recommendations/${target.recommendationId}` };
-      }
-      case 'report': {
-        return { ok: true, href: '/ops/reports' };
       }
       default:
         throw new AppError('NOT_FOUND', 'This content is no longer available.');

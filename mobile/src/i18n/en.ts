@@ -426,6 +426,14 @@ export const en = {
     schoolLink: 'School verification queue',
     approve: 'Approve',
     reject: 'Reject',
+    mixedTitle: 'Mixed-school circles',
+    mixedSub:
+      'Detect circles with members from different schools. Writes freeze until an operator resolves — memberships are never auto-moved.',
+    mixedEmpty: 'No open mixed-school incidents.',
+    mixedLink: 'Mixed-school circle queue',
+    mixedScan: 'Scan for mixed schools',
+    mixedResolve: 'Mark resolved (manual cleanup done)',
+    mixedFrozen: 'writes frozen',
   },
 
   language: {

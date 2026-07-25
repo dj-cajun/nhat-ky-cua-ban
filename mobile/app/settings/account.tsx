@@ -158,6 +158,14 @@ export default function AccountSettingsScreen() {
         <Text style={styles.linkText}>{t.ops.schoolLink}</Text>
       </Pressable>
 
+      <Pressable
+        style={styles.link}
+        onPress={() => router.push('/ops/mixed-circles')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t.ops.mixedLink}</Text>
+      </Pressable>
+
       <Text style={styles.section}>{t.settings.featureFlags}</Text>
       <Text style={styles.hint}>{t.settings.featureFlagsHint}</Text>
       {FLAG_LABELS.map((f) => (

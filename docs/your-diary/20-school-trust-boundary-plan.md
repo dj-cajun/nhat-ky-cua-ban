@@ -1,6 +1,6 @@
 # 20 — 학교 신뢰 경계 기획 (School Trust Boundary)
 
-> **상태**: 기획 확정 · Phase A 감사 완료 · **Phase B(`019`) 권한 결합 완료**  
+> **상태**: 기획 확정 · Phase A·B 완료 · **Phase B.1 하드닝 진행**  
 > **최종 갱신**: 2026-07-25  
 > **선행 마이그레이션**: `018` 이후 **forward-only** (`019+`). `007–018` 수정 금지.  
 > **레거시**: `001` `schools`/`classes`는 **재사용하지 않는다** (의미·모델 혼선 방지).  
@@ -320,14 +320,16 @@ nullable school_id 추가
 
 학교 목록·학생 검색·학교 홈 **없음**.
 
-### 남은 운영 리스크
+### 남은 운영 리스크 → Phase B.1 차단 항목
 
-1. **라이브 DB 미적용**: `019`는 마이그레이션 파일 + 체크리스트. staging에서 실제 JWT 침투 필요 (Phase H).
-2. **다학교 백필**: 멤버 학교 혼재 서클은 자동 할당 금지 · ops 큐 필요.
-3. **ops JWT**: 데모 클라이언트는 moderator 하드코딩. 프로덕션은 `app_metadata.is_moderator`만 신뢰.
-4. **Presence subscribe vs publish**: 변경 검토 중 publish만 차단 — 구독은 읽기 허용(의도).
-5. **개척자 draft accept**: SQL 전용 RPC 없음(로컬 `respondDraftInvite`). 서버 경로가 생기면 `019+`에서 동일 학교 검증 추가.
-6. **계정 전환 캐시**: 클라이언트 쿼리 캐시 무효는 기존 isolation 경로에 의존 — staging에서 재확인.
+출시 전 차단으로 격상. 상세는 아래 **Phase B.1** 절.
+
+1. staging 실제 JWT 침투 (`020` 체크리스트)
+2. 혼재 서클 ops 큐 (`020` incidents + freeze)
+3. ops role 하드코딩 제거 (`is_app_moderator` / local `operatorUserIds`)
+4. Presence subscribe vs publish 분리(의도) — staging 재확인
+5. 개척자 draft accept 서버 RPC 부재 시 `019+` 보강
+6. 계정 전환·stale cache staging 재확인
 
 ---
 
@@ -375,7 +377,8 @@ nullable school_id 추가
 |-------|------|------|
 | **A** | 감사·기획·네 원칙 고정 | ✅ |
 | **B** | `019` 스키마·RLS·백필·deny 테스트·권한 결합 | ✅ |
-| **C** | 온보딩 심화·변경 요청 UX (B 최소 UI 이후) | 대기 |
+| **B.1** | staging JWT 침투 · 혼재 ops 큐 · ops role 하드코딩 제거 | 진행 |
+| **C** | 온보딩 심화·변경 요청 UX (B.1 차단 항목 이후) | 대기 |
 | **D** | 서클 UX에 school 가드 노출 (규칙은 B에서 이미 강제) | 대기 |
 | **E–G** | 다이어리·기척·쪽지 회귀 | 대기 |
 | **H** | staging·실기기·교차학교 공격 | 대기 |
@@ -400,8 +403,46 @@ nullable school_id 추가
 
 ---
 
+## Phase B 완료 선언
+
+> **Phase B is complete when school trust checks are enforced across all existing circle-bound reads and writes, not when the schema merely exists.**
+
+구체적으로:
+
+```text
+- cross-school access is denied
+- same-school non-members are denied
+- pending_change users are read-only
+- invite links do not bypass school or circle membership
+- known IDs do not bypass RLS or RPC checks
+- all major legacy RPC paths use the shared school-aware access predicates
+```
+
+기능 추가보다 **staging에서 우회가 실제로 안 되는지 증명**이 다음 게이트다.
+
+---
+
+## Phase B.1 — 경계 하드닝 (출시 전 차단)
+
+Phase C UI 확장 전에 아래를 차단 항목으로 본다.
+
+| # | 항목 | 구현 / 증거 |
+|---|------|-------------|
+| 1 | staging 실제 JWT 침투 | `supabase/tests/020_staging_jwt_penetration_checklist.sql` |
+| 2 | 혼재 서클 ops 큐 | `020` `circle_school_incidents` + `ops_scan/list/resolve` + `/ops/mixed-circles` |
+| 3 | ops JWT/하드코딩 제거 | school ops → `is_app_moderator()` / `app_moderators`; 클라이언트 `getMyOperatorCapabilities` |
+| 4 | audit log | `school_audit_events` (verify/change/mixed) + 015 `admin_audit_logs` |
+| 5 | deep link 우회 | `resolveDeepLink` join → `getCircleInvitePreview` (타교 NOT_FOUND) |
+| 6 | 계정 전환 캐시 | `switchAccountIsolation` + staging 체크리스트 |
+
+혼재 정책 (베타):
+
+> 혼재 감지 시 신규 쓰기·초대·추천 중지(`can_write_circle` freeze), 멤버십 자동 이전 없음, 운영자 수동 정리 후 resolve.
+
+---
+
 ## 다음 액션
 
-1. staging에 `019` 적용 후 SQL 체크리스트·교차학교 JWT 공격 (Phase H)  
-2. Phase C: 온보딩 흐름에 학교 상태를 자연스럽게 연결 (탐색/홈은 계속 금지)  
-3. 다학교 백필·혼재 서클 ops 큐 설계
+1. **B.1 완료**: staging에 `019`+`020` 적용 → JWT 체크리스트 전수 통과  
+2. Phase C: 온보딩 상태 화면 (검토 중 / 추가 확인 / 승인 / 거절 / 변경 검토 중)  
+3. 학교 탐색·홈·학생 검색은 계속 금지

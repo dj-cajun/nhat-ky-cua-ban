@@ -27,7 +27,9 @@ import {
   getAnonymousCirclePosts,
   getCircleInvitePreview,
   getMySchoolMembership,
+  grantAppModeratorForTests,
   opsReviewSchoolVerification,
+  opsScanMixedSchoolCircles,
   proposeCircleDraft,
   setSchoolMembershipStatusForTests,
   signUpLocal,
@@ -52,9 +54,47 @@ describe('school boundary local mirror', () => {
 
   it('ops approve moves pending → verified', async () => {
     const me = await signUpLocal('Alex');
+    const ops = await signUpLocal('Ops');
+    await grantAppModeratorForTests(ops.id);
     const { requestId } = await submitSchoolInviteCode(me.id, BETA_SCHOOL_CODE);
-    await opsReviewSchoolVerification({ requestId, decision: 'approved' });
+    await opsReviewSchoolVerification({
+      actorId: ops.id,
+      requestId,
+      decision: 'approved',
+    });
     expect((await getMySchoolMembership(me.id)).status).toBe('verified');
+  });
+
+  it('non-operator cannot review school verification', async () => {
+    const me = await signUpLocal('Alex');
+    const { requestId } = await submitSchoolInviteCode(me.id, BETA_SCHOOL_CODE);
+    await expect(
+      opsReviewSchoolVerification({
+        actorId: me.id,
+        requestId,
+        decision: 'approved',
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('mixed-school circle freezes writes until ops resolve', async () => {
+    const me = await signUpLocal('Host');
+    const ops = await signUpLocal('Ops');
+    await grantAppModeratorForTests(ops.id);
+    const { draftId } = await proposeCircleDraft(me.id, 'Beta circle', [
+      '00000000-0000-4000-8000-0000000000a1',
+      '00000000-0000-4000-8000-0000000000b2',
+    ]);
+    const circle = await demoAcceptAll(draftId);
+    // Force a pioneer onto another school while remaining a circle member row
+    await setSchoolMembershipStatusForTests({
+      userId: '00000000-0000-4000-8000-0000000000a1',
+      schoolId: OTHER_SCHOOL_ID,
+      status: 'verified',
+    });
+    const scan = await opsScanMixedSchoolCircles(ops.id);
+    expect(scan.opened).toBeGreaterThanOrEqual(1);
+    expect(await canWriteCircle(circle.id, me.id)).toBe(false);
   });
 
   it('cross-school attacker denied with known circle/content ids', async () => {
