@@ -40,7 +40,7 @@
 | **12·B.1 / H** | staging JWT·실기기 출시 게이트 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) · Phase H |
 | **12·C** | 학교 온보딩·상태 UX · 최소 ops | ✅ | [20](./20-school-trust-boundary-plan.md) · `021` |
 | **12·D** | 베타 ops 최소 완성 (overview·안전·역할) | ✅ | `022` · `/ops/overview` · `/ops/safety` |
-| **12·E** | 우주·다이어리 공간 재설계 | ⏳ E2 리뷰 | [22](./22-phase-e-space-design.md) · [23](./23-phase-e2-prototype-checklist.md) · `/prototype/e2` |
+| **12·E** | 우주·다이어리 공간 재설계 | ⏳ E2.1 PASS · E2.2 장면 | [22](./22-phase-e-space-design.md) · [23](./23-phase-e2-prototype-checklist.md) · `/prototype/e2` |
 | **12·F–G** | 포커스룸·통합·오류 | ⏳ | E 이후 |
 | **12·H** | staging JWT·실기기 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) |
 | 베타 | 학교 코드 한정 초대 · 서클 중심 | 대기 | 11.5 + 12·B~D 최소 통과 후 권장 |
