@@ -1,16 +1,18 @@
 # 21 — Phase B.1 Staging Sign-off
 
-> **상태**: 실측 대기 (기획 논의 종료 · staging 결과만으로 닫음)  
-> **선행**: `019_school_trust_boundary.sql` + `020_school_boundary_hardening.sql` staging 적용  
+> **상태**: staging 결과 대기 (최종 게이트 고정 · 추가 기획 없음)  
+> **게이트**: **B = 구현 완료**, **B.1 = staging 실측으로 증명 완료**  
+> **판단 재료**: 이 문서의 실제 결과만 (코드 설명·기획 문서로 대체 불가)  
+> **선행**: `019` + `020` staging 적용  
 > **체크리스트**: [`supabase/tests/020_staging_jwt_penetration_checklist.sql`](../../supabase/tests/020_staging_jwt_penetration_checklist.sql)
 
 ---
 
-## 완료 정의 (고정)
+## 완료 정의 (최종 고정)
 
 | Phase | 의미 |
 |-------|------|
-| **B 완료** | 학교 경계가 기존 권한 경로에 **적용된** 상태 (코드·마이그레이션) |
+| **B 완료** | 학교 경계가 기존 권한 경로에 **적용된** 상태 (구현) |
 | **B.1 완료** | 실제 staging JWT로 그 경계가 **우회되지 않음을 증명한** 상태 |
 
 ```text
@@ -19,11 +21,25 @@
 → 경로 매트릭스 전수 PASS
 → 로그 검토
 → 혼재 서클 resolve 실제 검증
-→ B.1 승인
+→ B.1 승인 (이 문서 PASS + 증거)
 → Phase C 상태 화면
 ```
 
-규칙: **shared predicate를 거치지 않는 경로 하나라도 있으면 B.1 미완료.**
+전수 PASS와 로그 증거가 채워진 뒤에만 B.1을 닫는다.
+
+---
+
+## 자동 FAIL (하나라도 해당하면 B.1 미완료)
+
+| # | 실패 조건 |
+|---|-----------|
+| 1 | A–E / M 중 **하나라도** 예상 결과 불일치 |
+| 2 | 알려진 ID 또는 딥링크로 우회 가능 |
+| 3 | shared predicate를 거치지 않는 경로 발견 |
+| 4 | `pending_change`가 쓰기 가능 |
+| 5 | 혼재 서클 freeze/resolve가 **audit 없이** 처리됨 |
+| 6 | M이 ops 범위를 넘어 일반 다이어리·쪽지 열람 가능 |
+| 7 | 계정 전환 또는 캐시 때문에 이전 권한이 남음 |
 
 ---
 
