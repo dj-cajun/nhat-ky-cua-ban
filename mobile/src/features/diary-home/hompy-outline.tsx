@@ -123,7 +123,8 @@ function buildSketchPath(
   pushArc(x0 + tl, y0 + tl, tl, Math.PI, (Math.PI * 3) / 2, 6);
 
   // Deduplicate near-identical consecutive points, then wobble.
-  const amp = Math.min(1.85, 0.55 + weight * 0.35);
+  // Stronger amplitude so pastel strokes read as pencil, not hairline CSS.
+  const amp = Math.min(2.6, 0.95 + weight * 0.55);
   const wobble: Pt[] = [];
   for (let i = 0; i < pts.length; i++) {
     const prev = pts[(i - 1 + pts.length) % pts.length]!;
@@ -189,6 +190,9 @@ function SketchStroke({
 
   if (width < 4 || height < 4) return null;
 
+  // Graphite under-stroke so light pastel inks still read as pencil.
+  const under = hompy.pencilBold;
+
   return (
     <Svg
       pointerEvents="none"
@@ -198,9 +202,18 @@ function SketchStroke({
     >
       <Path
         d={d2}
+        stroke={under}
+        strokeWidth={weight + 0.7}
+        strokeOpacity={0.22}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d={d2}
         stroke={stroke}
-        strokeWidth={Math.max(1, weight - 0.4)}
-        strokeOpacity={0.35}
+        strokeWidth={Math.max(1.2, weight - 0.2)}
+        strokeOpacity={0.45}
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -208,8 +221,8 @@ function SketchStroke({
       <Path
         d={d}
         stroke={stroke}
-        strokeWidth={weight}
-        strokeOpacity={0.92}
+        strokeWidth={weight + 0.35}
+        strokeOpacity={0.95}
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -230,7 +243,7 @@ export function OutlineBox({
   stroke = hompy.pencilBold,
   size = 'md',
 }: OutlineBoxProps) {
-  const weight = size === 'lg' ? 2.75 : size === 'sm' ? 1.55 : 2.15;
+  const weight = size === 'lg' ? 3.1 : size === 'sm' ? 1.85 : 2.45;
   const radii = radiiFor(size);
   const [box, setBox] = useState({ w: 0, h: 0 });
 
