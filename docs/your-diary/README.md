@@ -1,8 +1,9 @@
 # Your Diary / 「너의 다이어리」 — 현행 기획·지침
 
 > **제품**: Your Diary (US App Store 우선) · 한국어 내부명 「너의 다이어리」  
-> **한 줄**: 세 사람이 신뢰의 문을 열고, 서로의 하루를 조용히 방문하는 폐쇄형 서클 다이어리  
-> **이 폴더 + `src/` + `mobile/`**: **유일한 현행 제품 기준**.
+> **한 줄**: 같은 학교라는 신뢰의 경계 안에서 작은 서클을 만들고, 서로의 하루를 조용히 방문하는 폐쇄형 관계 다이어리  
+> **이 폴더 + `src/` + `mobile/`**: **유일한 현행 제품 기준**.  
+> **계층**: 학교(바깥 경계) → 서클(관계 단위) → 다이어리(중심). 학교 전체 피드·전교 검색은 만들지 않는다. 상세: [20](./20-school-trust-boundary-plan.md)
 
 ---
 
@@ -51,6 +52,7 @@
 | [17-i18n-en-ko.md](./17-i18n-en-ko.md) | 1차 UI 언어: English · 한국어 |
 | [18-minihome-ui-mapping.md](./18-minihome-ui-mapping.md) | 미니홈피 UI → Your Diary 매핑 |
 | [19-universe-intro-3d.md](./19-universe-intro-3d.md) | 내 우주 인트로 영상 → 3D 핸드오프 |
+| [20-school-trust-boundary-plan.md](./20-school-trust-boundary-plan.md) | **학교 신뢰 경계** 기획·감사·페이즈 (구현 전) |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
 **갱신 규칙**: 단계가 끝날 때마다 `roadmap.md` 상태와 해당 phase 문서를 같이 고친다. 새 중간 지침이 오면 이 폴더에 추가·개정하고 커밋한다.
