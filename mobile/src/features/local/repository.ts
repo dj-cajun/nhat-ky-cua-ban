@@ -660,6 +660,10 @@ export async function setSchoolMembershipStatusForTests(input: {
   status: Exclude<SchoolMembershipStatus, 'none'>;
 }): Promise<void> {
   await loadLocalDb();
+  // Drop other-school rows so attacker personas stay single-school.
+  memory.schoolMemberships = memory.schoolMemberships.filter(
+    (row) => !(row.userId === input.userId && row.schoolId !== input.schoolId),
+  );
   let m = membershipForUser(input.userId, input.schoolId);
   if (!m) {
     m = {
@@ -702,7 +706,7 @@ function ensureDemoSchoolForUser(userId: string): void {
   ensureVerifiedSchoolMembership(userId, BETA_SCHOOL_ID);
 }
 
-function ensureDemoFriends(selfId: string): void {
+function ensureDemoFriendProfiles(selfId: string): void {
   const seeds: Profile[] = [
     { id: '00000000-0000-4000-8000-0000000000a1', displayName: 'Minseo', status: 'active', createdAt: now() },
     { id: '00000000-0000-4000-8000-0000000000b2', displayName: 'Junho', status: 'active', createdAt: now() },
@@ -717,6 +721,19 @@ function ensureDemoFriends(selfId: string): void {
   }
 }
 
+function ensureDemoFriends(selfId: string): void {
+  ensureDemoFriendProfiles(selfId);
+  for (const s of memory.profiles) {
+    if (
+      s.id === selfId ||
+      s.id.startsWith('00000000-0000-4000-8000-0000000000')
+    ) {
+      ensureDemoSchoolForUser(s.id);
+    }
+  }
+  ensureDemoSchoolForUser(selfId);
+}
+
 export async function signUpLocal(displayName: string): Promise<Profile> {
   await loadLocalDb();
   const profile: Profile = {
@@ -727,7 +744,8 @@ export async function signUpLocal(displayName: string): Promise<Profile> {
   };
   memory.profiles.push(profile);
   memory.sessionUserId = profile.id;
-  ensureDemoFriends(profile.id);
+  // Seed demo directory contacts only — school stays unverified until code/ops/circle open.
+  ensureDemoFriendProfiles(profile.id);
   await persist();
   return profile;
 }
@@ -1143,14 +1161,6 @@ export async function createJoinRequest(
   if (circle.status !== 'open') {
     throw new AppError('VALIDATION', 'This circle isn’t open for joins.');
   }
-  if (!circle.schoolId) {
-    throw new AppError('FORBIDDEN', 'Circle has no school boundary.');
-  }
-  const applicantMem = membershipForUser(applicantId, circle.schoolId);
-  const applicantSchool = schoolById(circle.schoolId);
-  if (!isVerifiedSchoolMember(applicantMem, applicantSchool)) {
-    throw new AppError('FORBIDDEN', 'Verified same-school membership required to join.');
-  }
   if (await isCircleMember(circleId, applicantId)) {
     throw new AppError('CONFLICT', 'You’re already a member.');
   }
@@ -1173,6 +1183,15 @@ export async function createJoinRequest(
     )
   ) {
     throw new AppError('CONFLICT', 'You already have a pending request.');
+  }
+
+  if (!circle.schoolId) {
+    throw new AppError('FORBIDDEN', 'Circle has no school boundary.');
+  }
+  const applicantMem = membershipForUser(applicantId, circle.schoolId);
+  const applicantSchool = schoolById(circle.schoolId);
+  if (!isVerifiedSchoolMember(applicantMem, applicantSchool)) {
+    throw new AppError('FORBIDDEN', 'Verified same-school membership required to join.');
   }
 
   for (const id of recommenderIds) {

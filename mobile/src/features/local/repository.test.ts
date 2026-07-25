@@ -410,6 +410,7 @@ describe('hompy boards', () => {
 
   it('lists guestbook newest-first on that homepage only', async () => {
     const me = await signUpLocal('Alex');
+    await ensureDemoOpenCircle(me.id);
     const friend = '00000000-0000-4000-8000-0000000000a1';
     await addGuestbookEntry({
       ownerUserId: me.id,
