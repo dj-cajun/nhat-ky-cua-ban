@@ -341,6 +341,7 @@ export const ko = {
     replayIntro: '내 유니버스 인트로 다시 보기',
     replayIntroDone: '준비됐어요 — 다음에 내 유니버스를 열면 전체 인트로가 다시 재생돼요.',
     school: '학교 인증',
+    e2Prototype: 'E2 공간 프로토타입 (정적)',
   },
 
   school: {

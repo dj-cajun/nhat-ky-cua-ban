@@ -132,6 +132,15 @@ export default function AccountSettingsScreen() {
 
       <Pressable
         style={styles.link}
+        onPress={() => router.push('/prototype/e2')}
+        accessibilityRole="button"
+        accessibilityLabel={t.settings.e2Prototype}
+      >
+        <Text style={styles.linkText}>{t.settings.e2Prototype}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.link}
         onPress={() => router.push('/school')}
         accessibilityRole="button"
       >

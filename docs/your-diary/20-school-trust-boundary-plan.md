@@ -380,7 +380,7 @@ nullable school_id 추가
 | **B.1 / H** | staging JWT·실기기 출시 게이트 (런북 준비됨) | ⏸ DEFERRED |
 | **C** | 학교 온보딩·상태 UX · 최소 ops | ✅ `021` |
 | **D** | 베타 ops 최소 (overview·안전·역할) — 성장 분석 없음 | ✅ `022` |
-| **E** | 우주·다이어리 공간 재설계 | ⏳ [22](./22-phase-e-space-design.md) |
+| **E** | 우주·다이어리 공간 재설계 | ⏳ E2 리뷰 [22](./22-phase-e-space-design.md)·[23](./23-phase-e2-prototype-checklist.md) |
 | **F–G** | 포커스룸·통합 | 대기 |
 | **H** | staging JWT·실기기 | ⏸ DEFERRED |
 

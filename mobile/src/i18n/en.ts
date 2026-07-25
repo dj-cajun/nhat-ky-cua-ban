@@ -341,6 +341,7 @@ export const en = {
     replayIntro: 'Replay My Universe intro',
     replayIntroDone: 'Ready — open My Universe next to watch the full intro again.',
     school: 'School verification',
+    e2Prototype: 'E2 space prototype (static)',
   },
 
   school: {

@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Your Diary — E2 Static Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --void: #070b14;
+        --deep: #0e1526;
+        --star: #d7deea;
+        --brand: #f4efe6;
+        --whisper: rgba(244, 239, 230, 0.62);
+        --orb: #f7e7c8;
+        --orb-rim: #e8c78a;
+        --circle-wash: #17362f;
+        --circle-ink: #e7f2ec;
+        --circle-muted: rgba(231, 242, 236, 0.7);
+        --circle-accent: #7faf9a;
+        --friend-wash: #241820;
+        --friend-ink: #f8ede8;
+        --friend-muted: rgba(248, 237, 232, 0.72);
+        --friend-mood: #e8b4a0;
+        --mine-wash: #152028;
+        --mine-ink: #eaf3f6;
+        --mine-muted: rgba(234, 243, 246, 0.72);
+        --mine-mood: #9fcbd8;
+        --tomato: #d46a5c;
+        --display: "Fraunces", Georgia, serif;
+        --body: "Outfit", "Avenir Next", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: #111;
+        color: var(--brand);
+        font-family: var(--body);
+      }
+      body {
+        display: grid;
+        place-items: start center;
+        padding: 24px 12px 48px;
+      }
+      .phone {
+        width: min(390px, 100%);
+        min-height: 780px;
+        border-radius: 28px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 24px 80px rgba(0,0,0,.45);
+        background: var(--void);
+      }
+      .screen { display: none; min-height: 780px; position: relative; padding: 18px 20px 28px; }
+      .screen.active { display: flex; flex-direction: column; }
+      .stars::before, .stars::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          radial-gradient(1.2px 1.2px at 12% 18%, var(--star), transparent),
+          radial-gradient(.8px .8px at 40% 52%, rgba(215,222,234,.35), transparent),
+          radial-gradient(1.4px 1.4px at 78% 24%, var(--star), transparent),
+          radial-gradient(.9px .9px at 92% 70%, rgba(215,222,234,.35), transparent),
+          radial-gradient(1.1px 1.1px at 18% 80%, var(--star), transparent),
+          radial-gradient(.7px .7px at 55% 12%, rgba(215,222,234,.35), transparent);
+        opacity: .9;
+      }
+      .rail {
+        display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 18px; position: relative; z-index: 2;
+      }
+      .rail button, .linkish, .cta {
+        font: 500 12px/1 var(--body);
+        border-radius: 999px;
+        border: 1px solid rgba(244,239,230,.18);
+        background: transparent;
+        color: inherit;
+        padding: 8px 12px;
+        min-height: 36px;
+        cursor: pointer;
+      }
+      .rail button.on {
+        border-color: rgba(244,239,230,.55);
+        background: rgba(244,239,230,.1);
+        font-weight: 600;
+      }
+      .meta {
+        display: flex; justify-content: space-between; font-size: 12px; opacity: .75; position: relative; z-index: 2;
+      }
+      h1 {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 34px;
+        margin: 8px 0 6px;
+        letter-spacing: -.5px;
+        position: relative; z-index: 2;
+      }
+      .tag { color: var(--whisper); font-size: 15px; position: relative; z-index: 2; }
+      .stage { position: relative; flex: 1; min-height: 420px; margin-top: 8px; }
+      .self {
+        position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%);
+        width: 118px; text-align: center; z-index: 5;
+      }
+      .self .orb {
+        width: 118px; height: 118px; border-radius: 999px;
+        background: var(--orb); border: 2px solid var(--orb-rim);
+        box-shadow: 0 0 40px rgba(232,199,138,.28);
+        display: grid; place-items: center; font-size: 28px; color: #6a5430;
+      }
+      .self span { display: block; margin-top: 8px; letter-spacing: 2px; text-transform: uppercase; font-size: 12px; font-weight: 500; }
+      .c-orb {
+        position: absolute; width: 96px; text-align: center; cursor: pointer; background: none; border: 0; color: inherit;
+      }
+      .c-orb i {
+        display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto; border-radius: 999px;
+        background: rgba(127,175,154,.35); border: 1px solid var(--circle-accent); font-style: normal; font-size: 24px;
+      }
+      .c-orb b { display: block; margin-top: 6px; font-size: 12px; font-weight: 500; color: var(--whisper); }
+      #universe .c1 { left: 6%; top: 18%; }
+      #universe .c2 { right: 4%; top: 28%; }
+      #universe .c3 { right: 18%; bottom: 16%; }
+      .foot {
+        text-align: center; margin-top: auto; padding-top: 12px; position: relative; z-index: 2;
+      }
+      .foot button {
+        background: none; border: 0; color: var(--whisper); text-decoration: underline;
+        font: 400 14px/1.4 var(--body); cursor: pointer; min-height: 44px;
+      }
+
+      #circle { background: linear-gradient(180deg, #17362f 0%, #0f241f 100%); color: var(--circle-ink); }
+      #circle .back, #friend .back, #mine .back {
+        background: none; border: 0; color: inherit; opacity: .75; font: 400 13px var(--body);
+        padding: 0; min-height: 44px; cursor: pointer; text-align: left;
+      }
+      #circle .sym { font-size: 28px; color: var(--circle-accent); }
+      #circle h1 { font-size: 30px; color: var(--circle-ink); }
+      #circle .tag { color: var(--circle-muted); }
+      .ring {
+        position: absolute; left: 18%; top: 28%; width: 64%; height: 52%;
+        border: 1px solid rgba(127,175,154,.35); border-radius: 999px;
+      }
+      .friend {
+        position: absolute; width: 90px; text-align: center; cursor: pointer; border: 0; background: none; color: inherit;
+      }
+      .friend i {
+        display: block; width: 64px; height: 64px; margin: 0 auto; border-radius: 999px;
+        border: 2px solid rgba(255,255,255,.35); font-style: normal;
+      }
+      .friend b { display: block; margin-top: 8px; font-size: 13px; }
+      .friend small { display: block; margin-top: 2px; font-size: 11px; color: var(--circle-muted); }
+      .f1 { left: 8%; top: 30%; } .f1 i { background: #f0d3b0; }
+      .f2 { right: 8%; top: 26%; } .f2 i { background: #b8d4e8; }
+      .f3 { left: 38%; top: 58%; } .f3 i { background: #e8c4d4; }
+      .objects { display: flex; gap: 10px; margin-top: auto; position: relative; z-index: 2; }
+      .objects .obj {
+        flex: 1; border-radius: 16px; border: 1px solid rgba(231,242,236,.28);
+        background: rgba(231,242,236,.14); padding: 12px; min-height: 56px;
+      }
+      .objects .obj span { display: block; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; opacity: .7; }
+      .objects .obj strong { display: block; margin-top: 4px; font-size: 13px; font-weight: 500; }
+      .cta {
+        align-self: center; margin-top: 14px; border: 0; background: none; font-size: 14px; font-weight: 500; cursor: pointer;
+      }
+
+      #friend { background: linear-gradient(180deg, #241820, #140e14); color: var(--friend-ink); }
+      #mine { background: linear-gradient(180deg, #152028, #0c141a); color: var(--mine-ink); }
+      .photo {
+        width: 100%; aspect-ratio: .92; border-radius: 28px; display: flex; align-items: flex-end;
+        padding: 18px; position: relative; overflow: hidden; margin-top: 8px;
+      }
+      #friend .photo { background: #3a2430; }
+      #mine .photo { background: #1e3340; }
+      .photo::after {
+        content: ""; position: absolute; top: 20%; left: 15%; width: 55%; height: 40%;
+        border-radius: 999px; background: rgba(255,255,255,.08);
+      }
+      .photo span { position: relative; z-index: 1; font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .75; }
+      .owner { margin-top: 18px; font-size: 11px; letter-spacing: 2px; opacity: .75; font-weight: 500; }
+      .sentence {
+        margin-top: 10px; font-family: var(--display); font-style: italic; font-weight: 500;
+        font-size: 26px; line-height: 1.3;
+      }
+      .mood { margin-top: 12px; font-size: 15px; font-weight: 600; }
+      #friend .mood { color: var(--friend-mood); }
+      #mine .mood { color: var(--mine-mood); }
+      .music {
+        margin-top: 16px; border-radius: 999px; padding: 12px 16px; font-size: 13px;
+        background: rgba(248,237,232,.16);
+      }
+      #mine .music { background: rgba(234,243,246,.16); }
+      .obj-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+      .obj-row .chip {
+        min-height: 52px; min-width: 80px; border-radius: 18px; border: 1px solid rgba(248,237,232,.26);
+        background: rgba(248,237,232,.12); display: grid; place-items: center; padding: 0 14px; font-size: 13px; font-weight: 500;
+      }
+      #mine .obj-row .chip { border-color: rgba(234,243,246,.26); background: rgba(234,243,246,.12); }
+      .tomato { border-color: var(--tomato) !important; background: rgba(212,106,92,.22) !important; }
+      .hint { margin-top: 14px; font-size: 13px; opacity: .72; }
+      .doc {
+        width: min(390px, 100%); margin-top: 18px; color: #ddd; font-size: 13px; line-height: 1.5;
+      }
+      .doc code { background: #222; padding: 1px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="phone" aria-label="E2 static prototype phone frame">
+      <section id="universe" class="screen active stars" aria-label="Universe Home">
+        <div class="meta"><span>Exit → close tab</span><span>E2 STATIC</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button class="on" data-go="universe">Universe</button>
+          <button data-go="circle">Circle</button>
+          <button data-go="friend">Friend</button>
+          <button data-go="mine">Mine</button>
+        </nav>
+        <h1>Your Diary</h1>
+        <p class="tag">your quiet orbit</p>
+        <div class="stage" aria-label="Universe stage with your orb and circles">
+          <button class="c-orb c1" data-go="circle" aria-label="Open circle Brooklyn Friends"><i>◌</i><b>Brooklyn Friends</b></button>
+          <button class="c-orb c2" data-go="circle" aria-label="Open circle Late Night"><i>✦</i><b>Late Night</b></button>
+          <button class="c-orb c3" data-go="circle" aria-label="Open circle Study Quiet"><i>◦</i><b>Study Quiet</b></button>
+          <div class="self" aria-label="Your presence at the center">
+            <div class="orb">◎</div>
+            <span>you</span>
+          </div>
+        </div>
+        <div class="foot"><button data-go="circle">enter a circle nearby</button></div>
+      </section>
+
+      <section id="circle" class="screen" aria-label="Circle">
+        <div class="meta"><span>from universe</span><span>E2 STATIC</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button data-go="universe">Universe</button>
+          <button class="on" data-go="circle">Circle</button>
+          <button data-go="friend">Friend</button>
+          <button data-go="mine">Mine</button>
+        </nav>
+        <button class="back" data-go="universe">← universe</button>
+        <div class="sym" aria-hidden="true">◌</div>
+        <h1>Brooklyn Friends</h1>
+        <p class="tag">three quiet orbits</p>
+        <div class="stage" aria-label="Friends as spatial members">
+          <div class="ring" aria-hidden="true"></div>
+          <button class="friend f1" data-go="friend" aria-label="Visit Minseo diary"><i></i><b>Minseo</b><small>warm dusk</small></button>
+          <button class="friend f2" data-go="friend" aria-label="Visit Junho diary"><i></i><b>Junho</b><small>cool air</small></button>
+          <button class="friend f3" data-go="friend" aria-label="Visit Sam diary"><i></i><b>Sam</b><small>soft lamp</small></button>
+        </div>
+        <div class="objects">
+          <div class="obj"><span>notice</span><strong>Friday picnic?</strong></div>
+          <div class="obj"><span>board</span><strong>alias board</strong></div>
+        </div>
+        <button class="cta" data-go="friend">step into a friend’s today →</button>
+      </section>
+
+      <section id="friend" class="screen" aria-label="Friend Diary">
+        <div class="meta"><span>from circle</span><span>E2 STATIC</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button data-go="universe">Universe</button>
+          <button data-go="circle">Circle</button>
+          <button class="on" data-go="friend">Friend</button>
+          <button data-go="mine">Mine</button>
+        </nav>
+        <button class="back" data-go="circle">← Brooklyn Friends</button>
+        <div class="photo"><span>afternoon window</span></div>
+        <div class="owner">MINSEO · TODAY</div>
+        <p class="sentence">the light stayed on the desk a little longer today</p>
+        <div class="mood">quiet bright</div>
+        <div class="music">♪ Moonlight Drive · soft instrumental</div>
+        <div class="obj-row" aria-label="Secondary objects">
+          <div class="chip">album</div>
+          <div class="chip">letters</div>
+          <div class="chip">days</div>
+        </div>
+        <button class="cta" data-go="mine" style="align-self:flex-start;margin-top:28px">same world · open my diary →</button>
+      </section>
+
+      <section id="mine" class="screen" aria-label="My Diary">
+        <div class="meta"><span>same world</span><span>E2 STATIC</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button data-go="universe">Universe</button>
+          <button data-go="circle">Circle</button>
+          <button data-go="friend">Friend</button>
+          <button class="on" data-go="mine">Mine</button>
+        </nav>
+        <button class="back" data-go="friend">← friend’s today</button>
+        <button class="photo" id="writeScene" aria-label="Edit today’s diary scene" style="border:0;width:100%;text-align:left;color:inherit;cursor:pointer">
+          <span>my desk corner</span>
+        </button>
+        <div class="owner">ALEX · TODAY</div>
+        <p class="sentence" id="mySentence">I kept one sentence and let the rest wait</p>
+        <div class="mood">slow clear</div>
+        <div class="music">♪ Harbor Morning · lo-fi piano</div>
+        <p class="hint" id="writeHint">tap the scene to write today</p>
+        <div class="obj-row" aria-label="Secondary objects including focus">
+          <div class="chip">album</div>
+          <div class="chip">letters</div>
+          <div class="chip">days</div>
+          <button class="chip tomato" id="tomato" aria-label="Focus room entrance">focus</button>
+        </div>
+        <p class="hint" id="focusHint" hidden>focus room stays a small door — not a dashboard</p>
+        <button class="cta" data-go="universe" style="align-self:flex-start;margin-top:32px">← return to the universe</button>
+      </section>
+    </div>
+
+    <div class="doc">
+      <p><strong>E2 browser mirror</strong> — static only. In-app path: <code>/prototype/e2</code></p>
+      <p>Checklist: <code>docs/your-diary/23-phase-e2-prototype-checklist.md</code></p>
+    </div>
+
+    <script>
+      const go = (id) => {
+        document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('active', el.id === id));
+        history.replaceState(null, '', '#' + id);
+      };
+      document.querySelectorAll('[data-go]').forEach((el) => {
+        el.addEventListener('click', () => go(el.getAttribute('data-go')));
+      });
+      document.getElementById('writeScene').addEventListener('click', () => {
+        document.getElementById('mySentence').textContent = '…keeping one quiet line';
+        document.getElementById('writeHint').textContent = 'writing mode (prototype · no save)';
+      });
+      document.getElementById('tomato').addEventListener('click', () => {
+        document.getElementById('focusHint').hidden = false;
+      });
+      const initial = location.hash.replace('#', '') || 'universe';
+      if (['universe', 'circle', 'friend', 'mine'].includes(initial)) go(initial);
+    </script>
+  </body>
+</html>
