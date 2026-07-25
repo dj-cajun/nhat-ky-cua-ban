@@ -1,16 +1,14 @@
 # 21 — Phase B.1 Staging Sign-off
 
-> **상태**: **BLOCKED — staging 자격 증명 대기** (최종 게이트 고정 · 추가 기획 없음)  
+> **Phase B.1: BLOCKED — implementation frozen, staging credentials unavailable, no empirical sign-off performed.**  
 > **게이트**: **B = 구현 완료**, **B.1 = staging 실측으로 증명 완료**  
 > **판단 재료**: 이 문서의 실제 결과만 (코드 설명·기획 문서로 대체 불가)  
-> **동결 기록**: [`b1-staging-run-freeze.md`](./b1-staging-run-freeze.md)  
+> **동결**: [`b1-staging-run-freeze.md`](./b1-staging-run-freeze.md)  
+> **권한 요청·계정·증거 위치**: [`b1-staging-access-request.md`](./b1-staging-access-request.md)  
 > **런북**: [`scripts/b1-staging-gate.md`](../../scripts/b1-staging-gate.md)  
 > **체크리스트**: [`supabase/tests/020_staging_jwt_penetration_checklist.sql`](../../supabase/tests/020_staging_jwt_penetration_checklist.sql)
 
-### Cloud agent 실행 불가 사유 (2026-07-25)
-
-이 실행 환경에는 Supabase staging URL/키·Docker가 없어 JWT 전수를 돌릴 수 없다.  
-**가짜 PASS를 쓰지 않는다.** staging 접근이 제공되면 동결 SHA에서 런북대로 재개한다.
+가짜 PASS / 조건부 PASS 금지. staging 담당자가 런북을 실행한 뒤에만 이 문서를 채운다.
 
 ---
 
