@@ -35,7 +35,7 @@
 | **11.5** | 실기기 출시 게이트 | 🔜 | [16](./16-phase-11.5-device-launch-gate.md), [15](./15-beta-launch-checklist.md) |
 | **i18n 1차** | English · 한국어 | ✅ | [17](./17-i18n-en-ko.md) |
 | **12·A** | 학교 신뢰 경계 기획·감사 | ✅ | [20](./20-school-trust-boundary-plan.md) |
-| **12·B** | 학교 스키마·RLS (`019+`) | ⏳ | [20](./20-school-trust-boundary-plan.md) Phase B |
+| **12·B** | `019` 권한 결합 · deny 테스트 · school_id 백필 | ⏳ | [20](./20-school-trust-boundary-plan.md) — 네 원칙 고정 후 착수 |
 | **12·C–D** | 온보딩·서클 school 가드 | ⏳ | 코드+초대/추천 RPC |
 | **12·E–G** | 다이어리·기척·쪽지 회귀 | ⏳ | UI+보안 테스트 |
 | **12·H** | staging·실기기 | ⏳ | 교차학교 공격 포함 |
