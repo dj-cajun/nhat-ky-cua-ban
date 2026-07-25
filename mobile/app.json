@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Your Diary",
+    "slug": "your-diary",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "yourdiary",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "locales": {
+      "en": "./locales/en.json"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourdiary.app",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleDevelopmentRegion": "en"
+      },
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "package": "com.yourdiary.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F4EF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-video",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "market": "US",
+      "defaultLocale": "en-US",
+      "defaultTimezone": "America/New_York"
+    }
+  }
+}
