@@ -176,16 +176,16 @@ function SketchStroke({
   size: OutlineSize;
   seedKey: string;
 }) {
-  const radii = radiiFor(size);
   const seed = hashSeed(seedKey);
   const d = useMemo(
-    () => buildSketchPath(width, height, radii, weight, seed),
-    [width, height, radii.tl, radii.tr, radii.br, radii.bl, weight, seed],
+    () => buildSketchPath(width, height, radiiFor(size), weight, seed),
+    [width, height, size, weight, seed],
   );
   // Second fainter pass for pencil grain (like layered graphite).
   const d2 = useMemo(
-    () => buildSketchPath(width, height, radii, weight * 0.85, seed ^ 0x85ebca6b),
-    [width, height, radii.tl, radii.tr, radii.br, radii.bl, weight, seed],
+    () =>
+      buildSketchPath(width, height, radiiFor(size), weight * 0.85, seed ^ 0x85ebca6b),
+    [width, height, size, weight, seed],
   );
 
   if (width < 4 || height < 4) return null;
@@ -195,10 +195,9 @@ function SketchStroke({
 
   return (
     <Svg
-      pointerEvents="none"
       width={width}
       height={height}
-      style={StyleSheet.absoluteFill}
+      style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
     >
       <Path
         d={d2}
@@ -311,7 +310,7 @@ export function DotPaper({ style }: { style?: StyleProp<ViewStyle> }) {
   }, []);
 
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, style]}>
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, style]}>
       {dots.map((d) => (
         <View
           key={d.key}

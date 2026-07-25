@@ -156,8 +156,11 @@ export function UniverseHome({
   return (
     <View style={[styles.root, { backgroundColor: INTRO_HANDOFF.spaceBg }]}>
       <Animated.View
-        style={[StyleSheet.absoluteFill, sceneStyle]}
-        pointerEvents={introPlaying ? 'none' : 'auto'}
+        style={[
+          StyleSheet.absoluteFill,
+          sceneStyle,
+          { pointerEvents: introPlaying ? 'none' : 'auto' },
+        ]}
       >
         {mode != null ? (
           <UniverseScene3D
@@ -189,7 +192,9 @@ export function UniverseHome({
             { width: modalW, height: modalH, backgroundColor: INTRO_HANDOFF.spaceBg },
           ]}
         >
-          <Animated.View style={[StyleSheet.absoluteFill, sceneStyle]} pointerEvents="none">
+          <Animated.View
+            style={[StyleSheet.absoluteFill, sceneStyle, { pointerEvents: 'none' }]}
+          >
             <UniverseScene3D
               profile={profile}
               circles={circles}
@@ -225,11 +230,11 @@ export function UniverseHome({
               paddingBottom: 16 + insets.bottom,
               paddingLeft: 16 + insets.left,
               paddingRight: 16 + insets.right,
+              pointerEvents: 'box-none',
             },
           ]}
-          pointerEvents="box-none"
         >
-          <View style={styles.header} pointerEvents="box-none">
+          <View style={[styles.header, { pointerEvents: 'box-none' }]}>
             <View>
               <Text style={styles.brand}>{t.universe.brand}</Text>
               <Text style={styles.title}>{t.universe.title}</Text>
@@ -245,7 +250,7 @@ export function UniverseHome({
           </View>
 
           {circles.length === 0 && introDone ? (
-            <View style={styles.emptyWrap} pointerEvents="box-none">
+            <View style={[styles.emptyWrap, { pointerEvents: 'box-none' }]}>
               <Text style={styles.emptyTitle}>{t.universe.emptyTitle}</Text>
               <Text style={styles.emptySub}>{t.universe.emptySub}</Text>
               {canCreate ? (

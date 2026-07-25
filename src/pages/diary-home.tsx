@@ -36,6 +36,7 @@ export function DiaryHomePage() {
   const sharedCircle = circles[0] ?? null;
 
   const canView = useMemo(() => {
+    void tick; // force refresh after guestbook / free-board writes
     if (!me || !ownerId) return false;
     if (isMine) return true;
     if (!entry) return true;

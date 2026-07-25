@@ -130,11 +130,14 @@ export function FallbackUniverse({
       <StarField width={width} height={height} />
 
       <Animated.View
-        style={[StyleSheet.absoluteFill, diagramStyle]}
-        pointerEvents={revealPlanets ? 'box-none' : 'none'}
+        style={[
+          StyleSheet.absoluteFill,
+          diagramStyle,
+          { pointerEvents: revealPlanets ? 'box-none' : 'none' },
+        ]}
       >
         {circleDisks.map((c) => (
-          <View key={c.circle.id} pointerEvents="box-none" style={{ zIndex: c.z }}>
+          <View key={c.circle.id} style={{ zIndex: c.z, pointerEvents: 'box-none' }}>
             {/* Pastel-filled large circle wrapping A */}
             <Pressable
               onPress={() => onPressCircle(c.circle.id)}
@@ -203,7 +206,6 @@ export function FallbackUniverse({
           testID="universe-self-sphere"
         >
           <View
-            pointerEvents="none"
             style={[
               styles.glow,
               {
@@ -211,11 +213,11 @@ export function FallbackUniverse({
                 height: hit,
                 borderRadius: hit / 2,
                 backgroundColor: INTRO_HANDOFF.sphere.glow,
+                pointerEvents: 'none',
               },
             ]}
           />
           <View
-            pointerEvents="none"
             style={[
               styles.sphere,
               {
@@ -223,6 +225,7 @@ export function FallbackUniverse({
                 height: diameter,
                 borderRadius: diameter / 2,
                 backgroundColor: INTRO_HANDOFF.sphere.color,
+                pointerEvents: 'none',
               },
             ]}
           >
@@ -279,7 +282,7 @@ function StarField({ width, height }: { width: number; height: number }) {
     [width, height],
   );
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
       {stars.map((s) => (
         <View
           key={s.key}
@@ -342,10 +345,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    shadowColor: INTRO_HANDOFF.sphere.glow,
-    shadowOpacity: 0.5,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
+    // RN web: prefer boxShadow over deprecated shadow* props
+    boxShadow: `0 6px 18px ${INTRO_HANDOFF.sphere.glow}80`,
     elevation: 10,
   },
   highlight: {

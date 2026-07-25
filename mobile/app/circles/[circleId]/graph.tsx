@@ -392,7 +392,6 @@ function EdgeLine({
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
   return (
     <View
-      pointerEvents="none"
       style={{
         position: 'absolute',
         left: (x1 + x2) / 2 - len / 2,
@@ -404,6 +403,7 @@ function EdgeLine({
         opacity,
         transform: [{ rotate: `${angle}deg` }],
         zIndex: 2,
+        pointerEvents: 'none',
       }}
     />
   );

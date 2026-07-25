@@ -62,6 +62,8 @@ export function GiftInbox({ onClose }: GiftInboxProps) {
   );
 }
 
+/** Hook co-located for gift inbox badge; not a component export. */
+// eslint-disable-next-line react-refresh/only-export-components -- badge helper
 export function useGiftBadgeCount(): number {
   return getUnopenedGiftCount();
 }

@@ -77,7 +77,6 @@ export function SyntheticSunBirth({
   const sunStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
-    shadowOpacity: 0.35 + glow.value * 0.45,
   }));
 
   const haloStyle = useAnimatedStyle(() => ({
@@ -110,7 +109,7 @@ export function SyntheticSunBirth({
             left,
             top,
             backgroundColor: INTRO_HANDOFF.sphere.color,
-            shadowColor: INTRO_HANDOFF.sphere.glow,
+            boxShadow: `0 0 28px ${INTRO_HANDOFF.sphere.glow}`,
           },
           sunStyle,
         ]}
@@ -141,8 +140,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 0 },
     elevation: 12,
   },
   core: {

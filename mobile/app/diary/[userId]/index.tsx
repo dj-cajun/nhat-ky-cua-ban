@@ -63,7 +63,6 @@ import { hompy } from '@/constants/hompy-theme';
 import { useMessages, DEFAULT_TIMEZONE, useLocale } from '@/i18n';
 import {
   backToCircleGraph,
-  openDiaryFromCircle,
   resolveCircleGraphId,
 } from '@/features/universe-home/circle-visit';
 

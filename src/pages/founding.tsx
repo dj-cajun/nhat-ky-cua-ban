@@ -89,7 +89,16 @@ export function FoundingPage({ schoolName, className, joinToken, onComplete }: F
     setRecord(result.record);
     setMessage(t.founding.joinSuccess);
     syncRoute(result.record.schoolName, result.record.className);
-  }, [joinToken, schoolName, className, zaloUser.id, zaloUser.name, syncRoute]);
+  }, [
+    joinToken,
+    schoolName,
+    className,
+    zaloUser.id,
+    zaloUser.name,
+    syncRoute,
+    t.founding.joinErrors,
+    t.founding.joinSuccess,
+  ]);
 
   useEffect(() => {
     if (joinToken) return;
