@@ -344,7 +344,12 @@ export const en = {
 
   guestbook: {
     title: 'Guestbook',
-    sub: 'Preview the latest 3. No photos or links. Use Report if something feels wrong.',
+    sub: 'Only on this homepage. Guests leave notes — no photos or links.',
+  },
+
+  freeBoard: {
+    title: 'Free board',
+    sub: 'Only on this homepage. The homepage owner can write here too.',
   },
 
   calendar: {

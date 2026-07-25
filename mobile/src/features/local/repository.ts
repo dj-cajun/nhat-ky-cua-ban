@@ -105,6 +105,8 @@ interface LocalDb {
   hiddenContent: HiddenContentRow[];
   moderationStatus: ModerationStatusRow[];
   guestbook: GuestbookRow[];
+  /** Personal free board posts — visible only on that user's homepage. */
+  freeBoard: FreeBoardRow[];
   photos: PhotoAssetRow[];
   circleAliases: {
     id: string;
@@ -240,6 +242,16 @@ export interface GuestbookRow {
   createdAt: string;
 }
 
+/** Free board on a personal mini-hompy (owner + visitors can write). */
+export interface FreeBoardRow {
+  id: string;
+  ownerUserId: string;
+  authorUserId: string;
+  body: string;
+  hidden: boolean;
+  createdAt: string;
+}
+
 interface PhotoAssetRow {
   id: string;
   userId: string;
@@ -268,6 +280,7 @@ const empty: LocalDb = {
   hiddenContent: [],
   moderationStatus: [],
   guestbook: [],
+  freeBoard: [],
   photos: [],
   circleAliases: [],
   anonymousPosts: [],
@@ -330,6 +343,7 @@ export async function loadLocalDb(): Promise<void> {
     memory.hiddenContent ??= [];
     memory.moderationStatus ??= [];
     memory.guestbook ??= [];
+    memory.freeBoard ??= [];
     memory.photos ??= [];
     memory.circleAliases ??= [];
     memory.anonymousPosts ??= [];
@@ -579,7 +593,76 @@ export async function ensureDemoOpenCircle(userId: string): Promise<CircleSummar
     color: CIRCLE_COLORS[2] ?? CIRCLE_COLORS[0],
     symbol: CIRCLE_SYMBOLS[2] ?? CIRCLE_SYMBOLS[0],
   });
+  seedHompyBoardDemo(userId, friendA, circle.id);
+  await persist();
   return listMyCircleSummaries(userId);
+}
+
+/** Soft demo rows for existing local sessions that already have a circle. */
+export async function ensureHompyBoardSeeds(userId: string): Promise<void> {
+  await loadLocalDb();
+  const circles = await listMyCircleSummaries(userId);
+  if (circles.length === 0) return;
+  const friendA = '00000000-0000-4000-8000-0000000000a1';
+  const before =
+    memory.guestbook.length + memory.freeBoard.length + memory.anonymousPosts.length;
+  seedHompyBoardDemo(userId, friendA, circles[0]!.id);
+  const after =
+    memory.guestbook.length + memory.freeBoard.length + memory.anonymousPosts.length;
+  if (after !== before) await persist();
+}
+
+/** Soft demo rows so school-style boards aren’t empty on first open. */
+function seedHompyBoardDemo(ownerId: string, friendId: string, circleId: string): void {
+  if (!memory.guestbook.some((g) => g.ownerUserId === ownerId)) {
+    memory.guestbook.push({
+      id: uid(),
+      ownerUserId: ownerId,
+      authorUserId: friendId,
+      body: '다녀가요~ 오늘 기분 좋아 보여요.',
+      hidden: false,
+      createdAt: new Date(Date.now() - 3600_000).toISOString(),
+    });
+  }
+  if (!memory.freeBoard.some((p) => p.ownerUserId === ownerId)) {
+    memory.freeBoard.push(
+      {
+        id: uid(),
+        ownerUserId: ownerId,
+        authorUserId: ownerId,
+        body: '자유게시판 첫 글 — 여기에 아무거나 남겨요.',
+        hidden: false,
+        createdAt: new Date(Date.now() - 7200_000).toISOString(),
+      },
+      {
+        id: uid(),
+        ownerUserId: ownerId,
+        authorUserId: friendId,
+        body: '사진첩이랑 캘린더 느낌 좋아요!',
+        hidden: false,
+        createdAt: new Date(Date.now() - 1800_000).toISOString(),
+      },
+    );
+  }
+  if (!memory.anonymousPosts.some((p) => p.circleId === circleId)) {
+    const alias = {
+      id: uid(),
+      circleId,
+      userId: friendId,
+      aliasName: 'Quiet Lantern',
+      createdAt: now(),
+    };
+    memory.circleAliases.push(alias);
+    memory.anonymousPosts.push({
+      id: uid(),
+      circleId,
+      authorUserId: friendId,
+      aliasId: alias.id,
+      body: '같은 서클만 보는 써클게시판이에요.',
+      status: 'active',
+      createdAt: new Date(Date.now() - 5400_000).toISOString(),
+    });
+  }
 }
 
 export async function updateCircleDesign(
@@ -2177,17 +2260,151 @@ export async function listGuestbook(
   if (await isBlockedBetween(ownerUserId, viewerId)) {
     throw new AppError('FORBIDDEN', 'You can’t view this.');
   }
-  return memory.guestbook.filter(
-    (g) =>
-      g.ownerUserId === ownerUserId &&
-      !g.hidden &&
-      !memory.hiddenContent.some(
-        (h) =>
-          h.userId === viewerId &&
-          h.targetType === 'guestbook_entry' &&
-          h.targetId === g.id,
-      ),
-  );
+  return memory.guestbook
+    .filter(
+      (g) =>
+        g.ownerUserId === ownerUserId &&
+        !g.hidden &&
+        !memory.hiddenContent.some(
+          (h) =>
+            h.userId === viewerId &&
+            h.targetType === 'guestbook_entry' &&
+            h.targetId === g.id,
+        ),
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+function validateHompyBoardBody(body: string, max = 200): string {
+  const trim = body.trim();
+  if (trim.length < 1 || trim.length > max) {
+    throw new AppError('VALIDATION', `Write 1–${max} characters.`);
+  }
+  if (/https?:\/\//i.test(trim) || /www\./i.test(trim)) {
+    throw new AppError('VALIDATION', 'Links aren’t allowed.');
+  }
+  return trim;
+}
+
+/**
+ * Free board — personal homepage only.
+ * Homepage owner and visitors who can open the hompy may write.
+ */
+export async function addFreeBoardPost(input: {
+  ownerUserId: string;
+  authorUserId: string;
+  body: string;
+}): Promise<FreeBoardRow> {
+  await loadLocalDb();
+  assertNotSuspended(input.authorUserId);
+  if (await isBlockedBetween(input.ownerUserId, input.authorUserId)) {
+    throw new AppError('FORBIDDEN', 'You can’t post here.');
+  }
+  const row: FreeBoardRow = {
+    id: uid(),
+    ownerUserId: input.ownerUserId,
+    authorUserId: input.authorUserId,
+    body: validateHompyBoardBody(input.body, 300),
+    hidden: false,
+    createdAt: now(),
+  };
+  memory.freeBoard.push(row);
+  await persist();
+  return row;
+}
+
+export async function listFreeBoard(
+  ownerUserId: string,
+  viewerId: string,
+): Promise<FreeBoardRow[]> {
+  await loadLocalDb();
+  if (await isBlockedBetween(ownerUserId, viewerId)) {
+    throw new AppError('FORBIDDEN', 'You can’t view this.');
+  }
+  return memory.freeBoard
+    .filter(
+      (p) =>
+        p.ownerUserId === ownerUserId &&
+        !p.hidden &&
+        !memory.hiddenContent.some(
+          (h) =>
+            h.userId === viewerId &&
+            h.targetType === 'free_board_post' &&
+            h.targetId === p.id,
+        ),
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function deleteFreeBoardPost(
+  postId: string,
+  actorId: string,
+): Promise<void> {
+  await loadLocalDb();
+  const post = memory.freeBoard.find((p) => p.id === postId);
+  if (!post) throw new AppError('NOT_FOUND', 'Post not found.');
+  if (post.authorUserId !== actorId && post.ownerUserId !== actorId) {
+    throw new AppError('FORBIDDEN', 'Only the author or homepage owner can delete.');
+  }
+  post.hidden = true;
+  await persist();
+}
+
+/**
+ * Circle board on a mini-hompy:
+ * - Own home → first open circle
+ * - Friend home → first shared open circle (null if none → board hidden)
+ */
+export async function resolveHompyCircleBoard(
+  viewerId: string,
+  ownerId: string,
+): Promise<{ circleId: string; circleName: string } | null> {
+  await loadLocalDb();
+  if (await isBlockedBetween(viewerId, ownerId)) {
+    throw new AppError('FORBIDDEN', "You can't view this.");
+  }
+  if (viewerId === ownerId) {
+    const mine = await listMyCircleSummaries(viewerId);
+    const c = mine[0];
+    return c ? { circleId: c.id, circleName: c.name } : null;
+  }
+  const shared = await listSharedCirclesWith(viewerId, ownerId);
+  const c = shared[0];
+  return c ? { circleId: c.id, circleName: c.name } : null;
+}
+
+export type HompyCirclePreview = {
+  id: string;
+  aliasName: string;
+  body: string;
+  createdAt: string;
+};
+
+/** Latest circle-board (alias) posts for hompy preview; empty if no shared circle. */
+export async function listHompyCircleBoardPreview(
+  viewerId: string,
+  ownerId: string,
+  limit = 3,
+): Promise<{
+  circle: { circleId: string; circleName: string } | null;
+  items: HompyCirclePreview[];
+}> {
+  const circle = await resolveHompyCircleBoard(viewerId, ownerId);
+  if (!circle) return { circle: null, items: [] };
+  const { items } = await getAnonymousCirclePosts({
+    circleId: circle.circleId,
+    viewerId,
+    limit,
+  });
+  return {
+    circle,
+    items: items.map((i) => ({
+      id: i.id,
+      aliasName: i.aliasName,
+      body: i.body,
+      createdAt: i.createdAt,
+    })),
+  };
 }
 
 export async function setUserModerationStatus(input: {

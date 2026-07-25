@@ -32,10 +32,15 @@ import {
   getSessionProfile,
   isBlockedBetween,
   listCircleMembers,
+  listFreeBoard,
   listGuestbook,
+  ensureHompyBoardSeeds,
+  listHompyCircleBoardPreview,
   listMyCircleSummaries,
   listRecentDiaryEntries,
+  type FreeBoardRow,
   type GuestbookRow,
+  type HompyCirclePreview,
   upsertDiary,
 } from '@/features/local/repository';
 import { blockUser } from '@/features/moderation/block.service';
@@ -76,6 +81,13 @@ export default function DiaryScreen() {
   const [recentEntries, setRecentEntries] = useState<DiaryEntry[]>([]);
   const [guestbook, setGuestbook] = useState<GuestbookRow[]>([]);
   const [guestbookAuthors, setGuestbookAuthors] = useState<Record<string, string>>({});
+  const [freeBoard, setFreeBoard] = useState<FreeBoardRow[]>([]);
+  const [freeBoardAuthors, setFreeBoardAuthors] = useState<Record<string, string>>({});
+  const [circleBoard, setCircleBoard] = useState<{
+    circleId: string;
+    circleName: string;
+  } | null>(null);
+  const [circleBoardItems, setCircleBoardItems] = useState<HompyCirclePreview[]>([]);
   const [circles, setCircles] = useState<CircleSummary[]>([]);
   const [visitMembers, setVisitMembers] = useState<VisitMember[]>([]);
   const [canView, setCanView] = useState(true);
@@ -107,6 +119,13 @@ export default function DiaryScreen() {
   }, []);
 
   const loadHompySide = useCallback(async (session: Profile, ownerId: string) => {
+    if (session.id === ownerId) {
+      try {
+        await ensureHompyBoardSeeds(session.id);
+      } catch {
+        /* ignore seed failures */
+      }
+    }
     const myCircles = await listMyCircleSummaries(session.id);
     setCircles(myCircles);
     setRecentEntries(await listRecentDiaryEntries(ownerId, 21));
@@ -140,6 +159,29 @@ export default function DiaryScreen() {
       setGuestbookAuthors(authors);
     } catch {
       setGuestbook([]);
+    }
+
+    try {
+      const fb = await listFreeBoard(ownerId, session.id);
+      setFreeBoard(fb.slice(0, 6));
+      const authors: Record<string, string> = {};
+      for (const p of fb.slice(0, 6)) {
+        if (authors[p.authorUserId]) continue;
+        const ap = await getProfile(p.authorUserId);
+        if (ap) authors[p.authorUserId] = ap.displayName;
+      }
+      setFreeBoardAuthors(authors);
+    } catch {
+      setFreeBoard([]);
+    }
+
+    try {
+      const preview = await listHompyCircleBoardPreview(session.id, ownerId, 3);
+      setCircleBoard(preview.circle);
+      setCircleBoardItems(preview.items);
+    } catch {
+      setCircleBoard(null);
+      setCircleBoardItems([]);
     }
   }, []);
 
@@ -376,6 +418,10 @@ export default function DiaryScreen() {
           recentEntries={recentEntries}
           guestbook={guestbook}
           guestbookAuthors={guestbookAuthors}
+          freeBoard={freeBoard}
+          freeBoardAuthors={freeBoardAuthors}
+          circleBoard={circleBoard}
+          circleBoardItems={circleBoardItems}
           circles={circles}
           visitMembers={visitMembers}
           music={music}

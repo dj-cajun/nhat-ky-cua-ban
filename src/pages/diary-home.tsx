@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useLocale, useMessages } from '@/i18n';
 import * as store from '@/lib/v1-store';
@@ -29,9 +29,11 @@ export function DiaryHomePage() {
   const owner = ownerId ? store.getProfileById(ownerId) : null;
   const isMine = Boolean(me && ownerId && me.id === ownerId);
   const entry = ownerId ? store.getDiaryEntry(ownerId) : null;
-  const guestbook = ownerId ? store.listGuestbook(ownerId, 4) : [];
+  const guestbook = ownerId ? store.listGuestbook(ownerId, 3) : [];
+  const freeBoard = ownerId ? store.listFreeBoard(ownerId, 3) : [];
   const entries = ownerId ? store.listDiaryEntries(ownerId) : [];
   const mood = DIARY_MOODS.find((m) => m.id === entry?.mood);
+  const sharedCircle = circles[0] ?? null;
 
   const canView = useMemo(() => {
     if (!me || !ownerId) return false;
@@ -121,56 +123,65 @@ export function DiaryHomePage() {
           <DiaryAlbumPanel locale={locale} hasEntry={Boolean(canView && entry)} />
         </div>
 
-        <section className="cy-card cy-box-lavender cy-board-preview flex min-h-0 flex-[1.1] flex-col overflow-hidden p-2">
-          <div className="cy-board-preview-scroll space-y-2">
-            <BoardBlock
-              title={locale === 'ko' ? '짧은 글' : 'Short entry'}
-              empty={locale === 'ko' ? '아직 짧은 글이 없어요.' : 'No short entry yet.'}
-            >
-              {canView && entry?.shortText ? (
-                <p className="text-[11px] leading-relaxed text-slate-700">{entry.shortText}</p>
-              ) : null}
-            </BoardBlock>
+        <section className="cy-card cy-box-lavender cy-board-preview cy-board-preview-home flex min-h-0 flex-[1.1] flex-col overflow-hidden p-2">
+          <div className="cy-board-preview-scroll">
+            {sharedCircle ? (
+              <SchoolBoardSection
+                title={locale === 'ko' ? '써클게시판' : 'Circle board'}
+                tone="school"
+                empty={locale === 'ko' ? '아직 써클 글이 없어요.' : 'No circle posts yet.'}
+                lines={[]}
+                onOpen={() => setPage('circle')}
+              />
+            ) : null}
 
-            <BoardBlock
+            <SchoolBoardSection
               title={locale === 'ko' ? '방명록' : 'Guestbook'}
+              tone="guestbook"
               empty={locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.'}
-            >
-              {guestbook.length > 0 ? (
-                <ul className="space-y-1">
-                  {guestbook.map((g) => (
-                    <li key={g.id} className="text-[11px] text-slate-700">
-                      <span className="text-slate-400">
-                        {store.getProfileById(g.authorUserId)?.displayName ?? '·'} ·{' '}
-                      </span>
-                      {g.body}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </BoardBlock>
+              lines={guestbook.map((g) => ({
+                id: g.id,
+                author: store.getProfileById(g.authorUserId)?.displayName ?? '·',
+                body: g.body,
+              }))}
+              onOpen={() => undefined}
+            />
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setPage('circle')}
-                className="cy-hard-btn bg-white px-2.5 py-1.5 text-[10px] font-bold"
-              >
-                {locale === 'ko' ? '가명 게시판 →' : 'Alias board →'}
-              </button>
+            <SchoolBoardSection
+              title={locale === 'ko' ? '자유게시판' : 'Free board'}
+              tone="diary"
+              empty={
+                locale === 'ko' ? '아직 자유게시판 글이 없어요.' : 'No free-board posts yet.'
+              }
+              lines={freeBoard.map((p) => ({
+                id: p.id,
+                author: store.getProfileById(p.authorUserId)?.displayName ?? '·',
+                body: p.body,
+              }))}
+              onOpen={() => undefined}
+            />
+
+            <div className="flex flex-wrap gap-2 pt-2">
               <div className="cy-hard-btn flex items-center gap-1 bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-600">
                 ♪ {locale === 'ko' ? '오늘의 음악 (Spotify)' : "Today’s music (Spotify)"}
               </div>
             </div>
 
-            {!isMine && circles.length > 0 && (
+            {!isMine ? (
               <GuestbookComposer
                 ownerId={ownerId}
                 authorId={me.id}
                 locale={locale}
                 onDone={refresh}
               />
-            )}
+            ) : null}
+            <FreeBoardComposer
+              ownerId={ownerId}
+              authorId={me.id}
+              isMine={isMine}
+              locale={locale}
+              onDone={refresh}
+            />
           </div>
         </section>
       </div>
@@ -178,20 +189,64 @@ export function DiaryHomePage() {
   );
 }
 
-function BoardBlock({
+function SchoolBoardSection({
   title,
+  tone,
   empty,
-  children,
+  lines,
+  onOpen,
 }: {
   title: string;
+  tone: 'school' | 'guestbook' | 'diary';
   empty: string;
-  children: ReactNode;
+  lines: { id: string; author: string; body: string }[];
+  onOpen: () => void;
 }) {
-  const has = Boolean(children);
+  const slots = Array.from({ length: 3 }, (_, i) => lines[i] ?? null);
+  const toneClass =
+    tone === 'school'
+      ? 'cy-board-section-title--school'
+      : tone === 'guestbook'
+        ? 'cy-board-section-title--guestbook'
+        : 'cy-board-section-title--diary';
+
   return (
-    <div>
-      <p className="cy-board-section-title text-[10px] font-bold text-slate-600">{title}</p>
-      {has ? children : <p className="text-[10px] text-zinc-400">{empty}</p>}
+    <div className="sk-divider-top first:border-0 first:pt-0">
+      <button
+        type="button"
+        onClick={onOpen}
+        className={`cy-board-section-title cy-board-row-tappable w-full ${toneClass}`}
+      >
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <span className="cy-board-post-row-cue" aria-hidden>
+          ›
+        </span>
+      </button>
+      {slots.map((line, i) => {
+        if (!line) {
+          return (
+            <div key={`${title}-slot-${i}`} className="cy-board-post-row">
+              {lines.length === 0 && i === 0 ? (
+                <span className="text-[10px] text-zinc-400">{empty}</span>
+              ) : null}
+            </div>
+          );
+        }
+        return (
+          <button
+            key={line.id}
+            type="button"
+            onClick={onOpen}
+            className="cy-board-post-row cy-board-row-tappable w-full"
+          >
+            <span className="shrink-0 text-[10px] font-bold text-zinc-400">{line.author}</span>
+            <span className="min-w-0 flex-1 truncate text-zinc-700">{line.body}</span>
+            <span className="cy-board-post-row-cue" aria-hidden>
+              ·
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -279,12 +334,15 @@ function GuestbookComposer({
 }) {
   const [body, setBody] = useState('');
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-2">
+    <div className="mt-2 rounded-lg border border-amber-200/80 bg-[#fff8ee] p-2">
+      <p className="mb-1 text-[10px] font-bold text-slate-600">
+        {locale === 'ko' ? '방명록 쓰기' : 'Write guestbook'}
+      </p>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, 120))}
         placeholder={locale === 'ko' ? '방명록을 남겨요' : 'Leave a guestbook note'}
-        className="h-14 w-full resize-none text-[11px] outline-none"
+        className="h-14 w-full resize-none bg-transparent text-[11px] outline-none"
       />
       <button
         type="button"
@@ -297,6 +355,55 @@ function GuestbookComposer({
         className="mt-1 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-40"
       >
         {locale === 'ko' ? '남기기' : 'Post'}
+      </button>
+    </div>
+  );
+}
+
+function FreeBoardComposer({
+  ownerId,
+  authorId,
+  isMine,
+  locale,
+  onDone,
+}: {
+  ownerId: string;
+  authorId: string;
+  isMine: boolean;
+  locale: string;
+  onDone: () => void;
+}) {
+  const [body, setBody] = useState('');
+  return (
+    <div className="mt-2 rounded-lg border border-rose-200/80 bg-[#fff0f5] p-2">
+      <p className="mb-1 text-[10px] font-bold text-slate-600">
+        {locale === 'ko'
+          ? isMine
+            ? '자유게시판 쓰기 (주인)'
+            : '자유게시판 쓰기'
+          : isMine
+            ? 'Write free board (owner)'
+            : 'Write free board'}
+      </p>
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value.slice(0, 200))}
+        placeholder={
+          locale === 'ko' ? '자유게시판에 남겨요' : 'Write on the free board'
+        }
+        className="h-14 w-full resize-none bg-transparent text-[11px] outline-none"
+      />
+      <button
+        type="button"
+        disabled={!body.trim()}
+        onClick={() => {
+          store.addFreeBoard(ownerId, authorId, body);
+          setBody('');
+          onDone();
+        }}
+        className="mt-1 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-40"
+      >
+        {locale === 'ko' ? '올리기' : 'Post'}
       </button>
     </div>
   );

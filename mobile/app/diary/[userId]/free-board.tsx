@@ -15,24 +15,24 @@ import {
 } from '@/components/states';
 import { OutlineBox } from '@/features/diary-home/hompy-outline';
 import {
-  addGuestbookEntry,
+  addFreeBoardPost,
   getProfile,
   getSessionProfile,
-  listGuestbook,
-  type GuestbookRow,
+  listFreeBoard,
+  type FreeBoardRow,
 } from '@/features/local/repository';
 import { toAppError } from '@/lib/errors';
 import { hompy } from '@/constants/hompy-theme';
 import { useLocale, useMessages } from '@/i18n';
 import type { Profile } from '@/types/domain';
 
-export default function GuestbookScreen() {
+export default function FreeBoardScreen() {
   const t = useMessages();
   const [locale] = useLocale();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [me, setMe] = useState<Profile | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
-  const [rows, setRows] = useState<GuestbookRow[]>([]);
+  const [rows, setRows] = useState<FreeBoardRow[]>([]);
   const [authors, setAuthors] = useState<Record<string, string>>({});
   const [body, setBody] = useState('');
   const [error, setError] = useState('');
@@ -40,13 +40,13 @@ export default function GuestbookScreen() {
   const [saving, setSaving] = useState(false);
 
   const reload = useCallback(async (session: Profile, ownerId: string) => {
-    const list = await listGuestbook(ownerId, session.id);
+    const list = await listFreeBoard(ownerId, session.id);
     setRows(list);
     const map: Record<string, string> = {};
-    for (const g of list) {
-      if (map[g.authorUserId]) continue;
-      const p = await getProfile(g.authorUserId);
-      if (p) map[g.authorUserId] = p.displayName;
+    for (const p of list) {
+      if (map[p.authorUserId]) continue;
+      const profile = await getProfile(p.authorUserId);
+      if (profile) map[p.authorUserId] = profile.displayName;
     }
     setAuthors(map);
   }, []);
@@ -71,15 +71,15 @@ export default function GuestbookScreen() {
   }, [userId, reload]);
 
   const isMine = me?.id === userId;
-  /** Visitors leave guestbook notes; owner reads on their homepage. */
-  const canWrite = Boolean(me && owner && !isMine);
+  /** Owner and visitors who can open this homepage may write. */
+  const canWrite = Boolean(me && owner);
 
   const onSubmit = async () => {
     if (!me || !userId || !canWrite || saving) return;
     setSaving(true);
     setError('');
     try {
-      await addGuestbookEntry({
+      await addFreeBoardPost({
         ownerUserId: userId,
         authorUserId: me.id,
         body,
@@ -113,12 +113,17 @@ export default function GuestbookScreen() {
           <Pressable onPress={() => router.back()} hitSlop={8}>
             <Text style={styles.back}>← {locale === 'ko' ? '홈피' : 'Home'}</Text>
           </Pressable>
-          <Text style={styles.title}>{t.guestbook.title}</Text>
+          <Text style={styles.title}>{t.freeBoard.title}</Text>
           <Text style={styles.sub}>
             {locale === 'ko'
-              ? `${owner?.displayName ?? ''} 홈피 · 방명록`
-              : `${owner?.displayName ?? ''}'s guestbook`}
+              ? `${owner?.displayName ?? ''} 홈피 · 자유게시판`
+              : `${owner?.displayName ?? ''}'s free board`}
           </Text>
+          {isMine ? (
+            <Text style={styles.ownerBadge}>
+              {locale === 'ko' ? '홈피 주인 · 글쓰기 가능' : 'Homepage owner · you can write'}
+            </Text>
+          ) : null}
         </View>
 
         {error ? <AppErrorState message={error} /> : null}
@@ -129,13 +134,20 @@ export default function GuestbookScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={styles.empty}>
-              {locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.'}
+              {locale === 'ko'
+                ? '아직 자유게시판 글이 없어요.'
+                : 'No free-board posts yet.'}
             </Text>
           }
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Text style={styles.author}>
                 {authors[item.authorUserId] ?? '·'}
+                {item.authorUserId === userId
+                  ? locale === 'ko'
+                    ? ' (주인)'
+                    : ' (owner)'
+                  : ''}
               </Text>
               <Text style={styles.body}>{item.body}</Text>
             </View>
@@ -148,10 +160,16 @@ export default function GuestbookScreen() {
               value={body}
               onChangeText={setBody}
               placeholder={
-                locale === 'ko' ? '방명록을 남겨요' : 'Leave a guestbook note'
+                locale === 'ko'
+                  ? isMine
+                    ? '내 자유게시판에 남겨요'
+                    : '자유게시판에 남겨요'
+                  : isMine
+                    ? 'Write on your free board'
+                    : 'Write on this free board'
               }
               placeholderTextColor={hompy.soft}
-              maxLength={200}
+              maxLength={300}
               style={styles.input}
               multiline
             />
@@ -163,21 +181,15 @@ export default function GuestbookScreen() {
               <Text style={styles.sendText}>
                 {saving
                   ? locale === 'ko'
-                    ? '남기는 중…'
+                    ? '올리는 중…'
                     : 'Posting…'
                   : locale === 'ko'
-                    ? '남기기'
+                    ? '올리기'
                     : 'Post'}
               </Text>
             </Pressable>
           </View>
-        ) : (
-          <Text style={styles.ownerHint}>
-            {locale === 'ko'
-              ? '방명록은 손님이 남겨요. 내 글은 자유게시판에 써요.'
-              : 'Guests leave guestbook notes. Write on your free board instead.'}
-          </Text>
-        )}
+        ) : null}
       </OutlineBox>
     </SafeAreaView>
   );
@@ -191,6 +203,18 @@ const styles = StyleSheet.create({
   back: { fontSize: 11, fontWeight: '700', color: hompy.ink },
   title: { fontSize: 18, fontWeight: '700', color: hompy.ink },
   sub: { fontSize: 11, color: hompy.muted },
+  ownerBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 2,
+    fontSize: 10,
+    fontWeight: '700',
+    color: hompy.ink,
+    backgroundColor: 'rgba(255,232,240,0.8)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
   list: { paddingVertical: 8, gap: 8, flexGrow: 1 },
   row: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -204,10 +228,10 @@ const styles = StyleSheet.create({
   empty: { fontSize: 12, color: hompy.soft, paddingVertical: 16 },
   composer: { gap: 8, paddingTop: 4 },
   input: {
-    minHeight: 64,
+    minHeight: 72,
     borderWidth: 1,
-    borderColor: hompy.peachInk,
-    backgroundColor: hompy.peach,
+    borderColor: hompy.blushInk,
+    backgroundColor: hompy.blush,
     borderRadius: 10,
     padding: 10,
     fontSize: 13,
@@ -225,5 +249,4 @@ const styles = StyleSheet.create({
   },
   sendDisabled: { opacity: 0.45 },
   sendText: { fontSize: 12, fontWeight: '700', color: hompy.ink },
-  ownerHint: { fontSize: 11, color: hompy.muted, lineHeight: 16 },
 });

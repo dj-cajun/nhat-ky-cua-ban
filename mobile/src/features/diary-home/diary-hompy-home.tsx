@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -9,7 +9,12 @@ import {
 } from 'react-native';
 import type { DiaryMusicCard } from '@/features/diary-music/diary-music.types';
 import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
-import type { GuestbookRow } from '@/features/local/repository';
+import type {
+  FreeBoardRow,
+  GuestbookRow,
+  HompyCirclePreview,
+} from '@/features/local/repository';
+import { HompyBoardStack } from '@/features/diary-home/hompy-board-stack';
 import { DotPaper, OutlineBox } from '@/features/diary-home/hompy-outline';
 import { hompy } from '@/constants/hompy-theme';
 import { useLocale, useMessages } from '@/i18n';
@@ -29,6 +34,13 @@ type Props = {
   recentEntries: DiaryEntry[];
   guestbook: GuestbookRow[];
   guestbookAuthors: Record<string, string>;
+  freeBoard: FreeBoardRow[];
+  freeBoardAuthors: Record<string, string>;
+  circleBoard: {
+    circleId: string;
+    circleName: string;
+  } | null;
+  circleBoardItems: HompyCirclePreview[];
   circles: CircleSummary[];
   /** Kept for call-site compatibility; visit strip removed. */
   visitMembers?: VisitMember[];
@@ -52,6 +64,10 @@ export function DiaryHompyHome({
   recentEntries,
   guestbook,
   guestbookAuthors,
+  freeBoard,
+  freeBoardAuthors,
+  circleBoard,
+  circleBoardItems,
   circles,
   music,
   canView,
@@ -66,6 +82,76 @@ export function DiaryHompyHome({
   const moodMeta = DIARY_MOODS.find((m) => m.id === entry?.mood);
   const circle = circles[0];
   const week = useMemo(() => buildWeek(recentEntries, locale), [recentEntries, locale]);
+
+  const boardSections = useMemo(
+    () => [
+      {
+        key: 'circle',
+        title: locale === 'ko' ? '써클게시판' : 'Circle board',
+        titleTone: 'circle' as const,
+        visible: Boolean(circleBoard),
+        empty:
+          locale === 'ko'
+            ? '아직 써클 글이 없어요.'
+            : 'No circle posts yet.',
+        lines: circleBoardItems.map((p) => ({
+          id: p.id,
+          authorLabel: p.aliasName,
+          body: p.body,
+        })),
+        onOpen: () => {
+          if (!circleBoard) return;
+          router.push(`/circles/${circleBoard.circleId}/anonymous-board`);
+        },
+      },
+      {
+        key: 'guestbook',
+        title: locale === 'ko' ? '방명록' : 'Guestbook',
+        titleTone: 'guestbook' as const,
+        visible: true,
+        empty:
+          locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.',
+        lines: guestbook.slice(0, 3).map((g) => ({
+          id: g.id,
+          authorLabel: guestbookAuthors[g.authorUserId] ?? '·',
+          body: g.body,
+        })),
+        onOpen: () =>
+          router.push({
+            pathname: '/diary/[userId]/guestbook',
+            params: { userId: owner.id },
+          }),
+      },
+      {
+        key: 'free',
+        title: locale === 'ko' ? '자유게시판' : 'Free board',
+        titleTone: 'free' as const,
+        visible: true,
+        empty:
+          locale === 'ko' ? '아직 자유게시판 글이 없어요.' : 'No free-board posts yet.',
+        lines: freeBoard.slice(0, 3).map((p) => ({
+          id: p.id,
+          authorLabel: freeBoardAuthors[p.authorUserId] ?? '·',
+          body: p.body,
+        })),
+        onOpen: () =>
+          router.push({
+            pathname: '/diary/[userId]/free-board',
+            params: { userId: owner.id },
+          }),
+      },
+    ],
+    [
+      locale,
+      circleBoard,
+      circleBoardItems,
+      guestbook,
+      guestbookAuthors,
+      freeBoard,
+      freeBoardAuthors,
+      owner.id,
+    ],
+  );
 
   const handleBack = () => {
     if (onBack) {
@@ -226,49 +312,16 @@ export function DiaryHompyHome({
             </OutlineBox>
           </View>
 
-          {/* Board preview — cy-box-lavender */}
+          {/* School-style boards — circle / guestbook / free */}
           <OutlineBox
             fill={hompy.lavender}
             stroke={hompy.lavenderInk}
             contentStyle={styles.boardPad}
           >
-            <BoardBlock
-              title={locale === 'ko' ? '짧은 글' : 'Short entry'}
-              empty={locale === 'ko' ? '아직 짧은 글이 없어요.' : 'No short entry yet.'}
-            >
-              {canView && entry?.shortText ? (
-                <Text style={styles.body}>{entry.shortText}</Text>
-              ) : null}
-            </BoardBlock>
-
-            <BoardBlock
-              title={t.diary.guestbook}
-              empty={
-                locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.'
-              }
-            >
-              {guestbook.length > 0 ? (
-                <View style={{ gap: 4 }}>
-                  {guestbook.slice(0, 4).map((g) => (
-                    <Text key={g.id} style={styles.gbLine} numberOfLines={2}>
-                      <Text style={styles.gbAuthor}>
-                        {guestbookAuthors[g.authorUserId] ?? '·'} ·{' '}
-                      </Text>
-                      {g.body}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-            </BoardBlock>
+            <HompyBoardStack sections={boardSections} locale={locale} />
 
             <View style={styles.linkRow}>
-              {circle ? (
-                <HardBtn
-                  label={locale === 'ko' ? '가명 게시판 →' : 'Alias board →'}
-                  onPress={() => router.push(`/circles/${circle.id}/anonymous-board`)}
-                />
-              ) : null}
-              {/* Additive: Spotify slot (web shows placeholder chip) */}
+              {/* Additive: Spotify slot */}
               {music ? (
                 <View style={styles.musicWrap}>
                   <DiaryMusicCardView music={music} onOpen={() => onOpenMusic?.()} />
@@ -297,24 +350,6 @@ export function DiaryHompyHome({
           </OutlineBox>
         </ScrollView>
       </OutlineBox>
-    </View>
-  );
-}
-
-function BoardBlock({
-  title,
-  empty,
-  children,
-}: {
-  title: string;
-  empty: string;
-  children: ReactNode;
-}) {
-  const has = Boolean(children);
-  return (
-    <View style={styles.boardBlock}>
-      <Text style={styles.panelTitle}>{title}</Text>
-      {has ? children : <Text style={styles.emptyHint}>{empty}</Text>}
     </View>
   );
 }
@@ -462,12 +497,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   albumHint: { fontSize: 10, color: hompy.muted, textAlign: 'center' },
-  boardPad: { padding: 10, gap: 10 },
-  boardBlock: { gap: 2 },
-  body: { fontSize: 12, color: hompy.ink, lineHeight: 18 },
-  emptyHint: { fontSize: 10, color: hompy.soft },
-  gbLine: { fontSize: 11, color: hompy.ink },
-  gbAuthor: { color: hompy.soft },
+  boardPad: { padding: 8, gap: 10 },
   linkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 4, alignItems: 'center' },
   musicWrap: { flexGrow: 1, flexBasis: 200 },
   hardBtnInner: {

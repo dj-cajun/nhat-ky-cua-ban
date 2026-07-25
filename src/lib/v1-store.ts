@@ -44,8 +44,18 @@ const KEYS = {
   diary: 'v1_diary_entries',
   diaryVisibility: 'v1_diary_visibility',
   guestbook: 'v1_guestbook',
+  freeBoard: 'v1_free_board',
   session: 'v1_auth_session',
 } as const;
+
+export interface FreeBoardEntry {
+  id: string;
+  ownerUserId: string;
+  authorUserId: string;
+  body: string;
+  hidden?: boolean;
+  createdAt: string;
+}
 
 function uid(): string {
   return crypto.randomUUID();
@@ -766,6 +776,29 @@ export function addGuestbook(ownerUserId: string, authorUserId: string, body: st
 
 export function listGuestbook(ownerUserId: string, limit = 20): GuestbookEntry[] {
   return read<GuestbookEntry[]>(KEYS.guestbook, [])
+    .filter((g) => g.ownerUserId === ownerUserId && !g.hidden)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit);
+}
+
+export function addFreeBoard(
+  ownerUserId: string,
+  authorUserId: string,
+  body: string,
+): FreeBoardEntry {
+  const entry: FreeBoardEntry = {
+    id: uid(),
+    ownerUserId,
+    authorUserId,
+    body: body.trim().slice(0, 300),
+    createdAt: now(),
+  };
+  write(KEYS.freeBoard, [...read<FreeBoardEntry[]>(KEYS.freeBoard, []), entry]);
+  return entry;
+}
+
+export function listFreeBoard(ownerUserId: string, limit = 20): FreeBoardEntry[] {
+  return read<FreeBoardEntry[]>(KEYS.freeBoard, [])
     .filter((g) => g.ownerUserId === ownerUserId && !g.hidden)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, limit);

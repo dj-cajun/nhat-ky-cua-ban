@@ -40,6 +40,10 @@ import {
   signUpLocal,
   submitReport,
   addGuestbookEntry,
+  addFreeBoardPost,
+  listFreeBoard,
+  listGuestbook,
+  listHompyCircleBoardPreview,
   isContentHiddenForMe,
   upsertDiary,
 } from '@/features/local/repository';
@@ -361,5 +365,58 @@ describe('reports', () => {
     expect(report.contentSnapshot).not.toContain('forged');
     expect(report.status).toBe('submitted');
     expect(await isContentHiddenForMe(me.id, 'guestbook_entry', entry.id)).toBe(true);
+  });
+});
+describe('hompy boards', () => {
+  beforeEach(async () => {
+    store.clear();
+    await clearLocalDb();
+  });
+
+  it('keeps free board on the homepage owner and lets the owner write', async () => {
+    const me = await signUpLocal('Alex');
+    const friend = '00000000-0000-4000-8000-0000000000a1';
+    await addFreeBoardPost({
+      ownerUserId: me.id,
+      authorUserId: me.id,
+      body: '주인 첫 글',
+    });
+    await addFreeBoardPost({
+      ownerUserId: me.id,
+      authorUserId: friend,
+      body: '손님 댓글',
+    });
+    const mine = await listFreeBoard(me.id, me.id);
+    expect(mine.map((p) => p.body).sort()).toEqual(['손님 댓글', '주인 첫 글'].sort());
+    expect(mine.every((p) => p.ownerUserId === me.id)).toBe(true);
+    const otherHome = await listFreeBoard(friend, me.id);
+    expect(otherHome).toEqual([]);
+  });
+
+  it('shows circle board preview only when viewers share a circle', async () => {
+    const me = await signUpLocal('Alex');
+    await ensureDemoOpenCircle(me.id);
+    const friend = '00000000-0000-4000-8000-0000000000a1';
+    const outsider = await signUpLocal('Blake');
+
+    const asMember = await listHompyCircleBoardPreview(me.id, friend, 3);
+    expect(asMember.circle).not.toBeNull();
+    expect(asMember.items.length).toBeGreaterThan(0);
+
+    const asOutsider = await listHompyCircleBoardPreview(outsider.id, friend, 3);
+    expect(asOutsider.circle).toBeNull();
+    expect(asOutsider.items).toEqual([]);
+  });
+
+  it('lists guestbook newest-first on that homepage only', async () => {
+    const me = await signUpLocal('Alex');
+    const friend = '00000000-0000-4000-8000-0000000000a1';
+    await addGuestbookEntry({
+      ownerUserId: me.id,
+      authorUserId: friend,
+      body: '첫 방문',
+    });
+    const rows = await listGuestbook(me.id, me.id);
+    expect(rows[0]?.body).toBe('첫 방문');
   });
 });
