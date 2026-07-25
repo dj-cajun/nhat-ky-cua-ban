@@ -31,19 +31,38 @@
 
 | | |
 |--|--|
-| **한 가지 일** | “나는 우주에 있고, 내 서클이 주변에 있다” |
-| **히어로** | 화면 중앙~하단에 **나의 원형 오브** (얼굴/이니셜이 아닌 존재감) |
-| **주변** | 서클은 오브 주변의 **궤도/성단** — 리스트 카드 아님 |
-| **CTA** | 개척은 작고 드문 행동 (미인증이면 학교로) |
-| **모션** | 인트로 핸드오프 → 오브 호흡 → 서클 등장 (2–3개) |
-| **금지** | 통계 스트립, 일정, 공지 카드 스택, 학교 홈 |
+| **한 가지 일** | “나는 우주에 있고, **관계마다 거리감이 있다**” |
+| **히어로** | 중앙 **나의 원형 오브** |
+| **주변** | 사람 노드의 **크기 + 거리** (서클 메뉴 버튼 아님) |
+| **CTA** | 가까운 친구 오브 → 바로 다이어리 / 먼 점 → 포커스 후 방문 |
+| **모션** | 인트로 핸드오프 → 오브 호흡 → 포커스 시 점 당김 (E4) |
+| **금지** | 통계 스트립, 친밀도 자동 점수, 선택 알림, 학교 홈 |
+
+#### E2.1 Spatial relationship hierarchy
 
 ```text
-[ full-bleed space ]
-        ○  my orb
-     ◯       ◯   circles
-        ◯
-   (create) — secondary
+Spatial relationship hierarchy:
+
+- The authenticated user remains the central anchor.
+- Up to three privately selected close friends appear as large, uniquely colored orbs positioned nearest to the user.
+- Other authorized circle members appear as smaller graph-like nodes at greater distances.
+- Node size and distance communicate private spatial emphasis, not a public friendship score.
+- Close-friend placement is manually selected and never inferred from visits, notes, presence, or engagement.
+- Selection, replacement, size, and distance are private to the viewing user.
+- Distant nodes reveal names only when focused or tapped.
+- Selecting a distant node may temporarily bring it closer and reveal a diary entry action.
+- Spatial distance must never represent online status, popularity, responsiveness, or reciprocal affection.
+```
+
+```text
+             ·  distant
+
+      🟣 close A (front)
+                         ·
+                나
+   🟠 close B                    · near
+                     🟢 close C (back)
+          ·       ·        ·  cluster
 ```
 
 ### 2) 서클 (Circle graph)
@@ -114,7 +133,9 @@
 
 ```text
 E1  이 문서 콘셉트 확정          ✅
-E2  정적 프로토타입 (4화면)     ← 리뷰 중 · /prototype/e2 · e2-prototype/index.html
+E2  정적 프로토타입 (4화면)     리뷰 FAIL(친구 오늘 장면) — E3 금지
+E2.1 우주 관계 거리(크기+거리)  PASS · 수동 close-3 · 자동 친밀도 금지
+E2.2 친구/내 다이어리 장면 미디어 ← 다음 (A FAIL 해소)
 E3  핵심 화면 구현 (구조 교체)  ⛔ E2 승인 전 금지
 E4  모션·인트로·오브제
 E5  실제 기능 연결 (공지/편지/달력/토마토)

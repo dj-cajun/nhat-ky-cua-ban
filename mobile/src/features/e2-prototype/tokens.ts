@@ -67,8 +67,18 @@ export const e2 = {
     bodySemi: 'Outfit_600SemiBold',
   },
   spacePad: 20,
-  orbSelf: 118,
+  orbSelf: 112,
+  /** Close friends — large unique orbs nearest to self */
+  orbClose: 56,
+  orbCloseFront: 64,
+  orbCloseBack: 48,
+  /** Near members — medium graph nodes */
+  orbNear: 22,
+  /** Distant members — small dots */
+  orbDistant: 9,
   orbCircle: 72,
   orbFriend: 64,
   objectSize: 52,
+  linkFaint: 'rgba(215,222,234,0.14)',
+  linkFocus: 'rgba(232,199,138,0.55)',
 } as const;

@@ -103,36 +103,64 @@
         position: relative; z-index: 2;
       }
       .tag { color: var(--whisper); font-size: 15px; position: relative; z-index: 2; }
-      .stage { position: relative; flex: 1; min-height: 420px; margin-top: 8px; }
+      .stage { position: relative; flex: 1; min-height: 440px; margin-top: 8px; }
+      .links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
       .self {
         position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%);
-        width: 118px; text-align: center; z-index: 5;
+        width: 112px; text-align: center; z-index: 10;
       }
       .self .orb {
-        width: 118px; height: 118px; border-radius: 999px;
+        width: 112px; height: 112px; border-radius: 999px;
         background: var(--orb); border: 2px solid var(--orb-rim);
         box-shadow: 0 0 40px rgba(232,199,138,.28);
         display: grid; place-items: center; font-size: 28px; color: #6a5430;
       }
       .self span { display: block; margin-top: 8px; letter-spacing: 2px; text-transform: uppercase; font-size: 12px; font-weight: 500; }
-      .c-orb {
-        position: absolute; width: 96px; text-align: center; cursor: pointer; background: none; border: 0; color: inherit;
+      .node {
+        position: absolute; border: 0; padding: 0; cursor: pointer; border-radius: 999px;
+        transform: translate(-50%, -50%);
       }
-      .c-orb i {
-        display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto; border-radius: 999px;
-        background: rgba(127,175,154,.35); border: 1px solid var(--circle-accent); font-style: normal; font-size: 24px;
+      .node.close { z-index: 6; background: none; width: auto; text-align: center; color: inherit; }
+      .node.close i {
+        display: block; margin: 0 auto; border-radius: 999px;
+        border: 2px solid rgba(255,255,255,.28); box-shadow: 0 6px 18px rgba(0,0,0,.35);
+        font-style: normal;
       }
-      .c-orb b { display: block; margin-top: 6px; font-size: 12px; font-weight: 500; color: var(--whisper); }
-      #universe .c1 { left: 6%; top: 18%; }
-      #universe .c2 { right: 4%; top: 28%; }
-      #universe .c3 { right: 18%; bottom: 16%; }
+      .node.close.front i { width: 64px; height: 64px; }
+      .node.close.mid i { width: 56px; height: 56px; }
+      .node.close.back i { width: 48px; height: 48px; opacity: .92; }
+      .node.close b { display: block; margin-top: 6px; font-size: 12px; font-weight: 500; }
+      .node.near { width: 22px; height: 22px; background: #9aa7b8; z-index: 3; }
+      .node.distant { width: 9px; height: 9px; background: #6b7384; z-index: 1; opacity: .85; }
+      .node.pulled { width: 28px; height: 28px; background: #b8c2d4; z-index: 8; opacity: 1; }
+      .focus-card {
+        position: absolute; left: 8px; right: 8px; bottom: 4px; z-index: 20;
+        border-radius: 18px; border: 1px solid rgba(244,239,230,.22);
+        background: rgba(14,21,38,.92); padding: 16px; display: none;
+      }
+      .focus-card.on { display: block; }
+      .focus-card h3 { margin: 0; font-family: var(--display); font-size: 22px; font-weight: 600; }
+      .focus-card p { margin: 6px 0 0; font-size: 13px; color: var(--whisper); }
+      .focus-card .visit {
+        margin-top: 14px; border: 0; border-radius: 999px; min-height: 44px; padding: 0 16px;
+        background: var(--orb); color: #3a2e18; font: 600 14px var(--body); cursor: pointer;
+      }
+      .focus-card .dismiss {
+        display: block; margin-top: 12px; background: none; border: 0; color: var(--whisper);
+        font: 400 13px var(--body); cursor: pointer; padding: 0; min-height: 36px;
+      }
+      .privacy {
+        margin: 6px 0 0; font-size: 11px; line-height: 1.35; color: rgba(215,222,234,.45); position: relative; z-index: 2;
+      }
       .foot {
-        text-align: center; margin-top: auto; padding-top: 12px; position: relative; z-index: 2;
+        text-align: center; margin-top: 8px; padding-top: 4px; position: relative; z-index: 2;
       }
       .foot button {
         background: none; border: 0; color: var(--whisper); text-decoration: underline;
         font: 400 14px/1.4 var(--body); cursor: pointer; min-height: 44px;
       }
+      #universe.dim .node.close, #universe.dim .node.near:not(.pulled), #universe.dim .node.distant:not(.pulled) { opacity: .35; }
+      #universe.dim .node.pulled, #universe.dim .self { opacity: 1; }
 
       #circle { background: linear-gradient(180deg, #17362f 0%, #0f241f 100%); color: var(--circle-ink); }
       #circle .back, #friend .back, #mine .back {
@@ -212,7 +240,7 @@
   <body>
     <div class="phone" aria-label="E2 static prototype phone frame">
       <section id="universe" class="screen active stars" aria-label="Universe Home">
-        <div class="meta"><span>Exit → close tab</span><span>E2 STATIC</span></div>
+        <div class="meta"><span>Exit → close tab</span><span>E2.1 STATIC</span></div>
         <nav class="rail" aria-label="Prototype screens">
           <button class="on" data-go="universe">Universe</button>
           <button data-go="circle">Circle</button>
@@ -220,17 +248,49 @@
           <button data-go="mine">Mine</button>
         </nav>
         <h1>Your Diary</h1>
-        <p class="tag">your quiet orbit</p>
-        <div class="stage" aria-label="Universe stage with your orb and circles">
-          <button class="c-orb c1" data-go="circle" aria-label="Open circle Brooklyn Friends"><i>◌</i><b>Brooklyn Friends</b></button>
-          <button class="c-orb c2" data-go="circle" aria-label="Open circle Late Night"><i>✦</i><b>Late Night</b></button>
-          <button class="c-orb c3" data-go="circle" aria-label="Open circle Study Quiet"><i>◦</i><b>Study Quiet</b></button>
+        <p class="tag">nearness you chose — private to you</p>
+        <div class="stage" id="universeStage" aria-label="Private spatial universe with relationship distances">
+          <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <line class="link-close" x1="50" y1="48" x2="34" y2="30" stroke="rgba(215,222,234,.14)" stroke-width="0.35" />
+            <line class="link-close" x1="50" y1="48" x2="66" y2="28" stroke="rgba(215,222,234,.14)" stroke-width="0.35" />
+            <line class="link-close" x1="50" y1="48" x2="30" y2="62" stroke="rgba(215,222,234,.14)" stroke-width="0.35" />
+            <line id="focusLink" x1="50" y1="48" x2="50" y2="48" stroke="rgba(232,199,138,.55)" stroke-width="0.45" style="display:none" />
+          </svg>
+          <!-- distant clusters -->
+          <button class="node distant" style="left:72%;top:18%" data-focus="Minji" data-circle="Brooklyn Friends" data-diary="1" data-x="72" data-y="18" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:80%;top:22%" data-focus="Noah" data-circle="Brooklyn Friends" data-diary="0" data-x="80" data-y="22" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:76%;top:12%" data-focus="Hana" data-circle="Brooklyn Friends" data-diary="0" data-x="76" data-y="12" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:18%;top:16%" data-focus="Theo" data-circle="Late Night" data-diary="1" data-x="18" data-y="16" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:12%;top:24%" data-focus="Ivy" data-circle="Late Night" data-diary="0" data-x="12" data-y="24" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:22%;top:78%" data-focus="Quinn" data-circle="Study Quiet" data-diary="0" data-x="22" data-y="78" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:30%;top:84%" data-focus="Jules" data-circle="Study Quiet" data-diary="1" data-x="30" data-y="84" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:16%;top:86%" data-focus="Sky" data-circle="Study Quiet" data-diary="0" data-x="16" data-y="86" aria-label="Focus distant member"></button>
+          <!-- near -->
+          <button class="node near" style="left:78%;top:58%" data-focus="Casey" data-circle="Brooklyn Friends" data-diary="1" data-x="78" data-y="58" aria-label="Casey, near member"></button>
+          <button class="node near" style="left:58%;top:82%" data-focus="Riley" data-circle="Study Quiet" data-diary="0" data-x="58" data-y="82" aria-label="Riley, near member"></button>
+          <!-- close friends: large unique orbs, direct diary -->
+          <button class="node close front" style="left:34%;top:30%;background:none" data-go="friend" aria-label="Minseo, close friend, open diary">
+            <i style="background:#C97B63"></i><b>Minseo</b>
+          </button>
+          <button class="node close back" style="left:66%;top:28%;background:none" data-go="friend" aria-label="Sam, close friend, open diary">
+            <i style="background:#7FAF9A"></i><b>Sam</b>
+          </button>
+          <button class="node close mid" style="left:30%;top:62%;background:none" data-go="friend" aria-label="Junho, close friend, open diary">
+            <i style="background:#6FA3C2"></i><b>Junho</b>
+          </button>
           <div class="self" aria-label="Your presence at the center">
             <div class="orb">◎</div>
             <span>you</span>
           </div>
+          <div class="focus-card" id="focusCard">
+            <h3 id="focusName">—</h3>
+            <p id="focusMeta">—</p>
+            <button class="visit" data-go="friend">visit diary</button>
+            <button class="dismiss" id="focusDismiss" type="button">return to place</button>
+          </div>
         </div>
-        <div class="foot"><button data-go="circle">enter a circle nearby</button></div>
+        <p class="privacy">Close-friend placement is private and manually chosen. Size and distance never mean online status, popularity, or reciprocal affection.</p>
+        <div class="foot"><button data-go="circle">open a circle room →</button></div>
       </section>
 
       <section id="circle" class="screen" aria-label="Circle">
@@ -309,14 +369,15 @@
     </div>
 
     <div class="doc">
-      <p><strong>E2 browser mirror</strong> — static only. In-app path: <code>/prototype/e2</code></p>
-      <p>Checklist: <code>docs/your-diary/23-phase-e2-prototype-checklist.md</code></p>
+      <p><strong>E2.1 browser mirror</strong> — spatial relationship hierarchy. In-app: <code>/prototype/e2</code></p>
+      <p>Checklist: <code>docs/your-diary/23-phase-e2-prototype-checklist.md</code> · Spatial rules in <code>22</code></p>
     </div>
 
     <script>
       const go = (id) => {
         document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('active', el.id === id));
         history.replaceState(null, '', '#' + id);
+        clearFocus();
       };
       document.querySelectorAll('[data-go]').forEach((el) => {
         el.addEventListener('click', () => go(el.getAttribute('data-go')));
@@ -328,6 +389,55 @@
       document.getElementById('tomato').addEventListener('click', () => {
         document.getElementById('focusHint').hidden = false;
       });
+
+      const universe = document.getElementById('universe');
+      const focusCard = document.getElementById('focusCard');
+      const focusLink = document.getElementById('focusLink');
+      let pulled = null;
+
+      function clearFocus() {
+        if (pulled) {
+          pulled.classList.remove('pulled');
+          if (pulled.dataset.homeLeft) {
+            pulled.style.left = pulled.dataset.homeLeft;
+            pulled.style.top = pulled.dataset.homeTop;
+          }
+          pulled = null;
+        }
+        focusCard.classList.remove('on');
+        universe.classList.remove('dim');
+        focusLink.style.display = 'none';
+      }
+
+      document.querySelectorAll('.node.distant, .node.near').forEach((el) => {
+        el.dataset.homeLeft = el.style.left;
+        el.dataset.homeTop = el.style.top;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (pulled === el) { clearFocus(); return; }
+          clearFocus();
+          pulled = el;
+          el.classList.add('pulled');
+          // temporarily nearer to center
+          const x = parseFloat(el.dataset.x);
+          const y = parseFloat(el.dataset.y);
+          el.style.left = (50 + (x - 50) * 0.55) + '%';
+          el.style.top = (48 + (y - 48) * 0.55) + '%';
+          document.getElementById('focusName').textContent = el.dataset.focus;
+          document.getElementById('focusMeta').textContent =
+            el.dataset.circle + (el.dataset.diary === '1' ? ' · diary today' : ' · quiet today');
+          focusCard.classList.add('on');
+          universe.classList.add('dim');
+          focusLink.setAttribute('x2', String(50 + (x - 50) * 0.55));
+          focusLink.setAttribute('y2', String(48 + (y - 48) * 0.55));
+          focusLink.style.display = 'block';
+        });
+      });
+      document.getElementById('focusDismiss').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearFocus();
+      });
+
       const initial = location.hash.replace('#', '') || 'universe';
       if (['universe', 'circle', 'friend', 'mine'].includes(initial)) go(initial);
     </script>

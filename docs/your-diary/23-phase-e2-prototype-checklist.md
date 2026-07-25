@@ -1,6 +1,6 @@
 # 23 — Phase E2 Prototype Checklist
 
-> **상태**: E2 **조건부 미승인** — E3 금지  
+> **상태**: E2 **조건부 미승인** — E3 금지 · **E2.1 공간 계층 반영**  
 > **리뷰어**: cloud agent (실제 HTML 미러 캡처 후 판정)  
 > **캡처**: `/opt/cursor/artifacts/screenshots/e2-prototype/e2-{universe,circle,friend,mine}.png`  
 > **앱 경로**: `/prototype/e2`  
@@ -28,10 +28,10 @@
 
 ## 7문항 상세
 
-### 1. 일반 SNS가 아닌가 — **PASS (약함)**
+### 1. 일반 SNS가 아닌가 — **PASS**
 
-* PASS: 피드/지표 없음. 중앙 YOU + 주변 서클 공간 배치.
-* 잔여 FAIL 신호: 서클이 아직 **라벨 달린 원형 버튼**에 가깝고, 별/깊이감이 얇음. “공간”보다 “아이콘 배치”에 가까울 때 있음.
+* PASS: 피드/지표 없음. E2.1 이후 중앙 YOU + **크기·거리가 다른** 관계 계층(가까운 컬러 오브 / near / distant 군집).
+* 메뉴형 동등 원형 버튼감은 완화됨. 서클 룸 화면은 여전히 보조 경로.
 
 ### 2. 서클 ≠ 채팅/게시판 — **PASS**
 
@@ -67,14 +67,29 @@
 
 ## E2 재작업 최소 범위 (E3 전)
 
-1. **Friend/My Diary 장면 미디어**  
-   - fixture용 **실제 분위기 이미지**(또는 강한 그라데이션·빛 얼룩·질감)로 placeholder 제거  
-   - 친구/내 다이어리 **시각적으로 다른 장면**이 한눈에 구분
-2. **Universe 서클 오브**  
-   - 메뉴 버튼감 완화: 크기/광채/거리감 차이, 라벨을 버튼 캡션처럼 보이게 하지 않기
-3. 프로토타입 상단 레일은 리뷰용으로 유지하되, **첫인상 판정 시 시각적 노이즈**임을 감안 (제품 UI 아님)
+1. **Friend/My Diary 장면 미디어** *(여전히 열림 — A FAIL)*  
+   - fixture용 **실제 분위기 이미지**/질감으로 placeholder 제거  
+   - 친구/내 다이어리 **시각적으로 다른 장면**
+2. **Universe E2.1 공간 계층** — **PASS (재캡처 2026-07-25)**  
+   - 중앙 나 + 가까운 친구 3(큰 컬러 오브·짧은·서로 다른 거리·희미한 선)  
+   - near 중간 점 · distant 작은 점(서클별 느슨한 군집)  
+   - 먼 점 탭 → 당김 + 이름/서클/방문 · 가까운 오브 → 바로 다이어리  
+   - **자동 친밀도·알림·공개 점수 없음** ([22](./22-phase-e-space-design.md) E2.1)
+3. 프로토타입 상단 레일은 리뷰용 노이즈로 감안
 
 모션으로 A를 덮지 말 것. 정적 장면에 하루가 보여야 함.
+
+---
+
+## E2.1 spatial review (Universe only)
+
+| 항목 | 판정 |
+|------|------|
+| 크기 + 거리로 층위 표현 | **PASS** |
+| close-3 수동·비공개 카피/규칙 | **PASS** |
+| distant 이름 숨김 → 포커스 시 공개 | **PASS** (HTML/앱 동작) |
+| 거리 ≠ 온라인/인기/호감 자동점수 | **PASS** |
+| Friend today 장면(A) | **FAIL** (별건 — E3 여전히 금지) |
 
 ---
 
@@ -97,4 +112,4 @@
 | Result | ☐ PASS · ☑ **FAIL — revise A then re-review** |
 | E3 allowed | **No** |
 | Reviewed at (UTC) | 2026-07-25 |
-| Notes | Structure principles OK; emotional visit FAIL on empty diary scene |
+| Notes | E2.1 universe spatial hierarchy PASS. Emotional visit (A) still FAIL on empty diary scene — E3 blocked. |
