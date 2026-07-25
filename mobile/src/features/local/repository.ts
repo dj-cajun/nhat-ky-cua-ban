@@ -17,6 +17,22 @@ import {
   type DiaryVisibilityMode,
   type Profile,
 } from '@/types/domain';
+import {
+  BETA_SCHOOL_CODE,
+  BETA_SCHOOL_ID,
+  BETA_SCHOOL_NAME,
+  BETA_SCHOOL_SLUG,
+  OTHER_SCHOOL_ID,
+  OTHER_SCHOOL_NAME,
+  canAccessCircleLocal,
+  isSchoolMemberForAccess,
+  isVerifiedSchoolMember,
+  type SchoolInviteCodeRow,
+  type SchoolMembershipRow,
+  type SchoolMembershipStatus,
+  type SchoolRow,
+  type SchoolVerificationRequestRow,
+} from '@/features/local/school';
 
 const KEY = 'nk_local_v1';
 
@@ -174,6 +190,11 @@ interface LocalDb {
     createdAt: string;
     updatedAt: string;
   }[];
+  /** 019 school trust boundary (local mirror) */
+  schools: SchoolRow[];
+  schoolMemberships: SchoolMembershipRow[];
+  schoolVerificationRequests: SchoolVerificationRequestRow[];
+  schoolInviteCodes: SchoolInviteCodeRow[];
 }
 
 export interface CirclePostRecord {
@@ -289,6 +310,10 @@ const empty: LocalDb = {
   privateMessageUserStates: [],
   messagePreferences: [],
   diaryMusic: [],
+  schools: [],
+  schoolMemberships: [],
+  schoolVerificationRequests: [],
+  schoolInviteCodes: [],
 };
 
 let memory: LocalDb = structuredClone(empty);
@@ -352,6 +377,10 @@ export async function loadLocalDb(): Promise<void> {
     memory.privateMessageUserStates ??= [];
     memory.messagePreferences ??= [];
     memory.diaryMusic ??= [];
+    memory.schools ??= [];
+    memory.schoolMemberships ??= [];
+    memory.schoolVerificationRequests ??= [];
+    memory.schoolInviteCodes ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -376,13 +405,301 @@ export async function loadLocalDb(): Promise<void> {
   } else {
     memory = structuredClone(empty);
   }
+  ensureSchoolSeed();
+  backfillCircleSchoolsAndMemberships();
   loaded = true;
+}
+
+function ensureSchoolSeed(): void {
+  if (!memory.schools.some((s) => s.id === BETA_SCHOOL_ID)) {
+    memory.schools.push({
+      id: BETA_SCHOOL_ID,
+      displayName: BETA_SCHOOL_NAME,
+      slug: BETA_SCHOOL_SLUG,
+      status: 'active',
+    });
+  }
+  if (!memory.schools.some((s) => s.id === OTHER_SCHOOL_ID)) {
+    memory.schools.push({
+      id: OTHER_SCHOOL_ID,
+      displayName: OTHER_SCHOOL_NAME,
+      slug: 'other-school-test',
+      status: 'active',
+    });
+  }
+  if (!memory.schoolInviteCodes.some((c) => c.code === BETA_SCHOOL_CODE)) {
+    memory.schoolInviteCodes.push({
+      id: 'invite-beta-default',
+      schoolId: BETA_SCHOOL_ID,
+      code: BETA_SCHOOL_CODE,
+      disabled: false,
+    });
+  }
+}
+
+/** Demo continuity: existing circle members inherit beta verified membership. */
+function backfillCircleSchoolsAndMemberships(): void {
+  for (const c of memory.circles) {
+    if (!c.schoolId) c.schoolId = BETA_SCHOOL_ID;
+  }
+  const userIds = new Set<string>();
+  for (const m of memory.members) userIds.add(m.userId);
+  for (const d of memory.draftMembers) userIds.add(d.userId);
+  for (const id of userIds) {
+    ensureVerifiedSchoolMembership(id, BETA_SCHOOL_ID);
+  }
+}
+
+function schoolById(schoolId: string): SchoolRow | undefined {
+  return memory.schools.find((s) => s.id === schoolId);
+}
+
+function membershipForUser(userId: string, schoolId: string): SchoolMembershipRow | undefined {
+  return memory.schoolMemberships.find((m) => m.userId === userId && m.schoolId === schoolId);
+}
+
+function primaryMembership(userId: string): SchoolMembershipRow | undefined {
+  const rank: Record<string, number> = {
+    verified: 0,
+    pending_change: 1,
+    pending: 2,
+    rejected: 3,
+    suspended: 4,
+    expired: 5,
+  };
+  return [...memory.schoolMemberships]
+    .filter((m) => m.userId === userId)
+    .sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9))[0];
+}
+
+function ensureVerifiedSchoolMembership(userId: string, schoolId: string): void {
+  const existing = membershipForUser(userId, schoolId);
+  if (existing) {
+    if (existing.status === 'pending' || existing.status === 'rejected') {
+      existing.status = 'verified';
+      existing.verifiedAt = now();
+      existing.updatedAt = now();
+    }
+    return;
+  }
+  memory.schoolMemberships.push({
+    id: uid(),
+    schoolId,
+    userId,
+    status: 'verified',
+    verifiedAt: now(),
+    createdAt: now(),
+    updatedAt: now(),
+  });
+}
+
+function assertActiveCircleMemberRow(circleId: string, userId: string): boolean {
+  return memory.members.some(
+    (m) => m.circleId === circleId && m.userId === userId && m.status === 'active',
+  );
+}
+
+async function assertCanAccessCircle(circleId: string, userId: string): Promise<void> {
+  if (!(await canAccessCircle(circleId, userId))) {
+    throw new AppError('FORBIDDEN', 'School or circle access denied.');
+  }
+}
+
+async function assertCanWriteCircle(circleId: string, userId: string): Promise<void> {
+  if (!(await canWriteCircle(circleId, userId))) {
+    throw new AppError('FORBIDDEN', 'Verified school membership required to write.');
+  }
+}
+
+export async function canAccessCircle(circleId: string, userId: string): Promise<boolean> {
+  await loadLocalDb();
+  const circle = memory.circles.find((c) => c.id === circleId);
+  if (!circle?.schoolId) return false;
+  const membership = membershipForUser(userId, circle.schoolId);
+  const school = schoolById(circle.schoolId);
+  const blocked = false; // caller checks pairwise blocks where needed
+  return canAccessCircleLocal({
+    membership,
+    school,
+    sameSchoolAsCircle: membership?.schoolId === circle.schoolId,
+    activeCircleMember: assertActiveCircleMemberRow(circleId, userId),
+    blocked,
+  });
+}
+
+export async function canWriteCircle(circleId: string, userId: string): Promise<boolean> {
+  await loadLocalDb();
+  const circle = memory.circles.find((c) => c.id === circleId);
+  if (!circle?.schoolId) return false;
+  if (!(await canAccessCircle(circleId, userId))) return false;
+  const membership = membershipForUser(userId, circle.schoolId);
+  const school = schoolById(circle.schoolId);
+  return isVerifiedSchoolMember(membership, school);
+}
+
+/** Mirror submit_school_invite_code — pending only, never auto-verified. */
+export async function submitSchoolInviteCode(
+  userId: string,
+  code: string,
+): Promise<{ schoolId: string; membershipStatus: 'pending'; requestId: string }> {
+  await loadLocalDb();
+  const trimmed = code.trim();
+  if (!trimmed) throw new AppError('VALIDATION', 'Enter a school code.');
+  const invite = memory.schoolInviteCodes.find((c) => c.code === trimmed && !c.disabled);
+  if (!invite) throw new AppError('FORBIDDEN', 'Invalid school code.');
+
+  let membership = membershipForUser(userId, invite.schoolId);
+  if (!membership) {
+    membership = {
+      id: uid(),
+      schoolId: invite.schoolId,
+      userId,
+      status: 'pending',
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    memory.schoolMemberships.push(membership);
+  } else if (membership.status !== 'verified' && membership.status !== 'suspended') {
+    membership.status = 'pending';
+    membership.updatedAt = now();
+  }
+
+  const request: SchoolVerificationRequestRow = {
+    id: uid(),
+    schoolId: invite.schoolId,
+    userId,
+    status: 'pending',
+    method: 'beta_code',
+    createdAt: now(),
+  };
+  memory.schoolVerificationRequests.push(request);
+  await persist();
+  return {
+    schoolId: invite.schoolId,
+    membershipStatus: 'pending',
+    requestId: request.id,
+  };
+}
+
+export async function getMySchoolMembership(userId: string): Promise<{
+  status: SchoolMembershipStatus;
+  schoolId?: string;
+  schoolName?: string;
+  verifiedAt?: string;
+}> {
+  await loadLocalDb();
+  const m = primaryMembership(userId);
+  if (!m) return { status: 'none' };
+  const school = schoolById(m.schoolId);
+  return {
+    status: m.status,
+    schoolId: m.schoolId,
+    schoolName: school?.displayName,
+    verifiedAt: m.verifiedAt,
+  };
+}
+
+/** Demo ops: any signed-in caller may review (mirrors ops.reports demo). */
+export async function opsListSchoolVerificationRequests(): Promise<
+  {
+    id: string;
+    schoolId: string;
+    schoolName: string;
+    userId: string;
+    status: string;
+    method: string;
+    createdAt: string;
+  }[]
+> {
+  await loadLocalDb();
+  return memory.schoolVerificationRequests
+    .filter((r) => r.status === 'pending')
+    .map((r) => ({
+      id: r.id,
+      schoolId: r.schoolId,
+      schoolName: schoolById(r.schoolId)?.displayName ?? r.schoolId,
+      userId: r.userId,
+      status: r.status,
+      method: r.method,
+      createdAt: r.createdAt,
+    }));
+}
+
+export async function opsReviewSchoolVerification(input: {
+  requestId: string;
+  decision: 'approved' | 'rejected';
+  note?: string;
+}): Promise<void> {
+  await loadLocalDb();
+  const req = memory.schoolVerificationRequests.find((r) => r.id === input.requestId);
+  if (!req) throw new AppError('NOT_FOUND', 'Request not found.');
+  if (req.status !== 'pending') throw new AppError('CONFLICT', 'Already reviewed.');
+  req.status = input.decision;
+  req.reviewedAt = now();
+  req.reviewNote = input.note;
+  const membership = membershipForUser(req.userId, req.schoolId);
+  if (input.decision === 'approved') {
+    if (membership) {
+      membership.status = 'verified';
+      membership.verifiedAt = now();
+      membership.updatedAt = now();
+    } else {
+      ensureVerifiedSchoolMembership(req.userId, req.schoolId);
+    }
+  } else if (membership?.status === 'pending') {
+    membership.status = 'rejected';
+    membership.updatedAt = now();
+  }
+  await persist();
+}
+
+/** Test helper — set membership status without ops UI. */
+export async function setSchoolMembershipStatusForTests(input: {
+  userId: string;
+  schoolId: string;
+  status: Exclude<SchoolMembershipStatus, 'none'>;
+}): Promise<void> {
+  await loadLocalDb();
+  let m = membershipForUser(input.userId, input.schoolId);
+  if (!m) {
+    m = {
+      id: uid(),
+      schoolId: input.schoolId,
+      userId: input.userId,
+      status: input.status,
+      createdAt: now(),
+      updatedAt: now(),
+      verifiedAt: input.status === 'verified' ? now() : undefined,
+    };
+    memory.schoolMemberships.push(m);
+  } else {
+    m.status = input.status;
+    m.updatedAt = now();
+    if (input.status === 'verified') m.verifiedAt = now();
+  }
+  await persist();
 }
 
 export async function clearLocalDb(): Promise<void> {
   memory = structuredClone(empty);
+  ensureSchoolSeed();
   loaded = true;
   await persist();
+}
+
+/** Demo convenience: verify at beta unless user already belongs to another school. */
+function ensureDemoSchoolForUser(userId: string): void {
+  const primary = primaryMembership(userId);
+  if (
+    primary &&
+    primary.schoolId !== BETA_SCHOOL_ID &&
+    (primary.status === 'verified' ||
+      primary.status === 'pending_change' ||
+      primary.status === 'suspended')
+  ) {
+    return;
+  }
+  ensureVerifiedSchoolMembership(userId, BETA_SCHOOL_ID);
 }
 
 function ensureDemoFriends(selfId: string): void {
@@ -446,6 +763,10 @@ export async function proposeCircleDraft(
   if (inviteeIds.includes(proposerId)) {
     throw new AppError('VALIDATION', 'You can’t invite yourself.');
   }
+  ensureDemoFriends(proposerId);
+  ensureDemoSchoolForUser(proposerId);
+  ensureDemoSchoolForUser(inviteeIds[0]);
+  ensureDemoSchoolForUser(inviteeIds[1]);
 
   const draft: CircleDraft = {
     id: uid(),
@@ -533,6 +854,22 @@ export async function openCircleFromDraft(
     return null;
   }
 
+  // Server assigns school from proposer's verified membership (never client school_id)
+  const proposerMembership = primaryMembership(draft.proposerId);
+  const proposerSchool = proposerMembership
+    ? schoolById(proposerMembership.schoolId)
+    : undefined;
+  if (!isVerifiedSchoolMember(proposerMembership, proposerSchool) || !proposerMembership) {
+    throw new AppError('FORBIDDEN', 'Verified school membership required to open a circle.');
+  }
+  for (const m of members) {
+    const mem = membershipForUser(m.userId, proposerMembership.schoolId);
+    const sch = schoolById(proposerMembership.schoolId);
+    if (!isVerifiedSchoolMember(mem, sch)) {
+      throw new AppError('FORBIDDEN', 'All pioneers must be verified at the same school.');
+    }
+  }
+
   const circle: Circle = {
     id: uid(),
     name: draft.proposedName,
@@ -541,6 +878,7 @@ export async function openCircleFromDraft(
     symbol: CIRCLE_SYMBOLS[0],
     createdBy: draft.proposerId,
     status: 'open',
+    schoolId: proposerMembership.schoolId,
     openedAt: now(),
     createdAt: now(),
   };
@@ -584,8 +922,11 @@ export async function ensureDemoOpenCircle(userId: string): Promise<CircleSummar
   if (existing.length > 0) return existing;
 
   ensureDemoFriends(userId);
+  ensureVerifiedSchoolMembership(userId, BETA_SCHOOL_ID);
   const friendA = '00000000-0000-4000-8000-0000000000a1'; // Minseo
   const friendB = '00000000-0000-4000-8000-0000000000b2'; // Junho
+  ensureVerifiedSchoolMembership(friendA, BETA_SCHOOL_ID);
+  ensureVerifiedSchoolMembership(friendB, BETA_SCHOOL_ID);
   const { draftId } = await proposeCircleDraft(userId, 'Brooklyn Friends', [friendA, friendB]);
   const circle = await demoAcceptAll(draftId);
   // Give the demo circle a second companion planet feel via design tweak only if needed
@@ -731,10 +1072,8 @@ export async function getCircle(circleId: string): Promise<Circle | null> {
 }
 
 export async function isCircleMember(circleId: string, userId: string): Promise<boolean> {
-  await loadLocalDb();
-  return memory.members.some(
-    (m) => m.circleId === circleId && m.userId === userId && m.status === 'active',
-  );
+  // Mirrors SQL is_circle_member → can_access_circle (school + active member)
+  return canAccessCircle(circleId, userId);
 }
 
 /** Invite-link preview — minimal fields only (mirrors get_circle_invite_preview) */
@@ -752,7 +1091,10 @@ export async function getCircleInvitePreview(
 } | null> {
   await loadLocalDb();
   const circle = memory.circles.find((c) => c.id === circleId && c.status === 'open');
-  if (!circle) return null;
+  if (!circle?.schoolId) return null;
+  const membership = membershipForUser(viewerId, circle.schoolId);
+  const school = schoolById(circle.schoolId);
+  if (!isSchoolMemberForAccess(membership, school)) return null;
   const members = memory.members.filter((m) => m.circleId === circleId && m.status === 'active');
   return {
     id: circle.id,
@@ -800,6 +1142,14 @@ export async function createJoinRequest(
   if (!circle) throw new AppError('NOT_FOUND', 'Circle not found.');
   if (circle.status !== 'open') {
     throw new AppError('VALIDATION', 'This circle isn’t open for joins.');
+  }
+  if (!circle.schoolId) {
+    throw new AppError('FORBIDDEN', 'Circle has no school boundary.');
+  }
+  const applicantMem = membershipForUser(applicantId, circle.schoolId);
+  const applicantSchool = schoolById(circle.schoolId);
+  if (!isVerifiedSchoolMember(applicantMem, applicantSchool)) {
+    throw new AppError('FORBIDDEN', 'Verified same-school membership required to join.');
   }
   if (await isCircleMember(circleId, applicantId)) {
     throw new AppError('CONFLICT', 'You’re already a member.');
@@ -894,11 +1244,17 @@ export async function respondCircleRecommendation(
   if (request.status !== 'pending') {
     throw new AppError('CONFLICT', 'This request was already handled.');
   }
-  if (!(await isCircleMember(request.circleId, actorId))) {
-    throw new AppError('FORBIDDEN', 'Only circle members can recommend.');
-  }
+  await assertCanWriteCircle(request.circleId, actorId);
   if (await isBlockedBetween(actorId, request.applicantId)) {
     throw new AppError('FORBIDDEN', 'Blocked users can’t complete this recommendation.');
+  }
+  const circle = memory.circles.find((c) => c.id === request.circleId);
+  if (circle?.schoolId) {
+    const appMem = membershipForUser(request.applicantId, circle.schoolId);
+    const appSchool = schoolById(circle.schoolId);
+    if (!isVerifiedSchoolMember(appMem, appSchool)) {
+      throw new AppError('FORBIDDEN', 'Applicant must be verified at the same school.');
+    }
   }
 
   if (decision === 'recommended') {
@@ -1136,8 +1492,12 @@ export async function ensureDemoJoinApplicant(): Promise<Profile> {
       createdAt: now(),
     };
     memory.profiles.push(profile);
-    await persist();
   }
+  ensureDemoSchoolForUser(DEMO_JOIN_IDS.yujin);
+  ensureDemoSchoolForUser(DEMO_JOIN_IDS.minseo);
+  ensureDemoSchoolForUser(DEMO_JOIN_IDS.junho);
+  ensureDemoSchoolForUser(DEMO_JOIN_IDS.seoyeon);
+  await persist();
   return profile;
 }
 
@@ -1281,13 +1641,15 @@ export async function canViewDiary(
   if (await isBlockedBetween(viewerId, ownerId)) return false;
   if (entry.visibilityMode === 'private') return false;
 
-  const viewerCircles = new Set(
-    memory.members.filter((m) => m.userId === viewerId && m.status === 'active').map((m) => m.circleId),
-  );
-  const ownerCircles = new Set(
-    memory.members.filter((m) => m.userId === ownerId && m.status === 'active').map((m) => m.circleId),
-  );
-  const shared = [...viewerCircles].filter((id) => ownerCircles.has(id));
+  const shared: string[] = [];
+  for (const circle of memory.circles.filter((c) => c.status === 'open')) {
+    if (
+      (await canAccessCircle(circle.id, viewerId)) &&
+      (await canAccessCircle(circle.id, ownerId))
+    ) {
+      shared.push(circle.id);
+    }
+  }
   if (shared.length === 0) return false;
   if (entry.visibilityMode === 'all_circles') return true;
 
@@ -1348,6 +1710,7 @@ const MAX_ACTIVE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function canCreateCirclePost(circleId: string, userId: string): Promise<boolean> {
   await loadLocalDb();
+  if (!(await canWriteCircle(circleId, userId))) return false;
   const member = memory.members.find(
     (m) => m.circleId === circleId && m.userId === userId && m.status === 'active',
   );
@@ -1366,9 +1729,7 @@ export async function createCirclePost(input: {
   options?: string[];
 }): Promise<CirclePostRecord> {
   await loadLocalDb();
-  if (!(await isCircleMember(input.circleId, input.createdBy))) {
-    throw new AppError('FORBIDDEN', 'Only members can post.');
-  }
+  await assertCanWriteCircle(input.circleId, input.createdBy);
   if (!(await canCreateCirclePost(input.circleId, input.createdBy))) {
     throw new AppError('FORBIDDEN', 'Only admins can create notices or polls.');
   }
@@ -1573,9 +1934,7 @@ export async function acknowledgeCircleNotice(input: {
   if (post.type !== 'notice') {
     throw new AppError('VALIDATION', 'Not a notice.');
   }
-  if (!(await isCircleMember(post.circleId, input.userId))) {
-    throw new AppError('FORBIDDEN', 'Only members can respond.');
-  }
+  await assertCanWriteCircle(post.circleId, input.userId);
 
   const existing = memory.responses.find(
     (r) => r.postId === input.postId && r.userId === input.userId,
@@ -1614,9 +1973,7 @@ export async function respondCirclePoll(input: {
   if (post.type !== 'poll') {
     throw new AppError('VALIDATION', 'Not a poll.');
   }
-  if (!(await isCircleMember(post.circleId, input.userId))) {
-    throw new AppError('FORBIDDEN', 'Only members can respond.');
-  }
+  await assertCanWriteCircle(post.circleId, input.userId);
   if (!memory.pollOptions.some((o) => o.id === input.optionId && o.postId === post.id)) {
     throw new AppError('VALIDATION', 'Invalid option.');
   }
@@ -2213,6 +2570,9 @@ export async function createPhotoSignedUrlToken(
     if (await isBlockedBetween(viewerId, photo.userId)) {
       throw new AppError('FORBIDDEN', 'You can’t view this.');
     }
+    if (!(await sharesOpenCircleLocal(viewerId, photo.userId, false))) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
   }
   return { photoId: photo.id, storagePath: photo.storagePath, allowed: true };
 }
@@ -2230,6 +2590,29 @@ export async function addDemoPhoto(userId: string, path: string): Promise<PhotoA
   return row;
 }
 
+async function sharesOpenCircleLocal(a: string, b: string, write: boolean): Promise<boolean> {
+  if (a === b) return true;
+  for (const circle of memory.circles.filter((c) => c.status === 'open' && c.schoolId)) {
+    const aMember = assertActiveCircleMemberRow(circle.id, a);
+    const bMember = assertActiveCircleMemberRow(circle.id, b);
+    if (!aMember || !bMember || !circle.schoolId) continue;
+    const aMem = membershipForUser(a, circle.schoolId);
+    const bMem = membershipForUser(b, circle.schoolId);
+    const school = schoolById(circle.schoolId);
+    if (write) {
+      if (isVerifiedSchoolMember(aMem, school) && isSchoolMemberForAccess(bMem, school)) {
+        return true;
+      }
+    } else if (
+      isSchoolMemberForAccess(aMem, school) &&
+      isSchoolMemberForAccess(bMem, school)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function addGuestbookEntry(input: {
   ownerUserId: string;
   authorUserId: string;
@@ -2237,6 +2620,12 @@ export async function addGuestbookEntry(input: {
 }): Promise<GuestbookRow> {
   await loadLocalDb();
   if (await isBlockedBetween(input.ownerUserId, input.authorUserId)) {
+    throw new AppError('FORBIDDEN', 'You can’t post here.');
+  }
+  if (
+    input.ownerUserId !== input.authorUserId &&
+    !(await sharesOpenCircleLocal(input.authorUserId, input.ownerUserId, true))
+  ) {
     throw new AppError('FORBIDDEN', 'You can’t post here.');
   }
   const row: GuestbookRow = {
@@ -2465,9 +2854,7 @@ export async function getOrCreateCircleAlias(
 ): Promise<{ aliasName: string; aliasId: string }> {
   await loadLocalDb();
   assertNotSuspended(userId);
-  if (!(await isCircleMember(circleId, userId))) {
-    throw new AppError('FORBIDDEN', 'Only members can use the alias board.');
-  }
+  await assertCanWriteCircle(circleId, userId);
   const existing = memory.circleAliases.find(
     (a) => a.circleId === circleId && a.userId === userId,
   );
@@ -2518,9 +2905,7 @@ export async function createAnonymousPost(input: {
 }> {
   await loadLocalDb();
   assertNotSuspended(input.userId);
-  if (!(await isCircleMember(input.circleId, input.userId))) {
-    throw new AppError('FORBIDDEN', 'Only members can post.');
-  }
+  await assertCanWriteCircle(input.circleId, input.userId);
   const mod = memory.moderationStatus.find((m) => m.userId === input.userId);
   if (mod?.accountStatus === 'restricted') {
     throw new AppError('FORBIDDEN', 'Posting is temporarily limited.');
@@ -2838,10 +3223,8 @@ async function sendPrivateMessageLocal(input: {
   if (!input.recipientId || input.recipientId === input.senderId) {
     throw new AppError('VALIDATION', 'Pick someone else.');
   }
-  if (!(await isCircleMember(input.circleId, input.senderId))) {
-    throw new AppError('FORBIDDEN', 'Only members can send notes.');
-  }
-  if (!(await isCircleMember(input.circleId, input.recipientId))) {
+  await assertCanWriteCircle(input.circleId, input.senderId);
+  if (!(await canAccessCircle(input.circleId, input.recipientId))) {
     throw new AppError('FORBIDDEN', 'Only members can send notes.');
   }
   if (await isBlockedBetween(input.senderId, input.recipientId)) {

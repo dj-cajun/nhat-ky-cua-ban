@@ -128,6 +128,14 @@ export default function AccountSettingsScreen() {
 
       <Pressable
         style={styles.link}
+        onPress={() => router.push('/school')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t.settings.school}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.link}
         onPress={() => router.push('/settings/blocked-users')}
         accessibilityRole="button"
       >
@@ -140,6 +148,14 @@ export default function AccountSettingsScreen() {
         accessibilityRole="button"
       >
         <Text style={styles.linkText}>{t.ops.title}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.link}
+        onPress={() => router.push('/ops/school-verifications')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t.ops.schoolLink}</Text>
       </Pressable>
 
       <Text style={styles.section}>{t.settings.featureFlags}</Text>

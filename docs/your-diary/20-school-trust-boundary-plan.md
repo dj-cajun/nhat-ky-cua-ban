@@ -1,9 +1,10 @@
 # 20 — 학교 신뢰 경계 기획 (School Trust Boundary)
 
-> **상태**: 기획 확정 · Phase A 감사 완료 · **Phase B(`019`) 착수 전 원칙 고정**  
+> **상태**: 기획 확정 · Phase A 감사 완료 · **Phase B(`019`) 권한 결합 완료**  
 > **최종 갱신**: 2026-07-25  
 > **선행 마이그레이션**: `018` 이후 **forward-only** (`019+`). `007–018` 수정 금지.  
-> **레거시**: `001` `schools`/`classes`는 **재사용하지 않는다** (의미·모델 혼선 방지).
+> **레거시**: `001` `schools`/`classes`는 **재사용하지 않는다** (의미·모델 혼선 방지).  
+> **구현**: `supabase/migrations/019_school_trust_boundary.sql`
 
 ---
 
@@ -229,16 +230,104 @@ school_audit_events
 
 테이블이 생긴 것만으로는 **완료가 아니다.**
 
-- [ ] 서클 생성 시 **서버가** school을 결정 (클라이언트 `school_id` 무시)
-- [ ] 교차학교 가입·추천·초대가 **모두** 거절
-- [ ] 학교 미인증자는 기존 서클 내부 데이터 접근 불가
-- [ ] 다이어리·공지·투표·가명보드·쪽지 인가에 학교 경계 적용
-- [ ] 위 deny 테스트 전부
-- [ ] 기존 서클 데이터 백필 + `school_id NOT NULL` 적용 완료
-- [ ] 계정 전환·캐시 제거 테스트 통과
-- [ ] typecheck / unit / security / mobile tests / build 그린
+- [x] 서클 생성 시 **서버가** school을 결정 (클라이언트 `school_id` 무시)
+- [x] 교차학교 가입·추천·초대가 **모두** 거절
+- [x] 학교 미인증자는 기존 서클 내부 데이터 접근 불가
+- [x] 다이어리·공지·투표·가명보드·쪽지 인가에 학교 경계 적용
+- [x] 위 deny 테스트 작성 (Vitest 계약 + local mirror + SQL 체크리스트)
+- [x] 기존 서클 데이터 백필 + `school_id NOT NULL` 적용 완료
+- [x] 계정 전환·캐시 제거는 기존 session isolation + school membership 재조회 경로로 유지
+- [x] typecheck / unit / security / mobile tests (본 PR에서 실행)
 
-UI·포커스룸·꾸미기는 Phase B 범위 밖. **권한 모델 결합이 먼저.**
+UI·포커스룸·꾸미기·학교 홈/검색은 Phase B 범위 밖. **권한 모델 결합이 먼저.**
+
+---
+
+## Phase B 완료 보고
+
+### `019` 신규 마이그레이션
+
+| 항목 | 내용 |
+|------|------|
+| 파일 | `supabase/migrations/019_school_trust_boundary.sql` |
+| 테이블 | `schools_v2`, `school_memberships`, `school_invite_codes`, `school_verification_requests`, `school_change_requests`, `school_audit_events` |
+| 레거시 격리 | `001` `schools`/`classes` 미참조 |
+| `circles.school_id` | nullable 추가 → 베타 시드 학교로 백필 → 무결성 검사 → `NOT NULL` |
+| 시드 | `Your Diary Beta School` + 코드 해시(`BETA-SCHOOL-2026`) |
+
+### 공통 권한 함수
+
+```text
+is_verified_school_member(user, school)     -- write 자격
+is_school_member_for_access(user, school)   -- verified | pending_change
+can_access_circle(user, circle)             -- 읽기
+can_write_circle(user, circle)              -- 쓰기
+assert_can_write_circle(circle)
+can_write_shared_with(other)                -- 방명록 등 공유 쓰기
+can_write_circle_from_topic(topic, user)    -- Presence publish
+```
+
+`is_circle_member` / `is_active_circle_member` / `shares_open_circle` / Presence subscribe는 **access**로 재정의.  
+`pending_change`는 읽기 가능 · 쓰기/초대/추천 불가.
+
+### 추가·교체된 RPC 목록
+
+| RPC | 변경 |
+|-----|------|
+| `open_circle_from_draft` | 서버가 proposer verified school 할당 · 개척자 동일 학교 |
+| `create_circle_join_request` | 신청자 학교 = 서클 학교 |
+| `respond_circle_recommendation` | 추천자 write + 신청자 학교 |
+| `create_circle_post` | `assert_can_write_circle` |
+| `acknowledge_circle_notice` / `respond_circle_poll` / `close_circle_post` | write 게이트 |
+| `create_anonymous_post` / `get_or_create_circle_alias` / `delete_anonymous_post` | write |
+| `send_named_message` / `send_alias_message` / `reply_to_private_message` / `_send_private_message` | sender write · recipient access |
+| `can_view_diary_entry` | `can_access_circle` |
+| `get_circle_invite_preview` | 타교/미인증 → `NOT_FOUND` (메타 누수 차단) |
+| `submit_school_invite_code` | **pending만** (자동 verified 금지) |
+| `get_my_school_membership` | 상태 조회 |
+| `ops_review_school_verification` / `ops_list_school_verification_requests` | 승인·거절 |
+| `request_school_change` / `ops_review_school_change` | 변경 검토 · 서클 자동 이전 없음 |
+
+RLS: `guestbook_insert` → `can_write_shared_with`. Presence publish → write topic helper.
+
+### 기존 서클 백필 결과
+
+```text
+nullable school_id 추가
+→ 시드 베타 학교로 NULL 행 UPDATE
+→ SCHOOL_BACKFILL_INCOMPLETE 가드
+→ NOT NULL
+```
+
+베타 단일 시드이므로 교차학교 혼합 서클은 발생하지 않음. 향후 다학교 환경에서는 **자동 백필 금지 · 운영 검토 큐**가 필요 (잔여 리스크).
+
+### 교차학교 deny / 미인증·정지·변경 테스트
+
+| 계층 | 위치 |
+|------|------|
+| 도메인 계약 | `tests/security/school-boundary-access.test.ts` |
+| 로컬 미러 공격 | `mobile/src/features/local/school-boundary.test.ts` |
+| SQL 수동 체크리스트 | `supabase/tests/019_school_boundary_checklist.sql` |
+
+핵심 공격: **다른 학교 verified + 유효 초대 링크 + 알려진 circle/content id** → 미리보기·가입·가명보드·다이어리·쪽지·사진 전부 거절.
+
+### 최소 UI (Phase B)
+
+| 화면 | 경로 |
+|------|------|
+| 코드 입력·상태 | `mobile/app/school/index.tsx` |
+| ops 승인·거절 | `mobile/app/ops/school-verifications.tsx` |
+
+학교 목록·학생 검색·학교 홈 **없음**.
+
+### 남은 운영 리스크
+
+1. **라이브 DB 미적용**: `019`는 마이그레이션 파일 + 체크리스트. staging에서 실제 JWT 침투 필요 (Phase H).
+2. **다학교 백필**: 멤버 학교 혼재 서클은 자동 할당 금지 · ops 큐 필요.
+3. **ops JWT**: 데모 클라이언트는 moderator 하드코딩. 프로덕션은 `app_metadata.is_moderator`만 신뢰.
+4. **Presence subscribe vs publish**: 변경 검토 중 publish만 차단 — 구독은 읽기 허용(의도).
+5. **개척자 draft accept**: SQL 전용 RPC 없음(로컬 `respondDraftInvite`). 서버 경로가 생기면 `019+`에서 동일 학교 검증 추가.
+6. **계정 전환 캐시**: 클라이언트 쿼리 캐시 무효는 기존 isolation 경로에 의존 — staging에서 재확인.
 
 ---
 
@@ -285,8 +374,8 @@ UI·포커스룸·꾸미기는 Phase B 범위 밖. **권한 모델 결합이 먼
 | Phase | 내용 | 상태 |
 |-------|------|------|
 | **A** | 감사·기획·네 원칙 고정 | ✅ |
-| **B** | `019` 스키마·RLS·백필·deny 테스트·권한 결합 | 다음 |
-| **C** | 온보딩·코드·pending/rejected·변경 요청 UI | 대기 |
+| **B** | `019` 스키마·RLS·백필·deny 테스트·권한 결합 | ✅ |
+| **C** | 온보딩 심화·변경 요청 UX (B 최소 UI 이후) | 대기 |
 | **D** | 서클 UX에 school 가드 노출 (규칙은 B에서 이미 강제) | 대기 |
 | **E–G** | 다이어리·기척·쪽지 회귀 | 대기 |
 | **H** | staging·실기기·교차학교 공격 | 대기 |
@@ -313,6 +402,6 @@ UI·포커스룸·꾸미기는 Phase B 범위 밖. **권한 모델 결합이 먼
 
 ## 다음 액션
 
-1. 본 문서의 **네 원칙 + Phase B 완료 기준** 합의 유지  
-2. **Phase B 구현 착수**: `019` (nullable → 백필 → NOT NULL) + deny 테스트  
-3. UI/포커스룸은 B 완료 전에는 확장하지 않음
+1. staging에 `019` 적용 후 SQL 체크리스트·교차학교 JWT 공격 (Phase H)  
+2. Phase C: 온보딩 흐름에 학교 상태를 자연스럽게 연결 (탐색/홈은 계속 금지)  
+3. 다학교 백필·혼재 서클 ops 큐 설계

@@ -1,0 +1,40 @@
+-- Phase B — school trust boundary attack checklist
+-- Run manually against Supabase with JWTs for each persona.
+-- Not executed in CI without a live DB; documents required assertions.
+
+-- Setup:
+--   schools_v2: Beta (seed) + OtherSchool
+--   User A,B,C verified Beta + active members of Circle X (school=Beta)
+--   User D verified OtherSchool
+--   User E unverified
+--   User F suspended at Beta
+--   User G pending_change at Beta (was member of X)
+--   Invite link / circle id / content ids known to attacker D
+
+-- 1) Same-school non-member cannot SELECT circle_members / posts / anonymous
+-- 2) Different-school verified + invite link + known circle/content ids → FORBIDDEN
+--    on create_circle_join_request, get_anonymous_circle_posts, can_view_diary_entry,
+--    get_diary_music, send_named_message, Presence topic circle:{id}
+-- 3) Unverified cannot open_circle_from_draft / join / read circle internals
+-- 4) Suspended membership → can_access_circle false
+-- 5) Expired membership → false
+-- 6) Client spoof: open_circle_from_draft always stamps proposer's verified school_id
+-- 7) recommend cross-school applicant → FORBIDDEN
+-- 8) Account switch: previous school cache must not authorize
+-- 9) Blocked user: block wins even if school matches
+-- 10) pending_change: can_access true, can_write false (no post/anonymous/recommend)
+-- 11) submit_school_invite_code → pending only (never auto-verified)
+-- 12) circles.school_id IS NOT NULL after backfill
+-- 13) acknowledge_circle_notice / respond_circle_poll / close_circle_post → write gate
+-- 14) reply_to_private_message / _send_private_message → sender write, recipient access
+-- 15) guestbook_insert → can_write_shared_with
+-- 16) Presence publish → can_write_circle_from_topic; subscribe → access
+-- 17) get_circle_invite_preview → NOT_FOUND for other school (no metadata leak)
+
+-- Critical attack (as attacker D JWT — other school, valid invite link, known ids):
+--   select public.get_circle_invite_preview('<circle_x>'); -- NOT_FOUND
+--   select public.create_circle_join_request('<circle_x>', array[...]); -- FORBIDDEN
+--   select public.get_anonymous_circle_posts('<circle_x>'); -- FORBIDDEN
+--   select public.can_view_diary_entry('<entry_id>'); -- false
+--   select public.send_named_message('<circle_x>', ...); -- FORBIDDEN
+--   select public.create_photo_signed_url_token(...); -- FORBIDDEN via shares_open_circle

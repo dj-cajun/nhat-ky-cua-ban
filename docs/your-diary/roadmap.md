@@ -8,7 +8,7 @@
 ## 현재 위치
 
 **11단계 코드 완료** · **11.5 실기기 출시 게이트**와 병행해, 제품 방향을 **학교=바깥 신뢰 경계**로 명확화했다.  
-학교 레이어 기획: [20-school-trust-boundary-plan.md](./20-school-trust-boundary-plan.md) (Phase A 감사 완료 · 구현은 B부터)
+학교 레이어: [20-school-trust-boundary-plan.md](./20-school-trust-boundary-plan.md) — **Phase B(`019`) 권한 결합 완료** · 다음은 C(온보딩 UX) / H(staging 침투)
 
 > 11.5: staging·실기기 **출시 블로커**만.  
 > 학교 신뢰 경계: **신규 트랙** — 기존 서클/다이어리를 대체하지 않고, 입장 범위만 설명한다. 학교 전체 피드·전교 검색은 하지 않는다.
@@ -35,7 +35,7 @@
 | **11.5** | 실기기 출시 게이트 | 🔜 | [16](./16-phase-11.5-device-launch-gate.md), [15](./15-beta-launch-checklist.md) |
 | **i18n 1차** | English · 한국어 | ✅ | [17](./17-i18n-en-ko.md) |
 | **12·A** | 학교 신뢰 경계 기획·감사 | ✅ | [20](./20-school-trust-boundary-plan.md) |
-| **12·B** | `019` 권한 결합 · deny 테스트 · school_id 백필 | ⏳ | [20](./20-school-trust-boundary-plan.md) — 네 원칙 고정 후 착수 |
+| **12·B** | `019` 권한 결합 · deny 테스트 · school_id 백필 | ✅ | [20](./20-school-trust-boundary-plan.md) · `019_school_trust_boundary.sql` |
 | **12·C–D** | 온보딩·서클 school 가드 | ⏳ | 코드+초대/추천 RPC |
 | **12·E–G** | 다이어리·기척·쪽지 회귀 | ⏳ | UI+보안 테스트 |
 | **12·H** | staging·실기기 | ⏳ | 교차학교 공격 포함 |
@@ -69,6 +69,8 @@
 | 날짜 | 내용 |
 |------|------|
 | 2026-07-25 | **학교 신뢰 경계 기획** Phase A ([20](./20-school-trust-boundary-plan.md)) — 학교≠커뮤니티, 다이어리 중심 유지 |
+| 2026-07-25 | [20] 네 원칙 고정: 인증≠가입 · school_id 서버 결정 · 변경 시 권한 · 코드 역할 제한 + Phase B 완료 기준 |
+| 2026-07-25 | **Phase B 완료**: `019` schools_v2·공통 인가·RPC 교체·백필 NOT NULL·교차학교 deny·최소 school/ops UI |
 | 2026-07-24 | 4 · 4.5 · 5 · 6 · 6.5 |
 | 2026-07-24 | 7~10 · 10.5 · 11 |
 | 2026-07-24 | 베타 체크리스트 · 계정 설정 보강 |

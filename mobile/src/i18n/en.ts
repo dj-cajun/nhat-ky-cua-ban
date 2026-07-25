@@ -340,6 +340,23 @@ export const en = {
     emptyBlocks: 'You haven’t blocked anyone.',
     replayIntro: 'Replay My Universe intro',
     replayIntroDone: 'Ready — open My Universe next to watch the full intro again.',
+    school: 'School verification',
+  },
+
+  school: {
+    title: 'School verification',
+    sub: 'A school code only starts review. It never opens circles by itself.',
+    statusLabel: 'STATUS',
+    statusNone: 'Not submitted',
+    statusPending: 'Pending review',
+    statusVerified: 'Verified',
+    statusRejected: 'Rejected — you can submit another code',
+    statusSuspended: 'Suspended',
+    statusExpired: 'Expired',
+    statusPendingChange: 'School change under review (read-only in circles)',
+    codeLabel: 'School code',
+    codePlaceholder: 'BETA-SCHOOL-2026',
+    submitCode: 'Submit code',
   },
 
   guestbook: {
@@ -403,6 +420,12 @@ export const en = {
     reinstate: 'Reinstate',
     audit: 'Audit log',
     back: '← Back',
+    schoolTitle: 'School verifications',
+    schoolSub: 'Approve or reject invite-code requests. Codes never auto-verify.',
+    schoolEmpty: 'No pending school requests.',
+    schoolLink: 'School verification queue',
+    approve: 'Approve',
+    reject: 'Reject',
   },
 
   language: {

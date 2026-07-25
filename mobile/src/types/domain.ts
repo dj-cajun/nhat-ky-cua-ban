@@ -71,6 +71,8 @@ export interface Circle {
   symbol: string;
   createdBy: string;
   status: CircleStatus;
+  /** Server-assigned school boundary (019). Never trust client-supplied values. */
+  schoolId?: string;
   openedAt?: string | null;
   createdAt: string;
 }

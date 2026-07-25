@@ -340,6 +340,23 @@ export const ko = {
     emptyBlocks: '차단한 사람이 없어요.',
     replayIntro: '내 유니버스 인트로 다시 보기',
     replayIntroDone: '준비됐어요 — 다음에 내 유니버스를 열면 전체 인트로가 다시 재생돼요.',
+    school: '학교 인증',
+  },
+
+  school: {
+    title: '학교 인증',
+    sub: '학교 코드는 검토 시작일 뿐이에요. 코드만으로 서클이 열리지 않아요.',
+    statusLabel: '상태',
+    statusNone: '미제출',
+    statusPending: '검토 대기',
+    statusVerified: '인증됨',
+    statusRejected: '거절됨 — 다른 코드를 제출할 수 있어요',
+    statusSuspended: '정지됨',
+    statusExpired: '만료됨',
+    statusPendingChange: '학교 변경 검토 중 (서클 읽기만 가능)',
+    codeLabel: '학교 코드',
+    codePlaceholder: 'BETA-SCHOOL-2026',
+    submitCode: '코드 제출',
   },
 
   guestbook: {
@@ -403,6 +420,12 @@ export const ko = {
     reinstate: '복구',
     audit: '감사 로그',
     back: '← 뒤로',
+    schoolTitle: '학교 인증 큐',
+    schoolSub: '초대 코드 요청을 승인·거절하세요. 코드만으로 자동 인증되지 않아요.',
+    schoolEmpty: '대기 중인 학교 요청이 없어요.',
+    schoolLink: '학교 인증 큐',
+    approve: '승인',
+    reject: '거절',
   },
 
   language: {
