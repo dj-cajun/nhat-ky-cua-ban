@@ -1,6 +1,6 @@
 # 20 — 학교 신뢰 경계 기획 (School Trust Boundary)
 
-> **상태**: 기획 확정 · Phase A·B 완료 · **Phase B.1 하드닝 진행**  
+> **상태**: Phase A·B 완료 · **B.1/H DEFERRED** · **Phase C 착수**  
 > **최종 갱신**: 2026-07-25  
 > **선행 마이그레이션**: `018` 이후 **forward-only** (`019+`). `007–018` 수정 금지.  
 > **레거시**: `001` `schools`/`classes`는 **재사용하지 않는다** (의미·모델 혼선 방지).  
@@ -377,8 +377,8 @@ nullable school_id 추가
 |-------|------|------|
 | **A** | 감사·기획·네 원칙 고정 | ✅ |
 | **B** | `019` 스키마·RLS·백필·deny 테스트·권한 결합 | ✅ |
-| **B.1** | staging JWT 침투 · 혼재 ops 큐 · ops role 하드코딩 제거 | 진행 |
-| **C** | 온보딩 심화·변경 요청 UX (B.1 차단 항목 이후) | 대기 |
+| **B.1 / H** | staging JWT·실기기 출시 게이트 (런북 준비됨) | ⏸ DEFERRED |
+| **C** | 학교 온보딩·상태 UX · ops 콘솔 | ⏳ 진행 중 · `021` |
 | **D** | 서클 UX에 school 가드 노출 (규칙은 B에서 이미 강제) | 대기 |
 | **E–G** | 다이어리·기척·쪽지 회귀 | 대기 |
 | **H** | staging·실기기·교차학교 공격 | 대기 |
@@ -472,7 +472,7 @@ ops 화면 최소 필드: 기준 학교 · 혼재 멤버·학교 상태 · freez
 
 ---
 
-## Phase C (B.1 승인 후에만 · 작게)
+## Phase C — 학교 진입·상태 UX (지금)
 
 ```text
 코드 입력
@@ -483,16 +483,12 @@ ops 화면 최소 필드: 기준 학교 · 혼재 멤버·학교 상태 · freez
 학교 변경 검토 중
 ```
 
-학교 홈 · 학생 목록 · 탐색이 들어오면 제품 경계가 다시 흐려진다 → **금지**.
+학교 홈 · 학생 목록 · 탐색 **금지**. Staging JWT 실측은 Phase H.
 
 ---
 
-## 다음 액션 (기획 논의 종료)
+## 다음 액션
 
-**staging 실측 결과만으로 B.1을 닫는다.**
-
-1. `019` + `020` staging 적용  
-2. A–E / M JWT 전수 + 경로 매트릭스 PASS  
-3. 로그 검토 · 혼재 freeze/resolve 실측  
-4. 결과 문서 작성·승인: [21-phase-b1-staging-signoff.md](./21-phase-b1-staging-signoff.md)  
-5. 승인 후에만 Phase C
+1. **Phase C**: 학교 상태 UX · 최소 ops 콘솔 (탐색/홈/학생검색 금지)  
+2. D–G: ops 심화 · 다이어리/우주 디자인 · 통합  
+3. **Phase H**: [21](./21-phase-b1-staging-signoff.md) staging JWT 실측 (B.1 DEFERRED)

@@ -160,6 +160,13 @@ describe('school boundary authorization contract', () => {
       'submit_school_invite_code',
       'ops_review_school_verification',
       'ops_review_school_change',
+      'ops_list_school_change_requests',
+      'ops_list_school_invite_codes',
+      'ops_create_school_invite_code',
+      'ops_disable_school_invite_code',
+      'ops_list_school_audit_events',
+      'list_active_schools_for_change',
+      'request_school_change',
     ];
     expect(required.length).toBeGreaterThan(20);
   });

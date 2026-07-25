@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   demoAcceptAll,
+  getMySchoolMembership,
   getSessionProfile,
   listDirectory,
   proposeCircleDraft,
@@ -12,8 +13,10 @@ import {
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import type { Profile } from '@/types/domain';
+import type { SchoolMembershipStatus } from '@/features/local/school';
 import { colors } from '@/constants/theme';
 import { useMessages } from '@/i18n';
+
 export default function CreateCircleScreen() {
   const t = useMessages();
   const [me, setMe] = useState<Profile | null>(null);
@@ -21,6 +24,7 @@ export default function CreateCircleScreen() {
   const [name, setName] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [schoolStatus, setSchoolStatus] = useState<SchoolMembershipStatus | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -30,6 +34,11 @@ export default function CreateCircleScreen() {
         return;
       }
       setMe(p);
+      const membership = await getMySchoolMembership(p.id);
+      setSchoolStatus(membership.status);
+      if (membership.status !== 'verified') {
+        return;
+      }
       setDirectory(await listDirectory(p.id));
     })();
   }, []);
@@ -45,6 +54,10 @@ export default function CreateCircleScreen() {
   const submit = async () => {
     if (!me) return;
     setError('');
+    if (schoolStatus !== 'verified') {
+      setError(t.school.restrictedTitle);
+      return;
+    }
     if (!name.trim()) {
       setError(t.circle.nameRequired);
       return;
@@ -64,6 +77,25 @@ export default function CreateCircleScreen() {
       setError(toAppError(e).message);
     }
   };
+
+  if (schoolStatus && schoolStatus !== 'verified') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <Pressable onPress={() => router.back()}>
+          <Text style={styles.back}>{t.circle.cancel}</Text>
+        </Pressable>
+        <Text style={styles.title}>{t.school.restrictedTitle}</Text>
+        <Text style={styles.sub}>{t.school.restrictedBody}</Text>
+        <Pressable
+          style={styles.btn}
+          onPress={() => router.push('/school')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.btnText}>{t.settings.school}</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -109,11 +141,11 @@ export default function CreateCircleScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg, padding: 16 },
-  back: { color: colors.muted, marginBottom: 12 },
+  safe: { flex: 1, padding: 20, backgroundColor: colors.bg },
+  back: { color: colors.muted, marginBottom: 12, minHeight: 44 },
   title: { fontSize: 22, fontWeight: '600', color: colors.ink },
   sub: { marginTop: 8, marginBottom: 20, color: colors.muted, lineHeight: 20 },
-  label: { fontSize: 12, color: colors.soft, marginBottom: 6, marginTop: 12 },
+  label: { fontSize: 12, color: colors.soft, marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: colors.line,
@@ -122,17 +154,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     color: colors.ink,
+    marginBottom: 16,
   },
   person: {
     borderWidth: 1,
     borderColor: colors.line,
+    borderRadius: 12,
+    padding: 12,
     backgroundColor: colors.card,
-    borderRadius: 14,
-    padding: 14,
   },
   personOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   personText: { color: colors.ink },
-  personTextOn: { color: '#fff' },
+  personTextOn: { color: colors.bg, fontWeight: '600' },
   error: { marginTop: 12, color: colors.warn },
   btn: {
     marginTop: 24,
@@ -140,6 +173,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     alignItems: 'center',
+    minHeight: 44,
   },
   btnText: { color: '#fff', fontWeight: '600' },
   hint: { marginTop: 10, fontSize: 11, color: colors.soft, textAlign: 'center' },

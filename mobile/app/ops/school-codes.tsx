@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BETA_SCHOOL_ID } from '@/features/local/school';
 import { getSessionProfile } from '@/features/local/repository';
 import { opsService } from '@/features/ops/ops.service';
 import {
@@ -14,25 +15,20 @@ import { colors } from '@/constants/theme';
 import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
-/**
- * School verification queue — operator role from server/local moderator table only.
- */
-export default function OpsSchoolVerificationsScreen() {
+export default function OpsSchoolCodesScreen() {
   const t = useMessages();
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState('');
   const [actorId, setActorId] = useState<string | null>(null);
-  const [reason, setReason] = useState('');
+  const [code, setCode] = useState('');
+  const [label, setLabel] = useState('');
   const [rows, setRows] = useState<
     {
       id: string;
       schoolName: string;
-      userId: string;
-      method: string;
-      status: string;
-      reviewNote?: string;
-      createdAt: string;
+      label?: string;
+      disabled: boolean;
     }[]
   >([]);
 
@@ -52,16 +48,13 @@ export default function OpsSchoolVerificationsScreen() {
         return;
       }
       setForbidden(false);
-      const list = await opsService.listSchoolVerifications(me.id);
+      const list = await opsService.listSchoolInviteCodes(me.id);
       setRows(
         list.map((r) => ({
           id: r.id,
           schoolName: r.schoolName,
-          userId: r.userId,
-          method: r.method,
-          status: r.status,
-          reviewNote: r.reviewNote,
-          createdAt: r.createdAt,
+          label: r.label,
+          disabled: r.disabled,
         })),
       );
     } catch (e) {
@@ -79,24 +72,29 @@ export default function OpsSchoolVerificationsScreen() {
     }, [reload]),
   );
 
-  const decide = async (
-    requestId: string,
-    decision: 'approved' | 'rejected' | 'needs_more_info',
-  ) => {
+  const create = async () => {
     if (!actorId) return;
     setError('');
-    if ((decision === 'rejected' || decision === 'needs_more_info') && !reason.trim()) {
-      setError(t.ops.reasonRequired);
-      return;
-    }
     try {
-      await opsService.reviewSchoolVerification({
+      await opsService.createSchoolInviteCode({
         actorId,
-        requestId,
-        decision,
-        note: reason.trim() || undefined,
+        schoolId: BETA_SCHOOL_ID,
+        code,
+        label,
       });
-      setReason('');
+      setCode('');
+      setLabel('');
+      await reload();
+    } catch (e) {
+      setError(toAppError(e).message);
+    }
+  };
+
+  const disable = async (codeId: string) => {
+    if (!actorId) return;
+    setError('');
+    try {
+      await opsService.disableSchoolInviteCode({ actorId, codeId });
       await reload();
     } catch (e) {
       setError(toAppError(e).message);
@@ -130,51 +128,50 @@ export default function OpsSchoolVerificationsScreen() {
       <Pressable onPress={() => router.back()} accessibilityRole="button">
         <Text style={styles.back}>{t.ops.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{t.ops.schoolTitle}</Text>
-      <Text style={styles.sub}>{t.ops.schoolSub}</Text>
-      <Text style={styles.label}>{t.ops.reasonLabel}</Text>
+      <Text style={styles.title}>{t.ops.codesTitle}</Text>
+      <Text style={styles.sub}>{t.ops.codesSub}</Text>
+
+      <Text style={styles.label}>{t.ops.codesCodeLabel}</Text>
       <TextInput
-        value={reason}
-        onChangeText={setReason}
-        placeholder={t.ops.reasonPlaceholder}
-        placeholderTextColor={colors.soft}
+        value={code}
+        onChangeText={setCode}
+        autoCapitalize="characters"
+        autoCorrect={false}
         style={styles.input}
+        placeholderTextColor={colors.soft}
       />
+      <Text style={styles.label}>{t.ops.codesLabelLabel}</Text>
+      <TextInput
+        value={label}
+        onChangeText={setLabel}
+        style={styles.input}
+        placeholderTextColor={colors.soft}
+      />
+      <Pressable style={styles.create} onPress={() => void create()} accessibilityRole="button">
+        <Text style={styles.createText}>{t.ops.codesCreate}</Text>
+      </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 40, marginTop: 16 }}>
         {rows.length === 0 ? (
-          <AppEmptyState title={t.ops.schoolEmpty} />
+          <AppEmptyState title={t.ops.codesEmpty} />
         ) : (
           rows.map((r) => (
             <View key={r.id} style={styles.card}>
               <Text style={styles.school}>{r.schoolName}</Text>
               <Text style={styles.meta}>
-                user {r.userId.slice(0, 8)} · {r.method} · {r.status}
+                {r.label ?? r.id.slice(0, 8)}
+                {r.disabled ? ` · ${t.ops.codesDisabled}` : ''}
               </Text>
-              {r.reviewNote ? <Text style={styles.note}>{r.reviewNote}</Text> : null}
-              <View style={styles.row}>
+              {!r.disabled ? (
                 <Pressable
-                  style={styles.approve}
-                  onPress={() => void decide(r.id, 'approved')}
+                  style={styles.disable}
+                  onPress={() => void disable(r.id)}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.approveText}>{t.ops.approve}</Text>
+                  <Text style={styles.disableText}>{t.ops.codesDisable}</Text>
                 </Pressable>
-                <Pressable
-                  style={styles.more}
-                  onPress={() => void decide(r.id, 'needs_more_info')}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.moreText}>{t.ops.needsMoreInfo}</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.reject}
-                  onPress={() => void decide(r.id, 'rejected')}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.rejectText}>{t.ops.reject}</Text>
-                </Pressable>
-              </View>
+              ) : null}
             </View>
           ))
         )}
@@ -199,7 +196,15 @@ const styles = StyleSheet.create({
     color: colors.ink,
     marginBottom: 12,
   },
-  error: { color: colors.warn, marginBottom: 8 },
+  create: {
+    minHeight: 44,
+    borderRadius: 12,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createText: { color: colors.bg, fontWeight: '600' },
+  error: { color: colors.warn, marginTop: 8 },
   card: {
     borderWidth: 1,
     borderColor: colors.line,
@@ -210,38 +215,14 @@ const styles = StyleSheet.create({
   },
   school: { color: colors.ink, fontWeight: '600', fontSize: 16 },
   meta: { marginTop: 4, color: colors.muted, fontSize: 12 },
-  note: { marginTop: 6, color: colors.ink, fontSize: 13 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  approve: {
-    flexGrow: 1,
-    minHeight: 44,
-    borderRadius: 12,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  approveText: { color: colors.bg, fontWeight: '600' },
-  more: {
-    flexGrow: 1,
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  moreText: { color: colors.ink, fontWeight: '600' },
-  reject: {
-    flexGrow: 1,
+  disable: {
+    marginTop: 12,
     minHeight: 44,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.warn,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
   },
-  rejectText: { color: colors.warn, fontWeight: '600' },
+  disableText: { color: colors.warn, fontWeight: '600' },
 });

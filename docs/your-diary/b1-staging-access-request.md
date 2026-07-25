@@ -1,7 +1,7 @@
 # B.1 Staging Access Request
 
-> **Phase B.1: BLOCKED — implementation frozen, staging credentials unavailable, no empirical sign-off performed.**  
-> 코드 변경 없음. 아래가 채워진 뒤 [`scripts/b1-staging-gate.md`](../../scripts/b1-staging-gate.md) 실행.
+> **Phase B.1: DEFERRED to Phase H** (베타 출시 게이트).  
+> 지금 개발을 막지 않는다. 자격 증명·실측은 feature-complete 후 이 문서 + 런북으로 실행.
 
 ---
 
@@ -71,7 +71,7 @@ PR에는 **마스킹된 요약 + sign-off 링크**만. raw JWT/service-role 첨�
 
 ## FAIL 시 재실행 기준
 
-하나라도 FAIL이면 Phase C 금지. 그다음:
+하나라도 FAIL이면 Phase H / 베타 출시 게이트 금지. 그다음:
 
 1. 실패 경로만 수정 → **새 commit SHA**  
 2. `019`/`020` checksum 재계산 → 동결 기록 **갱신** (이전 동결 폐기)  
@@ -83,12 +83,11 @@ PR에는 **마스킹된 요약 + sign-off 링크**만. raw JWT/service-role 첨�
 
 ---
 
-## 지금 하면 안 되는 것
+## Phase H 전에 하면 안 되는 것
 
-- Phase C 병합  
-- 학교 UI 확장 / Focus Room / 관리자 분석 대시보드  
-- sign-off를 조건부 PASS로 바꾸기  
-- 자격 증명 없이 PASS 기입  
+- B.1 sign-off를 조건부 PASS로 바꾸기  
+- 자격 증명 없이 empirical PASS 기입  
+- (개발은 Phase C+ 계속 진행)  
 
 ---
 

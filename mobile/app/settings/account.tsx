@@ -160,6 +160,30 @@ export default function AccountSettingsScreen() {
 
       <Pressable
         style={styles.link}
+        onPress={() => router.push('/ops/school-changes')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t.ops.schoolChangesLink}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.link}
+        onPress={() => router.push('/ops/school-codes')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t.ops.schoolCodesLink}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.link}
+        onPress={() => router.push('/ops/school-audit')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t.ops.schoolAuditLink}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.link}
         onPress={() => router.push('/ops/mixed-circles')}
         accessibilityRole="button"
       >

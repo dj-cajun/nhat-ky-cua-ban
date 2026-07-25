@@ -8,11 +8,13 @@ import {
   OfflineBanner,
 } from '@/components/states';
 import {
+  getMySchoolMembership,
   getProfile,
   getSessionProfile,
   listCircleMembers,
   listMyCircleSummaries,
 } from '@/features/local/repository';
+import type { SchoolMembershipStatus } from '@/features/local/school';
 import { UniverseHome } from '@/features/universe-home';
 import type { UniverseGraphFriend } from '@/features/universe-home/fallback-universe';
 import { INTRO_HANDOFF } from '@/features/universe-home/handoff';
@@ -31,6 +33,7 @@ export default function UniverseScreen() {
   const [error, setError] = useState('');
   const [offline, setOffline] = useState(false);
   const [introPlaying, setIntroPlaying] = useState(true);
+  const [schoolStatus, setSchoolStatus] = useState<SchoolMembershipStatus>('none');
 
   const reload = useCallback(async () => {
     setError('');
@@ -42,6 +45,8 @@ export default function UniverseScreen() {
         return;
       }
       setProfile(p);
+      const membership = await getMySchoolMembership(p.id);
+      setSchoolStatus(membership.status);
       const myCircles = await listMyCircleSummaries(p.id);
       setCircles(myCircles);
 
@@ -128,7 +133,9 @@ export default function UniverseScreen() {
           track(AnalyticsEvents.diary_viewed, { market: 'US' });
           router.push(`/diary/${userId}`);
         }}
-        onCreateCircle={() => router.push('/circles/create')}
+        onCreateCircle={() =>
+          router.push(schoolStatus === 'verified' ? '/circles/create' : '/school')
+        }
       />
     </SafeAreaView>
   );

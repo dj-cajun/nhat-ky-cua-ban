@@ -29,7 +29,8 @@ export default function OnboardingScreen() {
         market: 'US',
         has_email: Boolean(email),
       });
-      router.replace('/(tabs)/universe');
+      // Phase C: school status before circle founding — never skip verification.
+      router.replace('/school');
     } catch (e) {
       setError(toAppError(e).message);
     }

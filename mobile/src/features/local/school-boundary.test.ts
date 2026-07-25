@@ -28,9 +28,12 @@ import {
   getCircleInvitePreview,
   getMySchoolMembership,
   grantAppModeratorForTests,
+  opsListSchoolAuditEvents,
+  opsReviewSchoolChange,
   opsReviewSchoolVerification,
   opsScanMixedSchoolCircles,
   proposeCircleDraft,
+  requestSchoolChange,
   setSchoolMembershipStatusForTests,
   signUpLocal,
   submitSchoolInviteCode,
@@ -63,6 +66,65 @@ describe('school boundary local mirror', () => {
       decision: 'approved',
     });
     expect((await getMySchoolMembership(me.id)).status).toBe('verified');
+  });
+
+  it('ops needs_more_info requires reason and surfaces note', async () => {
+    const me = await signUpLocal('Alex');
+    const ops = await signUpLocal('Ops');
+    await grantAppModeratorForTests(ops.id);
+    const { requestId } = await submitSchoolInviteCode(me.id, BETA_SCHOOL_CODE);
+    await expect(
+      opsReviewSchoolVerification({
+        actorId: ops.id,
+        requestId,
+        decision: 'needs_more_info',
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    await opsReviewSchoolVerification({
+      actorId: ops.id,
+      requestId,
+      decision: 'needs_more_info',
+      note: 'Upload student ID',
+    });
+    const m = await getMySchoolMembership(me.id);
+    expect(m.status).toBe('needs_more_info');
+    expect(m.reviewNote).toBe('Upload student ID');
+  });
+
+  it('school change sets pending_change without moving circles', async () => {
+    const me = await signUpLocal('Host');
+    const ops = await signUpLocal('Ops');
+    await grantAppModeratorForTests(ops.id);
+    await setSchoolMembershipStatusForTests({
+      userId: me.id,
+      schoolId: BETA_SCHOOL_ID,
+      status: 'verified',
+    });
+    const { draftId } = await proposeCircleDraft(me.id, 'Beta circle', [
+      '00000000-0000-4000-8000-0000000000a1',
+      '00000000-0000-4000-8000-0000000000b2',
+    ]);
+    const circle = await demoAcceptAll(draftId);
+    const { requestId } = await requestSchoolChange({
+      userId: me.id,
+      toSchoolId: OTHER_SCHOOL_ID,
+      reason: 'transfer',
+    });
+    expect((await getMySchoolMembership(me.id)).status).toBe('pending_change');
+    expect(await canAccessCircle(circle.id, me.id)).toBe(true);
+    expect(await canWriteCircle(circle.id, me.id)).toBe(false);
+
+    await opsReviewSchoolChange({
+      actorId: ops.id,
+      requestId,
+      decision: 'rejected',
+      note: 'stay at beta',
+    });
+    expect((await getMySchoolMembership(me.id)).status).toBe('verified');
+    expect(await canWriteCircle(circle.id, me.id)).toBe(true);
+
+    const audit = await opsListSchoolAuditEvents(ops.id);
+    expect(audit.some((e) => e.eventType === 'school_change_rejected')).toBe(true);
   });
 
   it('non-operator cannot review school verification', async () => {

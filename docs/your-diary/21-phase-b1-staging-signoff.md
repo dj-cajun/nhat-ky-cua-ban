@@ -1,6 +1,8 @@
 # 21 — Phase B.1 Staging Sign-off
 
-> **Phase B.1: BLOCKED — implementation frozen, staging credentials unavailable, no empirical sign-off performed.**  
+> **Phase B.1: DEFERRED UNTIL STAGING LAUNCH GATE (Phase H)** — test plan and runbook prepared; empirical execution after beta is feature-complete.
+>
+> **지금은 기능 구현 단계.** B.1 실측으로 개발을 멈추지 않는다. Phase C+ 진행.  
 > **게이트**: **B = 구현 완료**, **B.1 = staging 실측으로 증명 완료**  
 > **판단 재료**: 이 문서의 실제 결과만 (코드 설명·기획 문서로 대체 불가)  
 > **동결**: [`b1-staging-run-freeze.md`](./b1-staging-run-freeze.md)  
@@ -20,16 +22,16 @@
 | **B.1 완료** | 실제 staging JWT로 그 경계가 **우회되지 않음을 증명한** 상태 |
 
 ```text
-019 + 020 staging 적용
+베타 핵심 기능 완성 (Phase C–G)
+→ 019 + 020 staging 적용
 → A–E / M 페르소나 JWT 전수 테스트
 → 경로 매트릭스 전수 PASS
 → 로그 검토
 → 혼재 서클 resolve 실제 검증
-→ B.1 승인 (이 문서 PASS + 증거)
-→ Phase C 상태 화면
+→ Phase H / B.1 승인 (이 문서 PASS + 증거)
 ```
 
-전수 PASS와 로그 증거가 채워진 뒤에만 B.1을 닫는다.
+전수 PASS와 로그 증거가 채워진 뒤에만 Phase H(B.1)를 닫는다.
 
 ---
 
@@ -114,18 +116,9 @@ account switch
 
 ---
 
-## Phase C (B.1 승인 후에만 · 작게)
+## 관련 구현 단계 (이 런북과 별개)
 
-```text
-코드 입력
-검토 중
-추가 확인 필요
-승인
-거절
-학교 변경 검토 중
-```
-
-학교 홈 · 학생 목록 · 탐색 **금지**.
+Phase C–G는 기능 구현이다. 이 문서의 staging 실측은 **Phase H**에서만 실행한다.
 
 ---
 

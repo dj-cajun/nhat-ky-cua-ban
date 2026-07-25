@@ -27,6 +27,8 @@ import {
   canAccessCircleLocal,
   isSchoolMemberForAccess,
   isVerifiedSchoolMember,
+  type SchoolAuditEventRow,
+  type SchoolChangeRequestRow,
   type SchoolInviteCodeRow,
   type SchoolMembershipRow,
   type SchoolMembershipStatus,
@@ -195,6 +197,8 @@ interface LocalDb {
   schoolMemberships: SchoolMembershipRow[];
   schoolVerificationRequests: SchoolVerificationRequestRow[];
   schoolInviteCodes: SchoolInviteCodeRow[];
+  schoolChangeRequests: SchoolChangeRequestRow[];
+  schoolAuditEvents: SchoolAuditEventRow[];
   /** B.1: local mirror of app_moderators — never imply all signed-in users */
   operatorUserIds: string[];
   circleSchoolIncidents: {
@@ -333,6 +337,8 @@ const empty: LocalDb = {
   schoolMemberships: [],
   schoolVerificationRequests: [],
   schoolInviteCodes: [],
+  schoolChangeRequests: [],
+  schoolAuditEvents: [],
   operatorUserIds: [],
   circleSchoolIncidents: [],
 };
@@ -404,6 +410,8 @@ export async function loadLocalDb(): Promise<void> {
     memory.schoolInviteCodes ??= [];
     memory.operatorUserIds ??= [];
     memory.circleSchoolIncidents ??= [];
+    memory.schoolChangeRequests ??= [];
+    memory.schoolAuditEvents ??= [];
     memory.recommendations = (memory.recommendations ?? []).map((r) => {
       const rawDecision = String((r as Recommendation).decision ?? 'pending');
       return {
@@ -455,8 +463,29 @@ function ensureSchoolSeed(): void {
       id: 'invite-beta-default',
       schoolId: BETA_SCHOOL_ID,
       code: BETA_SCHOOL_CODE,
+      label: 'Beta default',
       disabled: false,
+      createdAt: now(),
     });
+  }
+}
+
+function pushSchoolAudit(input: {
+  schoolId?: string;
+  actorId: string;
+  eventType: string;
+  payload?: Record<string, unknown>;
+}): void {
+  memory.schoolAuditEvents.unshift({
+    id: uid(),
+    schoolId: input.schoolId,
+    actorId: input.actorId,
+    eventType: input.eventType,
+    payload: input.payload,
+    createdAt: now(),
+  });
+  if (memory.schoolAuditEvents.length > 200) {
+    memory.schoolAuditEvents.length = 200;
   }
 }
 
@@ -485,10 +514,11 @@ function primaryMembership(userId: string): SchoolMembershipRow | undefined {
   const rank: Record<string, number> = {
     verified: 0,
     pending_change: 1,
-    pending: 2,
-    rejected: 3,
-    suspended: 4,
-    expired: 5,
+    needs_more_info: 2,
+    pending: 3,
+    rejected: 4,
+    suspended: 5,
+    expired: 6,
   };
   return [...memory.schoolMemberships]
     .filter((m) => m.userId === userId)
@@ -747,7 +777,11 @@ export async function submitSchoolInviteCode(
       updatedAt: now(),
     };
     memory.schoolMemberships.push(membership);
-  } else if (membership.status !== 'verified' && membership.status !== 'suspended') {
+  } else if (
+    membership.status !== 'verified' &&
+    membership.status !== 'suspended' &&
+    membership.status !== 'pending_change'
+  ) {
     membership.status = 'pending';
     membership.updatedAt = now();
   }
@@ -761,6 +795,12 @@ export async function submitSchoolInviteCode(
     createdAt: now(),
   };
   memory.schoolVerificationRequests.push(request);
+  pushSchoolAudit({
+    schoolId: invite.schoolId,
+    actorId: userId,
+    eventType: 'verification_submitted',
+    payload: { requestId: request.id, method: 'beta_code' },
+  });
   await persist();
   return {
     schoolId: invite.schoolId,
@@ -774,17 +814,101 @@ export async function getMySchoolMembership(userId: string): Promise<{
   schoolId?: string;
   schoolName?: string;
   verifiedAt?: string;
+  requestStatus?: string;
+  reviewNote?: string;
+  pendingChange?: {
+    requestId: string;
+    toSchoolId: string;
+    toSchoolName: string;
+    status: string;
+    reason?: string;
+  };
 }> {
   await loadLocalDb();
   const m = primaryMembership(userId);
   if (!m) return { status: 'none' };
   const school = schoolById(m.schoolId);
+  const latestReq = [...memory.schoolVerificationRequests]
+    .filter((r) => r.userId === userId && r.schoolId === m.schoolId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  const change = memory.schoolChangeRequests.find(
+    (c) => c.userId === userId && c.status === 'pending',
+  );
   return {
     status: m.status,
     schoolId: m.schoolId,
     schoolName: school?.displayName,
     verifiedAt: m.verifiedAt,
+    requestStatus: latestReq?.status,
+    reviewNote: latestReq?.reviewNote,
+    pendingChange: change
+      ? {
+          requestId: change.id,
+          toSchoolId: change.toSchoolId,
+          toSchoolName: schoolById(change.toSchoolId)?.displayName ?? change.toSchoolId,
+          status: change.status,
+          reason: change.reason,
+        }
+      : undefined,
   };
+}
+
+export async function listActiveSchoolsForChange(userId: string): Promise<
+  { id: string; displayName: string; slug: string }[]
+> {
+  await loadLocalDb();
+  const m = primaryMembership(userId);
+  if (!m || (m.status !== 'verified' && m.status !== 'pending_change')) {
+    throw new AppError('FORBIDDEN', 'Verified school membership required.');
+  }
+  return memory.schools
+    .filter((s) => s.status === 'active' && s.id !== m.schoolId)
+    .map((s) => ({ id: s.id, displayName: s.displayName, slug: s.slug }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+export async function requestSchoolChange(input: {
+  userId: string;
+  toSchoolId: string;
+  reason?: string;
+}): Promise<{ requestId: string; status: 'pending' }> {
+  await loadLocalDb();
+  const toSchool = schoolById(input.toSchoolId);
+  if (!toSchool || toSchool.status !== 'active') {
+    throw new AppError('NOT_FOUND', 'School not found.');
+  }
+  const from = memory.schoolMemberships.find(
+    (m) => m.userId === input.userId && m.status === 'verified',
+  );
+  if (!from) {
+    throw new AppError('FORBIDDEN', 'Verified school membership required.');
+  }
+  if (from.schoolId === input.toSchoolId) {
+    throw new AppError('VALIDATION', 'Pick a different school.');
+  }
+  if (memory.schoolChangeRequests.some((c) => c.userId === input.userId && c.status === 'pending')) {
+    throw new AppError('CONFLICT', 'A school change is already pending.');
+  }
+  from.status = 'pending_change';
+  from.updatedAt = now();
+  const request: SchoolChangeRequestRow = {
+    id: uid(),
+    userId: input.userId,
+    fromSchoolId: from.schoolId,
+    toSchoolId: input.toSchoolId,
+    reason: input.reason?.trim() || undefined,
+    status: 'pending',
+    createdAt: now(),
+  };
+  memory.schoolChangeRequests.push(request);
+  pushSchoolAudit({
+    schoolId: from.schoolId,
+    actorId: input.userId,
+    eventType: 'school_change_requested',
+    payload: { requestId: request.id, toSchoolId: input.toSchoolId },
+  });
+  await persist();
+  return { requestId: request.id, status: 'pending' };
 }
 
 /** Ops: requires local operator role (mirror app_moderators). */
@@ -796,13 +920,14 @@ export async function opsListSchoolVerificationRequests(actorId: string): Promis
     userId: string;
     status: string;
     method: string;
+    reviewNote?: string;
     createdAt: string;
   }[]
 > {
   await loadLocalDb();
   await assertLocalModerator(actorId);
   return memory.schoolVerificationRequests
-    .filter((r) => r.status === 'pending')
+    .filter((r) => r.status === 'pending' || r.status === 'needs_more_info')
     .map((r) => ({
       id: r.id,
       schoolId: r.schoolId,
@@ -810,6 +935,7 @@ export async function opsListSchoolVerificationRequests(actorId: string): Promis
       userId: r.userId,
       status: r.status,
       method: r.method,
+      reviewNote: r.reviewNote,
       createdAt: r.createdAt,
     }));
 }
@@ -817,17 +943,25 @@ export async function opsListSchoolVerificationRequests(actorId: string): Promis
 export async function opsReviewSchoolVerification(input: {
   actorId: string;
   requestId: string;
-  decision: 'approved' | 'rejected';
+  decision: 'approved' | 'rejected' | 'needs_more_info';
   note?: string;
 }): Promise<void> {
   await loadLocalDb();
   await assertLocalModerator(input.actorId);
   const req = memory.schoolVerificationRequests.find((r) => r.id === input.requestId);
   if (!req) throw new AppError('NOT_FOUND', 'Request not found.');
-  if (req.status !== 'pending') throw new AppError('CONFLICT', 'Already reviewed.');
+  if (req.status !== 'pending' && req.status !== 'needs_more_info') {
+    throw new AppError('CONFLICT', 'Already reviewed.');
+  }
+  if (
+    (input.decision === 'rejected' || input.decision === 'needs_more_info') &&
+    !input.note?.trim()
+  ) {
+    throw new AppError('VALIDATION', 'A reason is required.');
+  }
   req.status = input.decision;
   req.reviewedAt = now();
-  req.reviewNote = input.note;
+  req.reviewNote = input.note?.trim() || undefined;
   const membership = membershipForUser(req.userId, req.schoolId);
   if (input.decision === 'approved') {
     if (membership) {
@@ -837,11 +971,213 @@ export async function opsReviewSchoolVerification(input: {
     } else {
       ensureVerifiedSchoolMembership(req.userId, req.schoolId);
     }
-  } else if (membership?.status === 'pending') {
-    membership.status = 'rejected';
+  } else if (input.decision === 'rejected') {
+    if (membership && (membership.status === 'pending' || membership.status === 'needs_more_info')) {
+      membership.status = 'rejected';
+      membership.updatedAt = now();
+    }
+  } else if (
+    membership &&
+    (membership.status === 'pending' || membership.status === 'needs_more_info')
+  ) {
+    membership.status = 'needs_more_info';
     membership.updatedAt = now();
   }
+  pushSchoolAudit({
+    schoolId: req.schoolId,
+    actorId: input.actorId,
+    eventType: `verification_${input.decision}`,
+    payload: { requestId: req.id, userId: req.userId, note: req.reviewNote },
+  });
   await persist();
+}
+
+export async function opsListSchoolChangeRequests(actorId: string): Promise<
+  {
+    id: string;
+    userId: string;
+    fromSchoolId?: string;
+    fromSchoolName?: string;
+    toSchoolId: string;
+    toSchoolName: string;
+    reason?: string;
+    status: string;
+    createdAt: string;
+  }[]
+> {
+  await loadLocalDb();
+  await assertLocalModerator(actorId);
+  return memory.schoolChangeRequests
+    .filter((c) => c.status === 'pending')
+    .map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      fromSchoolId: c.fromSchoolId,
+      fromSchoolName: c.fromSchoolId ? schoolById(c.fromSchoolId)?.displayName : undefined,
+      toSchoolId: c.toSchoolId,
+      toSchoolName: schoolById(c.toSchoolId)?.displayName ?? c.toSchoolId,
+      reason: c.reason,
+      status: c.status,
+      createdAt: c.createdAt,
+    }));
+}
+
+export async function opsReviewSchoolChange(input: {
+  actorId: string;
+  requestId: string;
+  decision: 'approved' | 'rejected';
+  note?: string;
+}): Promise<void> {
+  await loadLocalDb();
+  await assertLocalModerator(input.actorId);
+  const req = memory.schoolChangeRequests.find((r) => r.id === input.requestId);
+  if (!req) throw new AppError('NOT_FOUND', 'Request not found.');
+  if (req.status !== 'pending') throw new AppError('CONFLICT', 'Already reviewed.');
+  if (!input.note?.trim()) {
+    throw new AppError('VALIDATION', 'A reason is required.');
+  }
+  req.status = input.decision;
+  req.reviewedAt = now();
+  req.reviewerId = input.actorId;
+  req.reviewNote = input.note.trim();
+
+  if (input.decision === 'approved') {
+    if (req.fromSchoolId) {
+      const from = membershipForUser(req.userId, req.fromSchoolId);
+      if (from && (from.status === 'verified' || from.status === 'pending_change')) {
+        from.status = 'expired';
+        from.updatedAt = now();
+      }
+    }
+    ensureVerifiedSchoolMembership(req.userId, req.toSchoolId);
+    const to = membershipForUser(req.userId, req.toSchoolId);
+    if (to) {
+      to.status = 'verified';
+      to.verifiedAt = now();
+      to.updatedAt = now();
+    }
+  } else if (req.fromSchoolId) {
+    const from = membershipForUser(req.userId, req.fromSchoolId);
+    if (from?.status === 'pending_change') {
+      from.status = 'verified';
+      from.updatedAt = now();
+    }
+  }
+
+  pushSchoolAudit({
+    schoolId: req.toSchoolId ?? req.fromSchoolId,
+    actorId: input.actorId,
+    eventType: `school_change_${input.decision}`,
+    payload: {
+      requestId: req.id,
+      userId: req.userId,
+      fromSchoolId: req.fromSchoolId,
+      toSchoolId: req.toSchoolId,
+      note: req.reviewNote,
+    },
+  });
+  await persist();
+}
+
+export async function opsListSchoolInviteCodes(actorId: string): Promise<
+  {
+    id: string;
+    schoolId: string;
+    schoolName: string;
+    label?: string;
+    disabled: boolean;
+    createdAt?: string;
+  }[]
+> {
+  await loadLocalDb();
+  await assertLocalModerator(actorId);
+  return memory.schoolInviteCodes.map((c) => ({
+    id: c.id,
+    schoolId: c.schoolId,
+    schoolName: schoolById(c.schoolId)?.displayName ?? c.schoolId,
+    label: c.label,
+    disabled: c.disabled,
+    createdAt: c.createdAt,
+  }));
+}
+
+export async function opsCreateSchoolInviteCode(input: {
+  actorId: string;
+  schoolId: string;
+  code: string;
+  label?: string;
+}): Promise<{ id: string; schoolId: string; label?: string }> {
+  await loadLocalDb();
+  await assertLocalModerator(input.actorId);
+  const school = schoolById(input.schoolId);
+  if (!school || school.status !== 'active') {
+    throw new AppError('NOT_FOUND', 'School not found.');
+  }
+  const trimmed = input.code.trim();
+  if (!trimmed) throw new AppError('VALIDATION', 'Enter a code.');
+  if (memory.schoolInviteCodes.some((c) => c.code === trimmed && !c.disabled)) {
+    throw new AppError('CONFLICT', 'Code already active.');
+  }
+  const row: SchoolInviteCodeRow = {
+    id: uid(),
+    schoolId: input.schoolId,
+    code: trimmed,
+    label: input.label?.trim() || undefined,
+    disabled: false,
+    createdAt: now(),
+  };
+  memory.schoolInviteCodes.push(row);
+  pushSchoolAudit({
+    schoolId: input.schoolId,
+    actorId: input.actorId,
+    eventType: 'invite_code_created',
+    payload: { codeId: row.id, label: row.label },
+  });
+  await persist();
+  return { id: row.id, schoolId: row.schoolId, label: row.label };
+}
+
+export async function opsDisableSchoolInviteCode(input: {
+  actorId: string;
+  codeId: string;
+}): Promise<void> {
+  await loadLocalDb();
+  await assertLocalModerator(input.actorId);
+  const row = memory.schoolInviteCodes.find((c) => c.id === input.codeId);
+  if (!row) throw new AppError('NOT_FOUND', 'Code not found.');
+  row.disabled = true;
+  row.disabledAt = row.disabledAt ?? now();
+  pushSchoolAudit({
+    schoolId: row.schoolId,
+    actorId: input.actorId,
+    eventType: 'invite_code_disabled',
+    payload: { codeId: row.id },
+  });
+  await persist();
+}
+
+export async function opsListSchoolAuditEvents(actorId: string): Promise<
+  {
+    id: string;
+    schoolId?: string;
+    schoolName?: string;
+    actorId: string;
+    eventType: string;
+    payload?: Record<string, unknown>;
+    createdAt: string;
+  }[]
+> {
+  await loadLocalDb();
+  await assertLocalModerator(actorId);
+  return memory.schoolAuditEvents.slice(0, 50).map((e) => ({
+    id: e.id,
+    schoolId: e.schoolId,
+    schoolName: e.schoolId ? schoolById(e.schoolId)?.displayName : undefined,
+    actorId: e.actorId,
+    eventType: e.eventType,
+    payload: e.payload,
+    createdAt: e.createdAt,
+  }));
 }
 
 /** Test helper — set membership status without ops UI. */

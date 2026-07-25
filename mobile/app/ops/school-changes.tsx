@@ -14,10 +14,7 @@ import { colors } from '@/constants/theme';
 import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
-/**
- * School verification queue — operator role from server/local moderator table only.
- */
-export default function OpsSchoolVerificationsScreen() {
+export default function OpsSchoolChangesScreen() {
   const t = useMessages();
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -27,11 +24,10 @@ export default function OpsSchoolVerificationsScreen() {
   const [rows, setRows] = useState<
     {
       id: string;
-      schoolName: string;
       userId: string;
-      method: string;
-      status: string;
-      reviewNote?: string;
+      fromSchoolName?: string;
+      toSchoolName: string;
+      reason?: string;
       createdAt: string;
     }[]
   >([]);
@@ -52,15 +48,14 @@ export default function OpsSchoolVerificationsScreen() {
         return;
       }
       setForbidden(false);
-      const list = await opsService.listSchoolVerifications(me.id);
+      const list = await opsService.listSchoolChangeRequests(me.id);
       setRows(
         list.map((r) => ({
           id: r.id,
-          schoolName: r.schoolName,
           userId: r.userId,
-          method: r.method,
-          status: r.status,
-          reviewNote: r.reviewNote,
+          fromSchoolName: r.fromSchoolName,
+          toSchoolName: r.toSchoolName,
+          reason: r.reason,
           createdAt: r.createdAt,
         })),
       );
@@ -79,22 +74,19 @@ export default function OpsSchoolVerificationsScreen() {
     }, [reload]),
   );
 
-  const decide = async (
-    requestId: string,
-    decision: 'approved' | 'rejected' | 'needs_more_info',
-  ) => {
+  const decide = async (requestId: string, decision: 'approved' | 'rejected') => {
     if (!actorId) return;
     setError('');
-    if ((decision === 'rejected' || decision === 'needs_more_info') && !reason.trim()) {
+    if (!reason.trim()) {
       setError(t.ops.reasonRequired);
       return;
     }
     try {
-      await opsService.reviewSchoolVerification({
+      await opsService.reviewSchoolChange({
         actorId,
         requestId,
         decision,
-        note: reason.trim() || undefined,
+        note: reason.trim(),
       });
       setReason('');
       await reload();
@@ -130,8 +122,8 @@ export default function OpsSchoolVerificationsScreen() {
       <Pressable onPress={() => router.back()} accessibilityRole="button">
         <Text style={styles.back}>{t.ops.back}</Text>
       </Pressable>
-      <Text style={styles.title}>{t.ops.schoolTitle}</Text>
-      <Text style={styles.sub}>{t.ops.schoolSub}</Text>
+      <Text style={styles.title}>{t.ops.changesTitle}</Text>
+      <Text style={styles.sub}>{t.ops.changesSub}</Text>
       <Text style={styles.label}>{t.ops.reasonLabel}</Text>
       <TextInput
         value={reason}
@@ -143,15 +135,15 @@ export default function OpsSchoolVerificationsScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {rows.length === 0 ? (
-          <AppEmptyState title={t.ops.schoolEmpty} />
+          <AppEmptyState title={t.ops.changesEmpty} />
         ) : (
           rows.map((r) => (
             <View key={r.id} style={styles.card}>
-              <Text style={styles.school}>{r.schoolName}</Text>
-              <Text style={styles.meta}>
-                user {r.userId.slice(0, 8)} · {r.method} · {r.status}
+              <Text style={styles.school}>
+                {(r.fromSchoolName ?? '—') + ' → ' + r.toSchoolName}
               </Text>
-              {r.reviewNote ? <Text style={styles.note}>{r.reviewNote}</Text> : null}
+              <Text style={styles.meta}>user {r.userId.slice(0, 8)}</Text>
+              {r.reason ? <Text style={styles.note}>{r.reason}</Text> : null}
               <View style={styles.row}>
                 <Pressable
                   style={styles.approve}
@@ -159,13 +151,6 @@ export default function OpsSchoolVerificationsScreen() {
                   accessibilityRole="button"
                 >
                   <Text style={styles.approveText}>{t.ops.approve}</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.more}
-                  onPress={() => void decide(r.id, 'needs_more_info')}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.moreText}>{t.ops.needsMoreInfo}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.reject}
@@ -211,37 +196,24 @@ const styles = StyleSheet.create({
   school: { color: colors.ink, fontWeight: '600', fontSize: 16 },
   meta: { marginTop: 4, color: colors.muted, fontSize: 12 },
   note: { marginTop: 6, color: colors.ink, fontSize: 13 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  row: { flexDirection: 'row', gap: 10, marginTop: 12 },
   approve: {
-    flexGrow: 1,
+    flex: 1,
     minHeight: 44,
     borderRadius: 12,
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
   },
   approveText: { color: colors.bg, fontWeight: '600' },
-  more: {
-    flexGrow: 1,
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  moreText: { color: colors.ink, fontWeight: '600' },
   reject: {
-    flexGrow: 1,
+    flex: 1,
     minHeight: 44,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.warn,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
   },
   rejectText: { color: colors.warn, fontWeight: '600' },
 });

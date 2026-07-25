@@ -14,6 +14,7 @@ export const OTHER_SCHOOL_NAME = 'Other School (test)';
 
 export type SchoolMembershipStatus =
   | 'pending'
+  | 'needs_more_info'
   | 'verified'
   | 'rejected'
   | 'suspended'
@@ -42,7 +43,7 @@ export type SchoolVerificationRequestRow = {
   id: string;
   schoolId: string;
   userId: string;
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  status: 'pending' | 'needs_more_info' | 'approved' | 'rejected' | 'cancelled';
   method: string;
   createdAt: string;
   reviewedAt?: string;
@@ -54,7 +55,32 @@ export type SchoolInviteCodeRow = {
   schoolId: string;
   /** Demo stores plain code; production hashes server-side only. */
   code: string;
+  label?: string;
   disabled: boolean;
+  disabledAt?: string;
+  createdAt?: string;
+};
+
+export type SchoolChangeRequestRow = {
+  id: string;
+  userId: string;
+  fromSchoolId?: string;
+  toSchoolId: string;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  createdAt: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  reviewerId?: string;
+};
+
+export type SchoolAuditEventRow = {
+  id: string;
+  schoolId?: string;
+  actorId: string;
+  eventType: string;
+  payload?: Record<string, unknown>;
+  createdAt: string;
 };
 
 export function isVerifiedSchoolMember(
