@@ -95,9 +95,13 @@
 -- [ ] get_my_operator_capabilities → true
 -- [ ] ops_list_school_verification_requests ok
 -- [ ] ops_scan_mixed_school_circles + ops_list_mixed_school_circles ok
--- [ ] ops_resolve_mixed_school_circle writes school_audit_events
+-- [ ] ops_resolve_mixed_school_circle writes school_audit_events (note required)
 -- [ ] A/B/C/D/E calling same ops → FORBIDDEN
 -- [ ] No service-role / hard-coded moderator JWT in client bundle
+-- [ ] M is NOT a data backdoor:
+--       can_view_diary_entry(other's shared entry) without circle membership → false
+--       get_anonymous_circle_posts / notes inbox for non-member circle → FORBIDDEN
+--       (report-case RPCs with snapshot may still work — that is explicit ops)
 
 -- =============================================================================
 -- Mixed-school incident flow (M)

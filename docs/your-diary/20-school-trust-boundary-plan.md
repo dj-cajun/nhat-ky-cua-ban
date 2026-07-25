@@ -446,7 +446,7 @@ nullable school_id 추가
 | **C** | 다른 학교 (+ known id / invite) | 존재 여부까지 숨김 (`NOT_FOUND`) |
 | **D** | `pending_change` | 읽기만 · 쓰기 거절 |
 | **E** | 정지·만료 (+ known id) | 접근 불가 |
-| **M** | `app_moderators` | 필요한 ops만 · 일반 데이터 백도어 금지 |
+| **M** | `app_moderators` | 명시된 ops만 · **일반 다이어리/쪽지 열람권으로 번지면 안 됨** |
 
 각 페르소나로 아래 경로를 **직접** 확인. shared predicate를 거치지 않으면 B.1 미완료:
 
@@ -472,20 +472,27 @@ ops 화면 최소 필드: 기준 학교 · 혼재 멤버·학교 상태 · freez
 
 ---
 
-## Phase C (B.1 전수 통과 후에만)
-
-기능 추가가 아니라 **상태 명시**:
+## Phase C (B.1 승인 후에만 · 작게)
 
 ```text
-학교 코드 입력 → 인증 요청됨 → 검토 중 → 추가 확인 필요 → 승인됨 → 거절됨 → 학교 변경 검토 중
+코드 입력
+검토 중
+추가 확인 필요
+승인
+거절
+학교 변경 검토 중
 ```
 
-학교 탐색·학생 검색·학교 홈 **금지**.
+학교 홈 · 학생 목록 · 탐색이 들어오면 제품 경계가 다시 흐려진다 → **금지**.
 
 ---
 
-## 다음 액션
+## 다음 액션 (기획 논의 종료)
 
-1. staging에 `019`+`020` 적용  
-2. JWT 체크리스트 **전수 PASS** + audit/혼재 resolve 로그 검토  
-3. 그다음 Phase C
+**staging 실측 결과만으로 B.1을 닫는다.**
+
+1. `019` + `020` staging 적용  
+2. A–E / M JWT 전수 + 경로 매트릭스 PASS  
+3. 로그 검토 · 혼재 freeze/resolve 실측  
+4. 결과 문서 작성·승인: [21-phase-b1-staging-signoff.md](./21-phase-b1-staging-signoff.md)  
+5. 승인 후에만 Phase C
