@@ -103,6 +103,26 @@ export default function OpsSchoolVerificationsScreen() {
     }
   };
 
+  const flagFake = async (requestId: string) => {
+    if (!actorId) return;
+    setError('');
+    if (!reason.trim()) {
+      setError(t.ops.reasonRequired);
+      return;
+    }
+    try {
+      await opsService.flagFakeSchoolVerification({
+        actorId,
+        requestId,
+        note: reason.trim(),
+      });
+      setReason('');
+      await reload();
+    } catch (e) {
+      setError(toAppError(e).message);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -174,6 +194,13 @@ export default function OpsSchoolVerificationsScreen() {
                 >
                   <Text style={styles.rejectText}>{t.ops.reject}</Text>
                 </Pressable>
+                <Pressable
+                  style={styles.flag}
+                  onPress={() => void flagFake(r.id)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.flagText}>{t.ops.flagFake}</Text>
+                </Pressable>
               </View>
             </View>
           ))
@@ -244,4 +271,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   rejectText: { color: colors.warn, fontWeight: '600' },
+  flag: {
+    flexGrow: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  flagText: { color: colors.ink, fontWeight: '600' },
 });

@@ -1,6 +1,6 @@
 # 20 — 학교 신뢰 경계 기획 (School Trust Boundary)
 
-> **상태**: Phase A·B 완료 · **B.1/H DEFERRED** · **Phase C 착수**  
+> **상태**: Phase A·B·C·D(최소) 완료 · **B.1/H DEFERRED** · **Phase E** ([22](./22-phase-e-space-design.md))
 > **최종 갱신**: 2026-07-25  
 > **선행 마이그레이션**: `018` 이후 **forward-only** (`019+`). `007–018` 수정 금지.  
 > **레거시**: `001` `schools`/`classes`는 **재사용하지 않는다** (의미·모델 혼선 방지).  
@@ -378,10 +378,11 @@ nullable school_id 추가
 | **A** | 감사·기획·네 원칙 고정 | ✅ |
 | **B** | `019` 스키마·RLS·백필·deny 테스트·권한 결합 | ✅ |
 | **B.1 / H** | staging JWT·실기기 출시 게이트 (런북 준비됨) | ⏸ DEFERRED |
-| **C** | 학교 온보딩·상태 UX · ops 콘솔 | ⏳ 진행 중 · `021` |
-| **D** | 서클 UX에 school 가드 노출 (규칙은 B에서 이미 강제) | 대기 |
-| **E–G** | 다이어리·기척·쪽지 회귀 | 대기 |
-| **H** | staging·실기기·교차학교 공격 | 대기 |
+| **C** | 학교 온보딩·상태 UX · 최소 ops | ✅ `021` |
+| **D** | 베타 ops 최소 (overview·안전·역할) — 성장 분석 없음 | ✅ `022` |
+| **E** | 우주·다이어리 공간 재설계 | ⏳ [22](./22-phase-e-space-design.md) |
+| **F–G** | 포커스룸·통합 | 대기 |
+| **H** | staging JWT·실기기 | ⏸ DEFERRED |
 
 ---
 
@@ -489,6 +490,6 @@ ops 화면 최소 필드: 기준 학교 · 혼재 멤버·학교 상태 · freez
 
 ## 다음 액션
 
-1. **Phase C**: 학교 상태 UX · 최소 ops 콘솔 (탐색/홈/학생검색 금지)  
-2. D–G: ops 심화 · 다이어리/우주 디자인 · 통합  
-3. **Phase H**: [21](./21-phase-b1-staging-signoff.md) staging JWT 실측 (B.1 DEFERRED)
+1. **Phase E**: [22](./22-phase-e-space-design.md) — 네 화면 시안 → 프로토타입 → 구현  
+2. F–G: 포커스룸·통합  
+3. **Phase H**: [21](./21-phase-b1-staging-signoff.md) staging JWT 실측

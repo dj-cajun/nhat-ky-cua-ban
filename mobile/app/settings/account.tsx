@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppLoadingState } from '@/components/states';
 import { getSessionProfile } from '@/features/local/repository';
+import { opsService } from '@/features/ops/ops.service';
 import type { Profile } from '@/types/domain';
 import { signOut } from '@/features/session/session-lifecycle';
 import { requestIntroReplay, resetIntroLaunchSession } from '@/features/universe-home';
@@ -59,6 +60,7 @@ export default function AccountSettingsScreen() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [replayHint, setReplayHint] = useState('');
+  const [isOps, setIsOps] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,6 +72,8 @@ export default function AccountSettingsScreen() {
         }
         setProfile(me);
         setFlags(getFeatureFlags());
+        const caps = await opsService.getCapabilities(me.id);
+        setIsOps(caps.isModerator);
       })();
     }, []),
   );
@@ -142,53 +146,45 @@ export default function AccountSettingsScreen() {
         <Text style={styles.linkText}>{t.settings.blockedUsers}</Text>
       </Pressable>
 
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push('/ops/reports')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.linkText}>{t.ops.title}</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push('/ops/school-verifications')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.linkText}>{t.ops.schoolLink}</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push('/ops/school-changes')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.linkText}>{t.ops.schoolChangesLink}</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push('/ops/school-codes')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.linkText}>{t.ops.schoolCodesLink}</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push('/ops/school-audit')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.linkText}>{t.ops.schoolAuditLink}</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.link}
-        onPress={() => router.push('/ops/mixed-circles')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.linkText}>{t.ops.mixedLink}</Text>
-      </Pressable>
+      {isOps ? (
+        <>
+          <Pressable
+            style={styles.link}
+            onPress={() => router.push('/ops/overview')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.linkText}>{t.ops.overviewLink}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.link}
+            onPress={() => router.push('/ops/safety')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.linkText}>{t.ops.safetyLink}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.link}
+            onPress={() => router.push('/ops/reports')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.linkText}>{t.ops.title}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.link}
+            onPress={() => router.push('/ops/school-verifications')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.linkText}>{t.ops.schoolLink}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.link}
+            onPress={() => router.push('/ops/mixed-circles')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.linkText}>{t.ops.mixedLink}</Text>
+          </Pressable>
+        </>
+      ) : null}
 
       <Text style={styles.section}>{t.settings.featureFlags}</Text>
       <Text style={styles.hint}>{t.settings.featureFlagsHint}</Text>

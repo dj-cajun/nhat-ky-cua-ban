@@ -167,6 +167,11 @@ describe('school boundary authorization contract', () => {
       'ops_list_school_audit_events',
       'list_active_schools_for_change',
       'request_school_change',
+      'ops_get_overview_metrics',
+      'ops_set_school_membership_status',
+      'ops_flag_fake_school_verification',
+      'ops_merge_schools',
+      'record_friend_diary_visit',
     ];
     expect(required.length).toBeGreaterThan(20);
   });

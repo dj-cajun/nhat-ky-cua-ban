@@ -27,11 +27,17 @@ import {
   getAnonymousCirclePosts,
   getCircleInvitePreview,
   getMySchoolMembership,
+  getMyOperatorCapabilities,
+  grantAppAdminForTests,
   grantAppModeratorForTests,
+  opsFlagFakeSchoolVerification,
+  opsGetOverviewMetrics,
   opsListSchoolAuditEvents,
+  opsMergeSchools,
   opsReviewSchoolChange,
   opsReviewSchoolVerification,
   opsScanMixedSchoolCircles,
+  opsSetSchoolMembershipStatus,
   proposeCircleDraft,
   requestSchoolChange,
   setSchoolMembershipStatusForTests,
@@ -213,6 +219,82 @@ describe('school boundary local mirror', () => {
     await expect(
       createAnonymousPost({ circleId: circle.id, userId: me.id, body: 'hi there' }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('ops overview is aggregate-only and role-gated', async () => {
+    const me = await signUpLocal('Alex');
+    const ops = await signUpLocal('Ops');
+    await expect(opsGetOverviewMetrics(me.id)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await grantAppModeratorForTests(ops.id);
+    const m = await opsGetOverviewMetrics(ops.id);
+    expect(m.totalUsers).toBeGreaterThanOrEqual(2);
+    expect(m).toHaveProperty('openReports');
+    expect(m).toHaveProperty('friendDiaryVisitsToday');
+    expect(typeof m.note).toBe('string');
+  });
+
+  it('membership suspend requires reason; school merge is admin-only', async () => {
+    const me = await signUpLocal('Host');
+    const mod = await signUpLocal('Mod');
+    const admin = await signUpLocal('Admin');
+    await grantAppModeratorForTests(mod.id);
+    await grantAppAdminForTests(admin.id);
+    await setSchoolMembershipStatusForTests({
+      userId: me.id,
+      schoolId: BETA_SCHOOL_ID,
+      status: 'verified',
+    });
+
+    await expect(
+      opsSetSchoolMembershipStatus({
+        actorId: mod.id,
+        userId: me.id,
+        schoolId: BETA_SCHOOL_ID,
+        status: 'suspended',
+        note: '',
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+
+    await opsSetSchoolMembershipStatus({
+      actorId: mod.id,
+      userId: me.id,
+      schoolId: BETA_SCHOOL_ID,
+      status: 'suspended',
+      note: 'policy',
+    });
+    expect((await getMySchoolMembership(me.id)).status).toBe('suspended');
+
+    await expect(
+      opsMergeSchools({
+        actorId: mod.id,
+        keepSchoolId: BETA_SCHOOL_ID,
+        absorbSchoolId: OTHER_SCHOOL_ID,
+        note: 'dup',
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    const caps = await getMyOperatorCapabilities(admin.id);
+    expect(caps.allowedActions).toContain('school_merge');
+    await opsMergeSchools({
+      actorId: admin.id,
+      keepSchoolId: BETA_SCHOOL_ID,
+      absorbSchoolId: OTHER_SCHOOL_ID,
+      note: 'duplicate school',
+    });
+  });
+
+  it('flag fake verification opens report + needs_more_info', async () => {
+    const me = await signUpLocal('Alex');
+    const ops = await signUpLocal('Ops');
+    await grantAppModeratorForTests(ops.id);
+    const { requestId } = await submitSchoolInviteCode(me.id, BETA_SCHOOL_CODE);
+    const { reportId } = await opsFlagFakeSchoolVerification({
+      actorId: ops.id,
+      requestId,
+      note: 'stolen code',
+    });
+    expect(reportId).toBeTruthy();
+    expect((await getMySchoolMembership(me.id)).status).toBe('needs_more_info');
   });
 
   it('unverified cannot join even with recommenders', async () => {

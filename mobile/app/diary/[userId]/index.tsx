@@ -38,6 +38,7 @@ import {
   listHompyCircleBoardPreview,
   listMyCircleSummaries,
   listRecentDiaryEntries,
+  recordFriendDiaryVisit,
   type FreeBoardRow,
   type GuestbookRow,
   type HompyCirclePreview,
@@ -209,6 +210,9 @@ export default function DiaryScreen() {
           } else {
             await loadMusic(d.id, session.id);
             track(AnalyticsEvents.diary_viewed, { market: 'US' });
+            if (session.id !== userId) {
+              void recordFriendDiaryVisit();
+            }
           }
           setMood(d.mood ?? undefined);
           setTen(d.tenCharText ?? '');

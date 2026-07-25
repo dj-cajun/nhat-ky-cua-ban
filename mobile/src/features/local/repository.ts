@@ -199,8 +199,12 @@ interface LocalDb {
   schoolInviteCodes: SchoolInviteCodeRow[];
   schoolChangeRequests: SchoolChangeRequestRow[];
   schoolAuditEvents: SchoolAuditEventRow[];
+  /** Aggregate counters only (no per-user visit history). */
+  opsMetricCounters: { metricKey: string; metricDay: string; value: number }[];
   /** B.1: local mirror of app_moderators — never imply all signed-in users */
   operatorUserIds: string[];
+  /** moderator | admin — defaults to moderator when missing */
+  operatorRoles: Record<string, 'moderator' | 'admin'>;
   circleSchoolIncidents: {
     id: string;
     circleId: string;
@@ -339,7 +343,9 @@ const empty: LocalDb = {
   schoolInviteCodes: [],
   schoolChangeRequests: [],
   schoolAuditEvents: [],
+  opsMetricCounters: [],
   operatorUserIds: [],
+  operatorRoles: {},
   circleSchoolIncidents: [],
 };
 
@@ -409,6 +415,8 @@ export async function loadLocalDb(): Promise<void> {
     memory.schoolVerificationRequests ??= [];
     memory.schoolInviteCodes ??= [];
     memory.operatorUserIds ??= [];
+    memory.operatorRoles ??= {};
+    memory.opsMetricCounters ??= [];
     memory.circleSchoolIncidents ??= [];
     memory.schoolChangeRequests ??= [];
     memory.schoolAuditEvents ??= [];
@@ -598,27 +606,60 @@ export async function canWriteCircle(circleId: string, userId: string): Promise<
   return isVerifiedSchoolMember(membership, school);
 }
 
+const OPS_ACTIONS_MODERATOR = [
+  'overview_read',
+  'verification_review',
+  'change_review',
+  'invite_codes',
+  'membership_suspend',
+  'mixed_resolve',
+  'reports_moderate',
+  'school_audit_read',
+] as const;
+
+const OPS_ACTIONS_ADMIN = [...OPS_ACTIONS_MODERATOR, 'school_merge'] as const;
+
+export type OpsAction = (typeof OPS_ACTIONS_ADMIN)[number];
+
 /** Mirror get_my_operator_capabilities / is_app_moderator — server table only. */
 export async function getMyOperatorCapabilities(userId: string): Promise<{
   isModerator: boolean;
   role: 'moderator' | 'admin' | null;
+  allowedActions: OpsAction[];
 }> {
   await loadLocalDb();
   const ok = memory.operatorUserIds.includes(userId);
-  return { isModerator: ok, role: ok ? 'moderator' : null };
+  if (!ok) return { isModerator: false, role: null, allowedActions: [] };
+  const role = memory.operatorRoles[userId] ?? 'moderator';
+  return {
+    isModerator: true,
+    role,
+    allowedActions: [...(role === 'admin' ? OPS_ACTIONS_ADMIN : OPS_ACTIONS_MODERATOR)],
+  };
 }
 
 export async function grantAppModeratorForTests(userId: string): Promise<void> {
   await loadLocalDb();
   if (!memory.operatorUserIds.includes(userId)) {
     memory.operatorUserIds.push(userId);
-    await persist();
   }
+  memory.operatorRoles[userId] ??= 'moderator';
+  await persist();
+}
+
+export async function grantAppAdminForTests(userId: string): Promise<void> {
+  await loadLocalDb();
+  if (!memory.operatorUserIds.includes(userId)) {
+    memory.operatorUserIds.push(userId);
+  }
+  memory.operatorRoles[userId] = 'admin';
+  await persist();
 }
 
 export async function revokeAppModeratorForTests(userId: string): Promise<void> {
   await loadLocalDb();
   memory.operatorUserIds = memory.operatorUserIds.filter((id) => id !== userId);
+  delete memory.operatorRoles[userId];
   await persist();
 }
 
@@ -626,6 +667,13 @@ async function assertLocalModerator(userId: string): Promise<void> {
   const caps = await getMyOperatorCapabilities(userId);
   if (!caps.isModerator) {
     throw new AppError('FORBIDDEN', 'Moderator only.');
+  }
+}
+
+async function assertLocalOpsAction(userId: string, action: OpsAction): Promise<void> {
+  const caps = await getMyOperatorCapabilities(userId);
+  if (!caps.allowedActions.includes(action)) {
+    throw new AppError('FORBIDDEN', 'Action not allowed for this operator role.');
   }
 }
 
@@ -1168,7 +1216,7 @@ export async function opsListSchoolAuditEvents(actorId: string): Promise<
   }[]
 > {
   await loadLocalDb();
-  await assertLocalModerator(actorId);
+  await assertLocalOpsAction(actorId, 'school_audit_read');
   return memory.schoolAuditEvents.slice(0, 50).map((e) => ({
     id: e.id,
     schoolId: e.schoolId,
@@ -1177,6 +1225,253 @@ export async function opsListSchoolAuditEvents(actorId: string): Promise<
     eventType: e.eventType,
     payload: e.payload,
     createdAt: e.createdAt,
+  }));
+}
+
+function localActiveUsersSince(msAgo: number): number {
+  const cutoff = new Date(Date.now() - msAgo).toISOString();
+  const ids = new Set<string>();
+  for (const d of memory.diary) {
+    if ((d.updatedAt ?? d.createdAt) >= cutoff) ids.add(d.userId);
+  }
+  for (const p of memory.posts) {
+    if (p.createdAt >= cutoff) ids.add(p.createdBy);
+  }
+  for (const m of memory.privateMessages) {
+    if (m.createdAt >= cutoff) {
+      ids.add(m.senderId);
+      ids.add(m.recipientId);
+    }
+  }
+  return ids.size;
+}
+
+function localMetricToday(key: string): number {
+  const day = todayInTz('UTC');
+  return (
+    memory.opsMetricCounters.find((c) => c.metricKey === key && c.metricDay === day)?.value ?? 0
+  );
+}
+
+/** Aggregates only — never returns diary/message bodies or per-user visit lists. */
+export async function opsGetOverviewMetrics(actorId: string): Promise<{
+  totalUsers: number;
+  activeUsers1d: number;
+  activeUsers7d: number;
+  activeUsers30d: number;
+  schoolVerified: number;
+  schoolPending: number;
+  circlesOpened: number;
+  circlesActive7d: number;
+  diaryEntriesToday: number;
+  friendDiaryVisitsToday: number;
+  openReports: number;
+  openMixedIncidents: number;
+  note: string;
+}> {
+  await loadLocalDb();
+  await assertLocalOpsAction(actorId, 'overview_read');
+  const today = todayInTz();
+  const openCircleIds = new Set(
+    memory.circles.filter((c) => c.status === 'open').map((c) => c.id),
+  );
+  const activeCircleIds = new Set<string>();
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  for (const p of memory.posts) {
+    if (p.createdAt >= weekAgo && openCircleIds.has(p.circleId)) activeCircleIds.add(p.circleId);
+  }
+  for (const m of memory.members) {
+    if (m.status === 'active' && openCircleIds.has(m.circleId)) {
+      /* membership alone is not activity — only count if circle had recent posts above */
+    }
+  }
+  return {
+    totalUsers: memory.profiles.length,
+    activeUsers1d: localActiveUsersSince(86400000),
+    activeUsers7d: localActiveUsersSince(7 * 86400000),
+    activeUsers30d: localActiveUsersSince(30 * 86400000),
+    schoolVerified: memory.schoolMemberships.filter((m) => m.status === 'verified').length,
+    schoolPending: memory.schoolMemberships.filter(
+      (m) => m.status === 'pending' || m.status === 'needs_more_info',
+    ).length,
+    circlesOpened: openCircleIds.size,
+    circlesActive7d: activeCircleIds.size || openCircleIds.size,
+    diaryEntriesToday: memory.diary.filter((d) => d.entryDate === today).length,
+    friendDiaryVisitsToday: localMetricToday('friend_diary_visit'),
+    openReports: memory.reports.filter(
+      (r) => r.status === 'submitted' || r.status === 'reviewing' || r.status === 'open',
+    ).length,
+    openMixedIncidents: memory.circleSchoolIncidents.filter((i) => i.status === 'open').length,
+    note: 'Aggregates only — not personal surveillance.',
+  };
+}
+
+export async function recordFriendDiaryVisit(): Promise<void> {
+  await loadLocalDb();
+  const day = todayInTz('UTC');
+  const row = memory.opsMetricCounters.find(
+    (c) => c.metricKey === 'friend_diary_visit' && c.metricDay === day,
+  );
+  if (row) row.value += 1;
+  else memory.opsMetricCounters.push({ metricKey: 'friend_diary_visit', metricDay: day, value: 1 });
+  await persist();
+}
+
+export async function opsSetSchoolMembershipStatus(input: {
+  actorId: string;
+  userId: string;
+  schoolId: string;
+  status: 'suspended' | 'verified';
+  note: string;
+}): Promise<void> {
+  await loadLocalDb();
+  await assertLocalOpsAction(input.actorId, 'membership_suspend');
+  if (!input.note.trim()) throw new AppError('VALIDATION', 'A reason is required.');
+  const m = membershipForUser(input.userId, input.schoolId);
+  if (!m) throw new AppError('NOT_FOUND', 'Membership not found.');
+  const prev = m.status;
+  if (input.status === 'verified' && prev !== 'suspended') {
+    throw new AppError('CONFLICT', 'Only suspended memberships can be reinstated.');
+  }
+  m.status = input.status;
+  m.updatedAt = now();
+  if (input.status === 'verified') m.verifiedAt = m.verifiedAt ?? now();
+  pushSchoolAudit({
+    schoolId: input.schoolId,
+    actorId: input.actorId,
+    eventType: `membership_${input.status}`,
+    payload: {
+      userId: input.userId,
+      fromStatus: prev,
+      toStatus: input.status,
+      note: input.note.trim(),
+    },
+  });
+  await persist();
+}
+
+export async function opsFlagFakeSchoolVerification(input: {
+  actorId: string;
+  requestId: string;
+  note: string;
+}): Promise<{ reportId: string }> {
+  await loadLocalDb();
+  await assertLocalOpsAction(input.actorId, 'verification_review');
+  if (!input.note.trim()) throw new AppError('VALIDATION', 'A reason is required.');
+  const req = memory.schoolVerificationRequests.find((r) => r.id === input.requestId);
+  if (!req) throw new AppError('NOT_FOUND', 'Request not found.');
+  if (!['pending', 'needs_more_info', 'approved'].includes(req.status)) {
+    throw new AppError('CONFLICT', 'Request not flaggable.');
+  }
+  req.status = 'needs_more_info';
+  req.reviewNote = input.note.trim();
+  req.reviewedAt = now();
+  const membership = membershipForUser(req.userId, req.schoolId);
+  if (
+    membership &&
+    (membership.status === 'pending' ||
+      membership.status === 'needs_more_info' ||
+      membership.status === 'verified')
+  ) {
+    membership.status = 'needs_more_info';
+    membership.updatedAt = now();
+  }
+  const reportId = uid();
+  memory.reports.push({
+    id: reportId,
+    reporterId: input.actorId,
+    targetType: 'school_verification',
+    targetId: req.id,
+    reason: 'impersonation',
+    details: input.note.trim(),
+    contentSnapshot: JSON.stringify({
+      kind: 'school_verification',
+      requestId: req.id,
+      userId: req.userId,
+      schoolId: req.schoolId,
+    }),
+    status: 'reviewing',
+    createdAt: now(),
+  });
+  pushSchoolAudit({
+    schoolId: req.schoolId,
+    actorId: input.actorId,
+    eventType: 'verification_flagged_fake',
+    payload: { requestId: req.id, reportId, note: input.note.trim() },
+  });
+  await persist();
+  return { reportId };
+}
+
+export async function opsMergeSchools(input: {
+  actorId: string;
+  keepSchoolId: string;
+  absorbSchoolId: string;
+  note: string;
+}): Promise<{ movedCircles: number; movedCodes: number }> {
+  await loadLocalDb();
+  await assertLocalOpsAction(input.actorId, 'school_merge');
+  if (!input.note.trim()) throw new AppError('VALIDATION', 'A reason is required.');
+  if (input.keepSchoolId === input.absorbSchoolId) {
+    throw new AppError('VALIDATION', 'Pick two different schools.');
+  }
+  const keep = schoolById(input.keepSchoolId);
+  const absorb = schoolById(input.absorbSchoolId);
+  if (!keep || keep.status !== 'active') throw new AppError('NOT_FOUND', 'Keep school not found.');
+  if (!absorb) throw new AppError('NOT_FOUND', 'Absorb school not found.');
+
+  for (const m of memory.schoolMemberships.filter((x) => x.schoolId === input.absorbSchoolId)) {
+    const conflict = membershipForUser(m.userId, input.keepSchoolId);
+    if (conflict) {
+      m.status = 'expired';
+      m.updatedAt = now();
+    } else if (m.status !== 'expired') {
+      m.schoolId = input.keepSchoolId;
+      m.updatedAt = now();
+    }
+  }
+
+  let movedCodes = 0;
+  for (const c of memory.schoolInviteCodes) {
+    if (c.schoolId === input.absorbSchoolId) {
+      c.schoolId = input.keepSchoolId;
+      movedCodes += 1;
+    }
+  }
+
+  let movedCircles = 0;
+  for (const c of memory.circles) {
+    if (c.schoolId === input.absorbSchoolId) {
+      c.schoolId = input.keepSchoolId;
+      movedCircles += 1;
+    }
+  }
+
+  absorb.status = 'archived';
+  pushSchoolAudit({
+    schoolId: input.keepSchoolId,
+    actorId: input.actorId,
+    eventType: 'school_merged',
+    payload: {
+      absorbSchoolId: input.absorbSchoolId,
+      movedCircles,
+      movedCodes,
+      note: input.note.trim(),
+    },
+  });
+  await persist();
+  return { movedCircles, movedCodes };
+}
+
+export async function listActiveSchoolsForOps(actorId: string): Promise<
+  { id: string; displayName: string; status: string }[]
+> {
+  await loadLocalDb();
+  await assertLocalModerator(actorId);
+  return memory.schools.map((s) => ({
+    id: s.id,
+    displayName: s.displayName,
+    status: s.status,
   }));
 }
 
@@ -3014,7 +3309,7 @@ export async function listAllReportsForOps(input: {
   isModerator: boolean;
 }): Promise<ReportRecord[]> {
   await loadLocalDb();
-  if (!input.isModerator) throw new AppError('FORBIDDEN', 'Moderator only.');
+  await assertLocalOpsAction(input.adminId, 'reports_moderate');
   return [...memory.reports].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 

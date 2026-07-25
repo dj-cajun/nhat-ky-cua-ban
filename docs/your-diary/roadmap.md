@@ -8,7 +8,8 @@
 ## 현재 위치
 
 **11단계 코드 완료** · **11.5 실기기 출시 게이트**와 병행해, 제품 방향을 **학교=바깥 신뢰 경계**로 명확화했다.  
-학교 레이어: **B 완료 · B.1 DEFERRED (Phase H)** — 런북 보관. 지금은 **Phase C** 학교 상태 UX·ops 콘솔 구현.
+학교 레이어: **B·C 완료 · D 최소 ops 완료 · B.1/H DEFERRED**.  
+지금은 **Phase E** — 우주·다이어리 공간 디자인 ([22](./22-phase-e-space-design.md)).
 
 > 11.5: staging·실기기 **출시 블로커**만.  
 > 학교 신뢰 경계: **신규 트랙** — 기존 서클/다이어리를 대체하지 않고, 입장 범위만 설명한다. 학교 전체 피드·전교 검색은 하지 않는다.
@@ -37,10 +38,11 @@
 | **12·A** | 학교 신뢰 경계 기획·감사 | ✅ | [20](./20-school-trust-boundary-plan.md) |
 | **12·B** | `019` 권한 결합 · deny 테스트 · school_id 백필 | ✅ | [20](./20-school-trust-boundary-plan.md) · `019` |
 | **12·B.1 / H** | staging JWT·실기기 출시 게이트 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) · Phase H |
-| **12·C** | 학교 온보딩·상태 UX · ops 콘솔 | ⏳ 진행 중 · `021` | [20](./20-school-trust-boundary-plan.md) |
-| **12·D** | 운영자 콘솔 심화 · 서클 school 가드 UX | ⏳ | C 이후 |
-| **12·E–G** | 다이어리·기척·쪽지 회귀 | ⏳ | UI+보안 테스트 |
-| **12·H** | staging·실기기 | ⏳ | 교차학교 공격 포함 |
+| **12·C** | 학교 온보딩·상태 UX · 최소 ops | ✅ | [20](./20-school-trust-boundary-plan.md) · `021` |
+| **12·D** | 베타 ops 최소 완성 (overview·안전·역할) | ✅ | `022` · `/ops/overview` · `/ops/safety` |
+| **12·E** | 우주·다이어리 공간 재설계 | ⏳ E1 | [22](./22-phase-e-space-design.md) |
+| **12·F–G** | 포커스룸·통합·오류 | ⏳ | E 이후 |
+| **12·H** | staging JWT·실기기 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) |
 | 베타 | 학교 코드 한정 초대 · 서클 중심 | 대기 | 11.5 + 12·B~D 최소 통과 후 권장 |
 
 ---
@@ -78,6 +80,8 @@
 | 2026-07-25 | **B.1 BLOCKED** 유지 — 자격 증명 요청·계정 규칙·증거 위치 ([access-request](./b1-staging-access-request.md)); 조건부 PASS 금지 |
 | 2026-07-25 | **B.1 → Phase H DEFERRED** 재표기 · Phase C(학교 상태 UX·ops) 착수 |
 | 2026-07-25 | **Phase C 구현**: `021` needs_more_info·변경/코드/audit ops · school 상태 UX · 미인증 서클 가드 |
+| 2026-07-25 | **Phase D 최소 완료**: `022` overview 집계·멤버십 정지·허위인증 신고·학교 병합(admin)·역할 액션 · [22](./22-phase-e-space-design.md) E1 |
+| 2026-07-25 | **Phase E 착수**: 우주/서클/친구·내 다이어리 네 화면 콘셉트 고정 — 코딩 전 시안 |
 | 2026-07-24 | 4 · 4.5 · 5 · 6 · 6.5 |
 | 2026-07-24 | 7~10 · 10.5 · 11 |
 | 2026-07-24 | 베타 체크리스트 · 계정 설정 보강 |
