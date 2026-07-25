@@ -206,10 +206,12 @@ interface LocalDb {
     memberSnapshot: {
       userId: string;
       memberSchoolId?: string;
+      memberSchoolName?: string;
       membershipStatus?: string;
     }[];
     detectedAt: string;
     resolvedAt?: string;
+    resolverId?: string;
     resolveNote?: string;
   }[];
 }
@@ -613,6 +615,7 @@ export async function opsScanMixedSchoolCircles(actorId: string): Promise<{
         return {
           userId: m.userId,
           memberSchoolId: mem?.schoolId,
+          memberSchoolName: mem ? schoolById(mem.schoolId)?.displayName : undefined,
           membershipStatus: mem?.status,
         };
       })
@@ -657,26 +660,48 @@ export async function opsListMixedSchoolCircles(actorId: string): Promise<
     memberSnapshot: {
       userId: string;
       memberSchoolId?: string;
+      memberSchoolName?: string;
       membershipStatus?: string;
     }[];
     detectedAt: string;
+    frozenAt: string;
+    lastActivityAt: string | null;
+    resolvedAt?: string;
+    resolverId?: string;
+    resolveNote?: string;
   }[]
 > {
   await loadLocalDb();
   await assertLocalModerator(actorId);
   return memory.circleSchoolIncidents
     .filter((i) => i.status === 'open')
-    .map((i) => ({
-      id: i.id,
-      circleId: i.circleId,
-      circleName: memory.circles.find((c) => c.id === i.circleId)?.name ?? i.circleId,
-      canonicalSchoolId: i.canonicalSchoolId,
-      canonicalSchoolName:
-        schoolById(i.canonicalSchoolId)?.displayName ?? i.canonicalSchoolId,
-      autoWriteBlocked: i.autoWriteBlocked,
-      memberSnapshot: i.memberSnapshot,
-      detectedAt: i.detectedAt,
-    }));
+    .map((i) => {
+      const activityCandidates = [
+        ...memory.posts.filter((p) => p.circleId === i.circleId).map((p) => p.createdAt),
+        ...memory.anonymousPosts.filter((p) => p.circleId === i.circleId).map((p) => p.createdAt),
+        ...memory.privateMessages.filter((m) => m.circleId === i.circleId).map((m) => m.createdAt),
+      ];
+      const lastActivityAt =
+        activityCandidates.length > 0
+          ? activityCandidates.sort((a, b) => (a < b ? 1 : -1))[0]!
+          : null;
+      return {
+        id: i.id,
+        circleId: i.circleId,
+        circleName: memory.circles.find((c) => c.id === i.circleId)?.name ?? i.circleId,
+        canonicalSchoolId: i.canonicalSchoolId,
+        canonicalSchoolName:
+          schoolById(i.canonicalSchoolId)?.displayName ?? i.canonicalSchoolId,
+        autoWriteBlocked: i.autoWriteBlocked,
+        memberSnapshot: i.memberSnapshot,
+        detectedAt: i.detectedAt,
+        frozenAt: i.detectedAt,
+        lastActivityAt,
+        resolvedAt: i.resolvedAt,
+        resolverId: i.resolverId,
+        resolveNote: i.resolveNote,
+      };
+    });
 }
 
 export async function opsResolveMixedSchoolCircle(input: {
@@ -689,10 +714,14 @@ export async function opsResolveMixedSchoolCircle(input: {
   const inc = memory.circleSchoolIncidents.find((i) => i.id === input.incidentId);
   if (!inc) throw new AppError('NOT_FOUND', 'Incident not found.');
   if (inc.status !== 'open') throw new AppError('CONFLICT', 'Already resolved.');
+  if (!input.note?.trim()) {
+    throw new AppError('VALIDATION', 'Resolve note is required for audit.');
+  }
   inc.status = 'resolved';
   inc.autoWriteBlocked = false;
   inc.resolvedAt = now();
-  inc.resolveNote = input.note;
+  inc.resolverId = input.actorId;
+  inc.resolveNote = input.note.trim();
   await persist();
 }
 

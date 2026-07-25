@@ -434,6 +434,13 @@ export const ko = {
     mixedScan: '혼재 스캔',
     mixedResolve: '정리 완료로 표시',
     mixedFrozen: '쓰기 중지',
+    mixedCanonical: '기준 학교',
+    mixedFrozenAt: 'freeze 시각',
+    mixedLastActivity: '마지막 활동',
+    mixedMembers: '혼재 멤버',
+    mixedResolveNote: '해결 사유 (필수)',
+    mixedResolveNoteHint: '무엇을 정리했는지, 누가 남는지 적어 주세요.',
+    mixedNoteRequired: '감사 로그용 해결 사유를 입력하세요.',
   },
 
   language: {

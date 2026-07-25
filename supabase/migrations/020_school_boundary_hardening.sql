@@ -121,6 +121,7 @@ BEGIN
         m.status AS "membershipStatus",
         s.display_name AS "memberSchoolName",
         cm.joined_at AS "joinedAt"
+        -- ops UI: school status + school name per foreign member
       FROM public.circle_members cm
       LEFT JOIN LATERAL (
         SELECT sm.school_id, sm.status
@@ -221,11 +222,32 @@ BEGIN
       i.auto_write_blocked AS "autoWriteBlocked",
       i.member_snapshot AS "memberSnapshot",
       i.detected_at AS "detectedAt",
-      (
-        SELECT MAX(cm.joined_at)
-        FROM public.circle_members cm
-        WHERE cm.circle_id = i.circle_id AND cm.status = 'active'
-      ) AS "lastMemberJoinedAt"
+      i.detected_at AS "frozenAt",
+      i.resolved_at AS "resolvedAt",
+      i.resolver_id AS "resolverId",
+      i.resolve_note AS "resolveNote",
+      GREATEST(
+        (
+          SELECT MAX(cm.joined_at)
+          FROM public.circle_members cm
+          WHERE cm.circle_id = i.circle_id AND cm.status = 'active'
+        ),
+        (
+          SELECT MAX(p.created_at)
+          FROM public.circle_posts p
+          WHERE p.circle_id = i.circle_id
+        ),
+        (
+          SELECT MAX(a.created_at)
+          FROM public.anonymous_posts a
+          WHERE a.circle_id = i.circle_id
+        ),
+        (
+          SELECT MAX(m.created_at)
+          FROM public.private_messages m
+          WHERE m.circle_id = i.circle_id
+        )
+      ) AS "lastActivityAt"
     FROM public.circle_school_incidents i
     JOIN public.circles c ON c.id = i.circle_id
     JOIN public.schools_v2 s ON s.id = i.canonical_school_id
@@ -257,6 +279,9 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
   IF NOT public.is_app_moderator() THEN RAISE EXCEPTION 'FORBIDDEN'; END IF;
+  IF p_note IS NULL OR btrim(p_note) = '' THEN
+    RAISE EXCEPTION 'VALIDATION';
+  END IF;
 
   SELECT * INTO v_inc
   FROM public.circle_school_incidents
@@ -270,7 +295,7 @@ BEGIN
   SET status = 'resolved',
       resolved_at = now(),
       resolver_id = v_uid,
-      resolve_note = p_note,
+      resolve_note = btrim(p_note),
       auto_write_blocked = false
   WHERE id = p_incident_id;
 

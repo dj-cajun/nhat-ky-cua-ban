@@ -434,6 +434,13 @@ export const en = {
     mixedScan: 'Scan for mixed schools',
     mixedResolve: 'Mark resolved (manual cleanup done)',
     mixedFrozen: 'writes frozen',
+    mixedCanonical: 'Canonical school',
+    mixedFrozenAt: 'Frozen at',
+    mixedLastActivity: 'Last activity',
+    mixedMembers: 'MIXED MEMBERS',
+    mixedResolveNote: 'RESOLVE NOTE (required)',
+    mixedResolveNoteHint: 'What was cleaned up? Who stays?',
+    mixedNoteRequired: 'Add a resolve note for the audit log.',
   },
 
   language: {

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSessionProfile } from '@/features/local/repository';
 import { opsService } from '@/features/ops/ops.service';
@@ -14,6 +14,21 @@ import { colors } from '@/constants/theme';
 import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
 
+type MixedRow = {
+  id: string;
+  circleName: string;
+  canonicalSchoolName: string;
+  autoWriteBlocked: boolean;
+  frozenAt: string;
+  lastActivityAt: string | null;
+  memberSnapshot: {
+    userId: string;
+    memberSchoolId?: string;
+    memberSchoolName?: string;
+    membershipStatus?: string;
+  }[];
+};
+
 /**
  * Mixed-school circle ops queue (B.1).
  * Detect → freeze writes → manual resolve. Never auto-rewrites memberships.
@@ -24,16 +39,8 @@ export default function OpsMixedCirclesScreen() {
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState('');
   const [actorId, setActorId] = useState<string | null>(null);
-  const [rows, setRows] = useState<
-    {
-      id: string;
-      circleName: string;
-      canonicalSchoolName: string;
-      autoWriteBlocked: boolean;
-      foreignCount: number;
-      detectedAt: string;
-    }[]
-  >([]);
+  const [rows, setRows] = useState<MixedRow[]>([]);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -58,8 +65,9 @@ export default function OpsMixedCirclesScreen() {
           circleName: r.circleName,
           canonicalSchoolName: r.canonicalSchoolName,
           autoWriteBlocked: r.autoWriteBlocked,
-          foreignCount: r.memberSnapshot.length,
-          detectedAt: r.detectedAt,
+          frozenAt: r.frozenAt,
+          lastActivityAt: r.lastActivityAt,
+          memberSnapshot: r.memberSnapshot,
         })),
       );
     } catch (e) {
@@ -89,11 +97,21 @@ export default function OpsMixedCirclesScreen() {
 
   const resolve = async (incidentId: string) => {
     if (!actorId) return;
+    const note = notes[incidentId]?.trim();
+    if (!note) {
+      setError(t.ops.mixedNoteRequired);
+      return;
+    }
     try {
       await opsService.resolveMixedSchoolCircle({
         actorId,
         incidentId,
-        note: 'manual_ops_resolve',
+        note,
+      });
+      setNotes((prev) => {
+        const next = { ...prev };
+        delete next[incidentId];
+        return next;
       });
       await reload();
     } catch (e) {
@@ -142,9 +160,31 @@ export default function OpsMixedCirclesScreen() {
             <View key={r.id} style={styles.card}>
               <Text style={styles.name}>{r.circleName}</Text>
               <Text style={styles.meta}>
-                {r.canonicalSchoolName} · foreign {r.foreignCount}
+                {t.ops.mixedCanonical}: {r.canonicalSchoolName}
+              </Text>
+              <Text style={styles.meta}>
+                {t.ops.mixedFrozenAt}: {r.frozenAt}
                 {r.autoWriteBlocked ? ` · ${t.ops.mixedFrozen}` : ''}
               </Text>
+              <Text style={styles.meta}>
+                {t.ops.mixedLastActivity}: {r.lastActivityAt ?? '—'}
+              </Text>
+              <Text style={styles.section}>{t.ops.mixedMembers}</Text>
+              {r.memberSnapshot.map((m) => (
+                <Text key={m.userId} style={styles.member}>
+                  {m.userId.slice(0, 8)} · {m.memberSchoolName ?? m.memberSchoolId ?? '?'} ·{' '}
+                  {m.membershipStatus ?? '?'}
+                </Text>
+              ))}
+              <Text style={styles.section}>{t.ops.mixedResolveNote}</Text>
+              <TextInput
+                value={notes[r.id] ?? ''}
+                onChangeText={(v) => setNotes((prev) => ({ ...prev, [r.id]: v }))}
+                placeholder={t.ops.mixedResolveNoteHint}
+                placeholderTextColor={colors.soft}
+                style={styles.input}
+                multiline
+              />
               <Pressable
                 style={styles.resolve}
                 onPress={() => void resolve(r.id)}
@@ -188,6 +228,23 @@ const styles = StyleSheet.create({
   },
   name: { color: colors.ink, fontWeight: '600', fontSize: 16 },
   meta: { marginTop: 4, color: colors.muted, fontSize: 12 },
+  section: {
+    marginTop: 12,
+    fontSize: 11,
+    color: colors.soft,
+    letterSpacing: 1,
+  },
+  member: { marginTop: 4, color: colors.ink, fontSize: 13 },
+  input: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    padding: 10,
+    minHeight: 64,
+    color: colors.ink,
+    textAlignVertical: 'top',
+  },
   resolve: {
     marginTop: 12,
     minHeight: 44,

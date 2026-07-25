@@ -424,25 +424,68 @@ nullable school_id 추가
 
 ## Phase B.1 — 경계 하드닝 (출시 전 차단)
 
-Phase C UI 확장 전에 아래를 차단 항목으로 본다.
+체크리스트가 있다는 것 ≠ 통과. **실제 JWT 전수 PASS**가 게이트다.
+
+### 구현 / 증거
 
 | # | 항목 | 구현 / 증거 |
 |---|------|-------------|
 | 1 | staging 실제 JWT 침투 | `supabase/tests/020_staging_jwt_penetration_checklist.sql` |
-| 2 | 혼재 서클 ops 큐 | `020` `circle_school_incidents` + `ops_scan/list/resolve` + `/ops/mixed-circles` |
-| 3 | ops JWT/하드코딩 제거 | school ops → `is_app_moderator()` / `app_moderators`; 클라이언트 `getMyOperatorCapabilities` |
-| 4 | audit log | `school_audit_events` (verify/change/mixed) + 015 `admin_audit_logs` |
-| 5 | deep link 우회 | `resolveDeepLink` join → `getCircleInvitePreview` (타교 NOT_FOUND) |
-| 6 | 계정 전환 캐시 | `switchAccountIsolation` + staging 체크리스트 |
+| 2 | 혼재 서클 ops 큐 | `020` incidents + freeze + `/ops/mixed-circles` (사유·감사 필수) |
+| 3 | ops role 서버 판정 | `is_app_moderator()` / `app_moderators`; 클라이언트 하드코딩 제거 |
+| 4 | audit log | `school_audit_events` + resolve note/resolver |
+| 5 | deep link 우회 | join → `getCircleInvitePreview` (타교 `NOT_FOUND`) |
+| 6 | 계정 전환 캐시 | `switchAccountIsolation` + staging 매트릭스 |
 
-혼재 정책 (베타):
+### 실제 통과 기준 (페르소나)
 
-> 혼재 감지 시 신규 쓰기·초대·추천 중지(`can_write_circle` freeze), 멤버십 자동 이전 없음, 운영자 수동 정리 후 resolve.
+| ID | 상태 | 기대 |
+|----|------|------|
+| **A** | 같은 학교 · 정상 서클 멤버 | 허용 |
+| **B** | 같은 학교 · 비서클 멤버 | 거절 |
+| **C** | 다른 학교 (+ known id / invite) | 존재 여부까지 숨김 (`NOT_FOUND`) |
+| **D** | `pending_change` | 읽기만 · 쓰기 거절 |
+| **E** | 정지·만료 (+ known id) | 접근 불가 |
+| **M** | `app_moderators` | 필요한 ops만 · 일반 데이터 백도어 금지 |
+
+각 페르소나로 아래 경로를 **직접** 확인. shared predicate를 거치지 않으면 B.1 미완료:
+
+```text
+circle read/write
+diary read/write
+notice/poll
+pseudonymous board
+private notes
+guestbook
+invite preview
+presence publish
+deep link
+cached screen refresh
+account switch
+```
+
+### 혼재 서클 정책
+
+`incident → freeze → 수동 resolve` (자동 이전·재배정 금지).
+
+ops 화면 최소 필드: 기준 학교 · 혼재 멤버·학교 상태 · freeze 시각 · 마지막 활동 · 해결 사유 · 처리자 · resolve 결과(+ audit).
+
+---
+
+## Phase C (B.1 전수 통과 후에만)
+
+기능 추가가 아니라 **상태 명시**:
+
+```text
+학교 코드 입력 → 인증 요청됨 → 검토 중 → 추가 확인 필요 → 승인됨 → 거절됨 → 학교 변경 검토 중
+```
+
+학교 탐색·학생 검색·학교 홈 **금지**.
 
 ---
 
 ## 다음 액션
 
-1. **B.1 완료**: staging에 `019`+`020` 적용 → JWT 체크리스트 전수 통과  
-2. Phase C: 온보딩 상태 화면 (검토 중 / 추가 확인 / 승인 / 거절 / 변경 검토 중)  
-3. 학교 탐색·홈·학생 검색은 계속 금지
+1. staging에 `019`+`020` 적용  
+2. JWT 체크리스트 **전수 PASS** + audit/혼재 resolve 로그 검토  
+3. 그다음 Phase C
