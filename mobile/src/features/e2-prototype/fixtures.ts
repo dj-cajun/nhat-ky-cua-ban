@@ -231,6 +231,8 @@ export const e2Fixtures = {
     sentence: 'the light stayed on the desk a little longer today',
     music: 'Moonlight Drive · soft instrumental',
     photoLabel: 'afternoon window',
+    /** Distinct place art — warm window, not a shared template block */
+    sceneVariant: 'friendWindow' as const,
   },
   myToday: {
     ownerName: 'Alex',
@@ -239,6 +241,8 @@ export const e2Fixtures = {
     music: 'Harbor Morning · lo-fi piano',
     photoLabel: 'my desk corner',
     writeHint: 'tap the scene to write today',
+    /** Cool morning desk — visually different from friend’s window */
+    sceneVariant: 'myDesk' as const,
   },
   objects: {
     album: 'album',

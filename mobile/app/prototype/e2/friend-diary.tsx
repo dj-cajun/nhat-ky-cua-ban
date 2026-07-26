@@ -39,6 +39,7 @@ export default function E2FriendDiaryPrototype() {
             sentence={today.sentence}
             music={today.music}
             photoLabel={today.photoLabel}
+            sceneVariant="friendWindow"
             sceneA11y={`${today.ownerName}'s diary today`}
           />
 

@@ -43,6 +43,7 @@ export default function E2MyDiaryPrototype() {
             sentence={writing ? '…keeping one quiet line' : today.sentence}
             music={today.music}
             photoLabel={today.photoLabel}
+            sceneVariant="myDesk"
             onPressScene={() => setWriting(true)}
             sceneA11y="Edit today’s diary scene"
           />

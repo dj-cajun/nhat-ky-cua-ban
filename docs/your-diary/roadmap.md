@@ -9,7 +9,7 @@
 
 **11단계 코드 완료** · **11.5 실기기 출시 게이트**와 병행해, 제품 방향을 **학교=바깥 신뢰 경계**로 명확화했다.  
 학교 레이어: **B·C 완료 · D 최소 ops 완료 · B.1/H DEFERRED**.  
-**E2.1 우주 공간 계층 PASS.** 지금은 **E2.2** — 친구/내 다이어리 장면 미디어로 A FAIL 해소 ([22](./22-phase-e-space-design.md) · [23](./23-phase-e2-prototype-checklist.md)). E3는 A PASS 전 금지.
+**E2 승인 (E2.1·E2.2 PASS).** 지금은 **Phase E3** — 우주/서클/다이어리 핵심 화면 구조 교체 ([22](./22-phase-e-space-design.md) · [23](./23-phase-e2-prototype-checklist.md)). 실데이터·인가 연결은 E5.
 
 > 11.5: staging·실기기 **출시 블로커**만.  
 > 학교 신뢰 경계: **신규 트랙** — 기존 서클/다이어리를 대체하지 않고, 입장 범위만 설명한다. 학교 전체 피드·전교 검색은 하지 않는다.
@@ -40,7 +40,7 @@
 | **12·B.1 / H** | staging JWT·실기기 출시 게이트 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) · Phase H |
 | **12·C** | 학교 온보딩·상태 UX · 최소 ops | ✅ | [20](./20-school-trust-boundary-plan.md) · `021` |
 | **12·D** | 베타 ops 최소 완성 (overview·안전·역할) | ✅ | `022` · `/ops/overview` · `/ops/safety` |
-| **12·E** | 우주·다이어리 공간 재설계 | ⏳ E2.1 PASS · E2.2 장면 | [22](./22-phase-e-space-design.md) · [23](./23-phase-e2-prototype-checklist.md) · `/prototype/e2` |
+| **12·E** | 우주·다이어리 공간 재설계 | ⏳ E2 승인 · **E3** | [22](./22-phase-e-space-design.md) · [23](./23-phase-e2-prototype-checklist.md) · `/prototype/e2` |
 | **12·F–G** | 포커스룸·통합·오류 | ⏳ | E 이후 |
 | **12·H** | staging JWT·실기기 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) |
 | 베타 | 학교 코드 한정 초대 · 서클 중심 | 대기 | 11.5 + 12·B~D 최소 통과 후 권장 |
@@ -84,7 +84,8 @@
 | 2026-07-25 | **Phase E 착수**: 우주/서클/친구·내 다이어리 네 화면 콘셉트 고정 — 코딩 전 시안 |
 | 2026-07-25 | **Phase E2**: 정적 인터랙티브 프로토타입 4화면 + HTML 미러 + [23](./23-phase-e2-prototype-checklist.md) |
 | 2026-07-25 | **E2 live review FAIL** (친구 오늘 장면 placeholder) · E3 금지 |
-| 2026-07-25 | **E2.1 PASS**: 우주 크기+거리 계층 · 수동 close-3 · 자동 친밀도 금지 · 다음 E2.2 장면 미디어 |
+| 2026-07-25 | **E2.1 PASS**: 우주 크기+거리 계층 · 수동 close-3 · 자동 친밀도 금지 |
+| 2026-07-26 | **E2.2 PASS**: 친구 오후 창 / 내 책상 장면 차별 · E2 승인 · E3 허용 |
 | 2026-07-24 | 4 · 4.5 · 5 · 6 · 6.5 |
 | 2026-07-24 | 7~10 · 10.5 · 11 |
 | 2026-07-24 | 베타 체크리스트 · 계정 설정 보강 |

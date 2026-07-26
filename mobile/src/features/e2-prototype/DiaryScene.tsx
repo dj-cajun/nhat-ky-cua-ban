@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { e2 } from './tokens';
 import { e2Fixtures } from './fixtures';
+import { SceneArt, type SceneVariant } from './SceneArt';
 
 type Palette = typeof e2.friendDiary | typeof e2.myDiary;
 
-/** One dominant emotional scene — photo + sentence + mood + music as one frame. */
+/** One dominant emotional scene — place art + sentence + mood + music as one frame. */
 export function DiaryScene({
   palette,
   ownerName,
@@ -12,6 +13,7 @@ export function DiaryScene({
   sentence,
   music,
   photoLabel,
+  sceneVariant,
   onPressScene,
   sceneA11y,
 }: {
@@ -21,16 +23,18 @@ export function DiaryScene({
   sentence: string;
   music: string;
   photoLabel: string;
+  sceneVariant: SceneVariant;
   onPressScene?: () => void;
   sceneA11y: string;
 }) {
   const body = (
     <View style={styles.scene}>
       <View style={[styles.photo, { backgroundColor: palette.scene }]}>
-        <Text style={[styles.photoLabel, { color: palette.muted, fontFamily: e2.type.body }]}>
+        <SceneArt variant={sceneVariant} />
+        <View style={styles.photoScrim} pointerEvents="none" />
+        <Text style={[styles.photoLabel, { color: palette.ink, fontFamily: e2.type.bodyMed }]}>
           {photoLabel}
         </Text>
-        <View style={styles.photoGlow} />
       </View>
       <Text style={[styles.owner, { color: palette.muted, fontFamily: e2.type.bodyMed }]}>
         {ownerName.toUpperCase()} · TODAY
@@ -125,20 +129,22 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 18,
   },
-  photoGlow: {
+  photoScrim: {
     position: 'absolute',
-    top: '20%',
-    left: '15%',
-    width: '55%',
-    height: '40%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '38%',
+    backgroundColor: 'rgba(10,8,12,0.42)',
   },
   photoLabel: {
     fontSize: 13,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    zIndex: 1,
+    zIndex: 2,
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   owner: {
     marginTop: 18,
