@@ -44,8 +44,8 @@ export const ko = {
   },
 
   universe: {
-    brand: '내 유니버스',
-    title: '서클 지도',
+    brand: '너의 다이어리',
+    title: '가까이 둔 거리 — 나만의 배치',
     createCircle: '서클 만들기 (친구 2명과)',
     wroteToday: (n: number) => `오늘 ${n}명이 씀`,
     notice: '공지',

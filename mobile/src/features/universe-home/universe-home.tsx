@@ -288,8 +288,8 @@ const styles = StyleSheet.create({
   modalRoot: { flex: 1, overflow: 'hidden' },
   chrome: { ...StyleSheet.absoluteFill, justifyContent: 'space-between' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brand: { color: 'rgba(255,230,168,0.85)', fontSize: 12, letterSpacing: 0.6 },
-  title: { fontSize: 20, fontWeight: '600', color: '#F7F4EF', marginTop: 2 },
+  brand: { color: '#F4EFE6', fontSize: 22, fontWeight: '600', letterSpacing: -0.3 },
+  title: { fontSize: 13, fontWeight: '400', color: 'rgba(244,239,230,0.62)', marginTop: 4 },
   avatar: {
     width: 44,
     height: 44,

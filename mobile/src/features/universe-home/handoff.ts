@@ -29,7 +29,7 @@ export const INTRO_HANDOFF = {
     liveOpticalScale: 0.88,
     /**
      * Settled home diameter as fraction of **viewport** width.
-     * Small center orb; friends circles wrap it as a large pastel diagram.
+     * Small center orb; E3 friends/nodes orbit with private spatial distances.
      */
     homeDiameterRatio: 0.13,
     color: '#F0C36A',

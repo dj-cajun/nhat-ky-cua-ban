@@ -8,7 +8,7 @@ import { colors } from '@/constants/theme';
 import { toAppError } from '@/lib/errors';
 
 /**
- * Diary tab → pastel mini-hompy (`/diary/[userId]`).
+ * Diary tab → E3 diary space (`/diary/[userId]`).
  * Keeps one shell: intro → universe sphere → same home as this tab.
  */
 export default function MyDiaryTab() {

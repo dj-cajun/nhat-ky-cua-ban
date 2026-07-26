@@ -94,8 +94,8 @@ export default function UniverseScreen() {
       tabBarStyle: introPlaying
         ? { display: 'none' }
         : {
-            backgroundColor: '#F7F4EF',
-            borderTopColor: '#E6E0D6',
+            backgroundColor: '#0E1526',
+            borderTopColor: 'rgba(244,239,230,0.12)',
           },
     });
   }, [navigation, introPlaying]);

@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -7,14 +7,6 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import Animated, {
-  Easing,
-  cancelAnimation,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AppErrorState,
@@ -37,77 +29,23 @@ import {
   rememberCircleGraph,
 } from '@/features/universe-home/circle-visit';
 
-/** Black space — only me + friends + thin lines. */
-const GRAPH = {
-  space: '#000000',
-  ink: 'rgba(255,255,255,0.92)',
-  muted: 'rgba(255,255,255,0.45)',
-  edge: 'rgba(255,255,255,0.28)',
-  edgeHot: 'rgba(255,220,160,0.75)',
-  self: '#F0C36A',
-  selfGlow: 'rgba(240,195,106,0.28)',
-  node: 'rgba(255,255,255,0.12)',
-  nodeBorder: 'rgba(255,255,255,0.35)',
-  nodeHot: 'rgba(255,255,255,0.22)',
+/** E3 circle room — atmosphere + friend orbs (not a chat list). */
+const ROOM = {
+  wash: '#17362F',
+  washEdge: '#0F241F',
+  accent: '#7FAF9A',
+  ink: '#E7F2EC',
+  muted: 'rgba(231,242,236,0.7)',
+  object: 'rgba(231,242,236,0.14)',
+  objectBorder: 'rgba(231,242,236,0.28)',
+  colors: ['#F0D3B0', '#B8D4E8', '#E8C4D4', '#C9D4B8', '#D4C4E8'] as const,
 };
 
 type Friend = { id: string; name: string };
 
-type ProjectedNode = Friend & {
-  x: number;
-  y: number;
-  z: number;
-  scale: number;
-  opacity: number;
-  depth: number;
-};
-
-function projectSphere(
-  theta: number,
-  phi: number,
-  radius: number,
-  cx: number,
-  cy: number,
-  yaw: number,
-  pitch: number,
-): Omit<ProjectedNode, keyof Friend> {
-  let x = Math.sin(phi) * Math.cos(theta);
-  let y = Math.cos(phi);
-  let z = Math.sin(phi) * Math.sin(theta);
-
-  const cosY = Math.cos(yaw);
-  const sinY = Math.sin(yaw);
-  const x1 = x * cosY + z * sinY;
-  const z1 = -x * sinY + z * cosY;
-  x = x1;
-  z = z1;
-
-  const cosP = Math.cos(pitch);
-  const sinP = Math.sin(pitch);
-  const y1 = y * cosP - z * sinP;
-  const z2 = y * sinP + z * cosP;
-  y = y1;
-  z = z2;
-
-  const perspective = 2.6;
-  const depth = (z + 1) / 2;
-  const persp = perspective / (perspective - z);
-  const scale = 0.72 + depth * 0.55;
-  const opacity = 0.5 + depth * 0.5;
-
-  return {
-    x: cx + x * radius * persp,
-    y: cy + y * radius * persp * 0.92,
-    z,
-    scale,
-    opacity,
-    depth,
-  };
-}
-
 /**
- * Circle graph: pure black space. Only me ↔ each friend (hub lines).
- * No circle disk, wash, or friend–friend links.
+ * Circle graph: one job — choose whose diary to enter.
+ * Friends as spatial orbs; notice/board as small corner objects.
  */
 export default function CircleGraphScreen() {
   const t = useMessages();
@@ -119,8 +57,6 @@ export default function CircleGraphScreen() {
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [hotId, setHotId] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
 
   const reload = useCallback(async () => {
     setError('');
@@ -159,33 +95,22 @@ export default function CircleGraphScreen() {
     }, [circleId, reload]),
   );
 
-  useEffect(() => {
-    const id = setInterval(() => setTick((n) => n + 1), 48);
-    return () => clearInterval(id);
-  }, []);
-
-  const cx = width / 2;
-  const cy = height * 0.44;
-  const radius = Math.min(width, height) * 0.34;
-  const yaw = tick * 0.012;
-  const pitch = 0.22 + Math.sin(tick * 0.008) * 0.06;
-
-  const nodes: ProjectedNode[] = useMemo(() => {
-    const n = friends.length;
-    if (n === 0) return [];
+  const placements = useMemo(() => {
+    const cx = width / 2;
+    const cy = height * 0.48;
+    const r = Math.min(width, height) * 0.28;
+    if (friends.length === 0) return [];
     return friends.map((f, i) => {
-      const golden = Math.PI * (3 - Math.sqrt(5));
-      const y = 1 - (i / Math.max(n - 1, 1)) * 2;
-      const phi = Math.acos(Math.max(-1, Math.min(1, y)));
-      const theta = golden * i + i * 0.35;
-      return { ...f, ...projectSphere(theta, phi, radius, cx, cy, yaw, pitch) };
+      const angle = -Math.PI / 2 + (i / friends.length) * Math.PI * 2 + 0.35;
+      const wobble = 0.85 + (i % 3) * 0.08;
+      return {
+        ...f,
+        x: cx + Math.cos(angle) * r * wobble,
+        y: cy + Math.sin(angle) * r * wobble * 0.9,
+        color: ROOM.colors[i % ROOM.colors.length]!,
+      };
     });
-  }, [friends, radius, cx, cy, yaw, pitch]);
-
-  const sortedNodes = useMemo(
-    () => [...nodes].sort((a, b) => a.depth - b.depth),
-    [nodes],
-  );
+  }, [friends, width, height]);
 
   if (loading && !me) {
     return (
@@ -219,6 +144,7 @@ export default function CircleGraphScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <View style={styles.wash} />
       <View style={styles.header}>
         <Pressable
           onPress={() => backToUniverseCircles()}
@@ -227,276 +153,200 @@ export default function CircleGraphScreen() {
         >
           <Text style={styles.back}>← {t.universe.brand}</Text>
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {circle.symbol} {circle.name}
-        </Text>
         <Pressable onPress={() => router.push(`/circles/${circle.id}`)} hitSlop={12}>
           <Text style={styles.open}>{t.universe.tapPlanet}</Text>
         </Pressable>
       </View>
 
+      <Text style={styles.symbol} accessible={false}>
+        {circle.symbol}
+      </Text>
+      <Text style={styles.title} numberOfLines={1}>
+        {circle.name}
+      </Text>
+      <Text style={styles.blurb}>
+        {friends.length > 0
+          ? `${friends.length} quiet orbits`
+          : 'invite friends into this room'}
+      </Text>
+
       <View style={styles.stage}>
-        {/* Hub only: me → each friend */}
-        {nodes.map((n) => (
-          <EdgeLine
-            key={`hub-${n.id}`}
-            x1={cx}
-            y1={cy}
-            x2={n.x}
-            y2={n.y}
-            color={hotId === n.id ? GRAPH.edgeHot : GRAPH.edge}
-            thickness={hotId === n.id ? 1.5 : 1}
-            opacity={0.4 + n.depth * 0.45}
-          />
-        ))}
-
-        {sortedNodes.map((n) => (
-          <GraphNode
+        <View style={styles.ring} pointerEvents="none" />
+        {placements.map((n) => (
+          <Pressable
             key={n.id}
-            name={n.name}
-            x={n.x}
-            y={n.y}
-            scale={n.scale}
-            opacity={n.opacity}
-            hot={hotId === n.id}
-            onHot={(on) => setHotId(on ? n.id : null)}
             onPress={() => openDiaryFromCircle(n.id, circle.id)}
-          />
+            accessibilityRole="button"
+            accessibilityLabel={`Visit ${n.name} diary`}
+            style={[styles.friendWrap, { left: n.x - 40, top: n.y - 40 }]}
+          >
+            <View style={[styles.friendOrb, { backgroundColor: n.color }]}>
+              <Text style={styles.friendLetter}>{n.name.slice(0, 1)}</Text>
+            </View>
+            <Text style={styles.friendName} numberOfLines={1}>
+              {n.name}
+            </Text>
+          </Pressable>
         ))}
-
-        <Pressable
-          onPress={() => openDiaryFromCircle(me.id, circle.id)}
-          style={[styles.selfWrap, { left: cx - 28, top: cy - 28 }]}
-          accessibilityRole="button"
-          accessibilityLabel={me.displayName}
-        >
-          <View style={styles.selfGlow} />
-          <View style={styles.selfOrb}>
-            <Text style={styles.selfLetter}>{me.displayName.slice(0, 1)}</Text>
-          </View>
-          <Text style={styles.selfName} numberOfLines={1}>
-            {me.displayName}
-          </Text>
-        </Pressable>
-
         {friends.length === 0 ? (
-          <Text style={[styles.empty, { top: cy + radius * 0.35 }]}>
-            No friends in this circle yet
-          </Text>
+          <Text style={styles.empty}>No friends in this circle yet</Text>
         ) : null}
       </View>
+
+      <View style={styles.objects}>
+        <Pressable
+          style={styles.obj}
+          onPress={() => router.push(`/circles/${circle.id}`)}
+          accessibilityRole="button"
+          accessibilityLabel="Circle notice"
+        >
+          <Text style={styles.objLabel}>notice</Text>
+          <Text style={styles.objValue} numberOfLines={1}>
+            circle board
+          </Text>
+        </Pressable>
+        <Pressable
+          style={styles.obj}
+          onPress={() => router.push(`/circles/${circle.id}/anonymous-board`)}
+          accessibilityRole="button"
+          accessibilityLabel="Alias board"
+        >
+          <Text style={styles.objLabel}>board</Text>
+          <Text style={styles.objValue} numberOfLines={1}>
+            alias board
+          </Text>
+        </Pressable>
+      </View>
+
+      {friends[0] ? (
+        <Pressable
+          style={styles.cta}
+          onPress={() => openDiaryFromCircle(friends[0]!.id, circle.id)}
+          accessibilityRole="button"
+        >
+          <Text style={styles.ctaText}>step into a friend’s today →</Text>
+        </Pressable>
+      ) : null}
     </SafeAreaView>
   );
 }
 
-function GraphNode({
-  name,
-  x,
-  y,
-  scale,
-  opacity,
-  hot,
-  onHot,
-  onPress,
-}: {
-  name: string;
-  x: number;
-  y: number;
-  scale: number;
-  opacity: number;
-  hot: boolean;
-  onHot: (on: boolean) => void;
-  onPress: () => void;
-}) {
-  const pulse = useSharedValue(1);
-  const hotScale = useSharedValue(1);
-
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(1.06, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
-      -1,
-      true,
-    );
-    return () => cancelAnimation(pulse);
-  }, [pulse]);
-
-  useEffect(() => {
-    hotScale.value = withTiming(hot ? 1.45 : 1, {
-      duration: hot ? 120 : 180,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [hot, hotScale]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale * pulse.value * hotScale.value }],
-    opacity,
-  }));
-
-  const size = 36;
-
-  return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          left: x - size / 2,
-          top: y - size / 2,
-          width: size,
-          zIndex: 4 + Math.round(scale * 10),
-          alignItems: 'center',
-        },
-        style,
-      ]}
-    >
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => onHot(true)}
-        onPressOut={() => onHot(false)}
-        onHoverIn={() => onHot(true)}
-        onHoverOut={() => onHot(false)}
-        style={styles.nodeHit}
-        accessibilityRole="button"
-        accessibilityLabel={name}
-      >
-        <View style={[styles.nodeOrb, hot && styles.nodeOrbHot]}>
-          <Text style={styles.nodeLetter}>{name.slice(0, 1)}</Text>
-        </View>
-        <Text style={[styles.nodeLabel, hot && styles.nodeLabelHot]} numberOfLines={1}>
-          {name}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-function EdgeLine({
-  x1,
-  y1,
-  x2,
-  y2,
-  color,
-  thickness,
-  opacity,
-}: {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  color: string;
-  thickness: number;
-  opacity: number;
-}) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        left: (x1 + x2) / 2 - len / 2,
-        top: (y1 + y2) / 2 - thickness / 2,
-        width: len,
-        height: thickness,
-        borderRadius: thickness,
-        backgroundColor: color,
-        opacity,
-        transform: [{ rotate: `${angle}deg` }],
-        zIndex: 2,
-        pointerEvents: 'none',
-      }}
-    />
-  );
-}
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: GRAPH.space },
-  forbidden: { backgroundColor: GRAPH.space },
+  safe: { flex: 1, backgroundColor: ROOM.washEdge },
+  forbidden: { backgroundColor: ROOM.washEdge },
+  wash: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: ROOM.wash,
+    opacity: 0.95,
+  },
   header: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    zIndex: 2,
   },
-  back: { color: GRAPH.muted, fontSize: 13, fontWeight: '600' },
-  headerTitle: {
-    flex: 1,
+  back: { color: ROOM.muted, fontSize: 13, fontWeight: '600', minHeight: 44, textAlignVertical: 'center' },
+  open: { color: ROOM.muted, fontSize: 12, fontWeight: '600', minHeight: 44, textAlignVertical: 'center' },
+  symbol: {
+    marginTop: 8,
     textAlign: 'center',
-    color: GRAPH.ink,
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 28,
+    color: ROOM.accent,
+    zIndex: 2,
   },
-  open: { color: GRAPH.muted, fontSize: 12, fontWeight: '600' },
-  stage: { flex: 1 },
-  selfWrap: {
-    position: 'absolute',
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 20,
-  },
-  selfGlow: {
-    position: 'absolute',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: GRAPH.selfGlow,
-  },
-  selfOrb: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: GRAPH.self,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  selfLetter: { color: '#1A1410', fontWeight: '800', fontSize: 16 },
-  selfName: {
-    position: 'absolute',
-    top: 52,
-    color: GRAPH.ink,
-    fontSize: 10,
-    fontWeight: '700',
-    maxWidth: 72,
-    textAlign: 'center',
-  },
-  nodeHit: { alignItems: 'center', width: 56 },
-  nodeOrb: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: GRAPH.node,
-    borderWidth: 1,
-    borderColor: GRAPH.nodeBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nodeOrbHot: {
-    borderColor: 'rgba(255,220,160,0.7)',
-    backgroundColor: GRAPH.nodeHot,
-  },
-  nodeLetter: { color: GRAPH.ink, fontWeight: '800', fontSize: 11 },
-  nodeLabel: {
+  title: {
     marginTop: 4,
-    fontSize: 9,
+    textAlign: 'center',
+    fontSize: 28,
     fontWeight: '600',
-    color: GRAPH.muted,
-    maxWidth: 56,
+    color: ROOM.ink,
+    paddingHorizontal: 20,
+    zIndex: 2,
+  },
+  blurb: {
+    marginTop: 6,
+    textAlign: 'center',
+    fontSize: 14,
+    color: ROOM.muted,
+    zIndex: 2,
+  },
+  stage: { flex: 1, minHeight: 280, marginTop: 8 },
+  ring: {
+    position: 'absolute',
+    left: '18%',
+    top: '22%',
+    width: '64%',
+    height: '56%',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: ROOM.accent,
+    opacity: 0.35,
+  },
+  friendWrap: {
+    position: 'absolute',
+    width: 80,
+    alignItems: 'center',
+    zIndex: 4,
+  },
+  friendOrb: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendLetter: { fontSize: 20, fontWeight: '700', color: '#2A2430' },
+  friendName: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    color: ROOM.ink,
+    maxWidth: 80,
     textAlign: 'center',
   },
-  nodeLabelHot: { color: GRAPH.ink },
   empty: {
     position: 'absolute',
-    alignSelf: 'center',
     left: 0,
     right: 0,
+    top: '45%',
     textAlign: 'center',
-    color: GRAPH.muted,
+    color: ROOM.muted,
     fontSize: 13,
   },
+  objects: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    zIndex: 2,
+  },
+  obj: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: ROOM.objectBorder,
+    backgroundColor: ROOM.object,
+    padding: 12,
+    minHeight: 56,
+  },
+  objLabel: {
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: ROOM.muted,
+  },
+  objValue: { marginTop: 4, fontSize: 13, fontWeight: '500', color: ROOM.ink },
+  cta: {
+    alignSelf: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    zIndex: 2,
+  },
+  ctaText: { color: ROOM.ink, fontSize: 14, fontWeight: '500' },
 });

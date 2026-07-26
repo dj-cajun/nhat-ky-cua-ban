@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -12,9 +12,16 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import Svg, { Line } from 'react-native-svg';
 import type { CircleSummary, Profile } from '@/types/domain';
+import {
+  addCloseFriend,
+  getCloseFriendIds,
+  removeCloseFriend,
+} from './close-friends.store';
 import { INTRO_HANDOFF } from './handoff';
 import { resolveLiveHandoffLayout, resolveSettleScale } from './handoff-layout';
+import { buildSpatialNodes, type SpatialNode } from './spatial-members';
 
 export type UniverseGraphFriend = {
   userId: string;
@@ -22,23 +29,30 @@ export type UniverseGraphFriend = {
   circleId: string;
 };
 
-const PASTEL = {
-  fills: [
-    'rgba(255, 232, 240, 0.42)',
-    'rgba(223, 244, 255, 0.40)',
-    'rgba(229, 248, 232, 0.40)',
-    'rgba(255, 243, 224, 0.40)',
-    'rgba(240, 234, 255, 0.40)',
-  ] as const,
-  borders: ['#E8A4C4', '#9EC5E8', '#A8D5B0', '#E8C9A0', '#C9B8E8'] as const,
-  ink: ['#8B4F6A', '#3F6F96', '#3F7A4E', '#8A6A3A', '#5E4F8A'] as const,
+const SPACE = {
+  void: '#070B14',
+  linkFaint: 'rgba(215,222,234,0.14)',
+  linkFocus: 'rgba(232,199,138,0.55)',
+  ink: '#F4EFE6',
+  whisper: 'rgba(244,239,230,0.62)',
+  card: 'rgba(14,21,38,0.92)',
+  cardBorder: 'rgba(244,239,230,0.22)',
 };
 
+function polar(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + Math.cos(rad) * r, y: cy + Math.sin(rad) * r };
+}
+
+function closeSize(n: SpatialNode) {
+  if (n.depth === 'front') return 64;
+  if (n.depth === 'back') return 48;
+  return 56;
+}
+
 /**
- * My Universe home:
- * - A is the shared center (always visible)
- * - Each circle = large pastel-filled disk wrapping A (content as text in the fill, not chip-nodes)
- * - Tap a circle → open friends graph page
+ * E3 Universe — private spatial hierarchy (size + distance).
+ * Close friends are manually selected locally; never engagement-ranked.
  */
 export function FallbackUniverse({
   profile,
@@ -48,6 +62,7 @@ export function FallbackUniverse({
   revealPlanets,
   onPressSelf,
   onPressCircle,
+  onPressFriend,
   animateSettle = true,
 }: {
   profile: Profile;
@@ -57,15 +72,23 @@ export function FallbackUniverse({
   revealPlanets: boolean;
   onPressSelf: () => void;
   onPressCircle: (id: string) => void;
+  onPressFriend?: (userId: string) => void;
   animateSettle?: boolean;
 }) {
   const { width, height } = useWindowDimensions();
   const layout = resolveLiveHandoffLayout(width, height);
   const { diameter, left, top, cxPx, cyPx } = layout;
   const settleScale = resolveSettleScale(width, height);
+  const maxR = Math.min(width, height) * 0.42;
 
   const selfScale = useSharedValue(revealProfile && !animateSettle ? settleScale : 1);
   const diagramOp = useSharedValue(0);
+  const [closeIds, setCloseIds] = useState<string[]>([]);
+  const [focusId, setFocusId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getCloseFriendIds().then(setCloseIds);
+  }, []);
 
   useEffect(() => {
     if (revealProfile) {
@@ -84,35 +107,39 @@ export function FallbackUniverse({
     diagramOp.value = revealPlanets
       ? withTiming(1, { duration: 750, easing: Easing.out(Easing.cubic) })
       : 0;
+    if (!revealPlanets) setFocusId(null);
   }, [revealPlanets, diagramOp]);
 
-  const minSide = Math.min(width, height);
-  const baseRing = minSide * 0.38;
-  const ringStep = minSide * 0.11;
+  const nodes = useMemo(
+    () => buildSpatialNodes(friends, closeIds),
+    [friends, closeIds],
+  );
+  const focused = useMemo(
+    () => nodes.find((n) => n.userId === focusId) ?? null,
+    [nodes, focusId],
+  );
+  const closeNodes = nodes.filter((n) => n.tier === 'close');
+  const nearNodes = nodes.filter((n) => n.tier === 'near');
+  const distantNodes = nodes.filter((n) => n.tier === 'distant');
 
-  const circleDisks = useMemo(() => {
-    // Paint large → small so inner disks sit above outer fills; A stays on top.
-    return circles
-      .map((c, i) => {
-        const ring = baseRing + (circles.length - 1 - i) * ringStep;
-        const angle = -Math.PI / 2 + i * 0.7;
-        // Content sits in the pastel band (not a round chip).
-        const labelR = ring * 0.72;
-        return {
-          circle: c,
-          ring,
-          z: i + 1,
-          fill: PASTEL.fills[i % PASTEL.fills.length]!,
-          border: PASTEL.borders[i % PASTEL.borders.length]!,
-          ink: PASTEL.ink[i % PASTEL.ink.length]!,
-          labelX: cxPx + Math.cos(angle) * labelR,
-          labelY: cyPx + Math.sin(angle) * labelR,
-          friendCount: friends.filter((f) => f.circleId === c.id && f.userId !== profile.id)
-            .length,
-        };
-      })
-      .sort((a, b) => b.ring - a.ring);
-  }, [circles, friends, profile.id, baseRing, ringStep, cxPx, cyPx]);
+  const visit = useCallback(
+    (userId: string) => {
+      setFocusId(null);
+      if (onPressFriend) onPressFriend(userId);
+    },
+    [onPressFriend],
+  );
+
+  const keepNear = useCallback(async (userId: string) => {
+    const next = await addCloseFriend(userId);
+    setCloseIds(next);
+    setFocusId(null);
+  }, []);
+
+  const releaseNear = useCallback(async (userId: string) => {
+    const next = await removeCloseFriend(userId);
+    setCloseIds(next);
+  }, []);
 
   const selfStyle = useAnimatedStyle(() => ({
     transform: [{ scale: selfScale.value }],
@@ -124,70 +151,159 @@ export function FallbackUniverse({
   const glowPad = 0.12;
   const hit = diameter * (1 + glowPad * 2);
   const avatar = Math.max(28, diameter * 0.32);
+  const circleName = (id: string) => circles.find((c) => c.id === id)?.name ?? 'Circle';
 
   return (
-    <View style={[styles.root, { width, height, backgroundColor: INTRO_HANDOFF.spaceBg }]}>
+    <View style={[styles.root, { width, height, backgroundColor: SPACE.void }]}>
       <StarField width={width} height={height} />
 
       <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          diagramStyle,
-          // Web: no CSS box-none — disable layer, re-enable press targets.
-          { pointerEvents: 'none' },
-        ]}
+        style={[StyleSheet.absoluteFill, diagramStyle, { pointerEvents: 'none' }]}
       >
-        {circleDisks.map((c) => (
-          <View key={c.circle.id} style={{ zIndex: c.z, pointerEvents: 'none' }}>
-            {/* Pastel-filled large circle wrapping A */}
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          {closeNodes.map((n) => {
+            const p = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
+            return (
+              <Line
+                key={`link-${n.userId}`}
+                x1={cxPx}
+                y1={cyPx}
+                x2={p.x}
+                y2={p.y}
+                stroke={focusId ? 'rgba(215,222,234,0.06)' : SPACE.linkFaint}
+                strokeWidth={1}
+              />
+            );
+          })}
+          {focused && focused.tier !== 'close'
+            ? (() => {
+                const r =
+                  focused.tier === 'distant'
+                    ? Math.min(focused.radius, 0.55)
+                    : focused.radius;
+                const p = polar(cxPx, cyPx, r * maxR, focused.angleDeg);
+                return (
+                  <Line
+                    x1={cxPx}
+                    y1={cyPx}
+                    x2={p.x}
+                    y2={p.y}
+                    stroke={SPACE.linkFocus}
+                    strokeWidth={1.4}
+                  />
+                );
+              })()
+            : null}
+        </Svg>
+
+        {distantNodes.map((n) => {
+          const pulled = focusId === n.userId;
+          const p = polar(
+            cxPx,
+            cyPx,
+            (pulled ? Math.min(n.radius, 0.55) : n.radius) * maxR,
+            n.angleDeg,
+          );
+          const size = pulled ? 28 : 9;
+          return (
             <Pressable
-              onPress={() => onPressCircle(c.circle.id)}
+              key={n.userId}
+              onPress={() => setFocusId(pulled ? null : n.userId)}
               accessibilityRole="button"
-              accessibilityLabel={c.circle.name}
+              accessibilityLabel={
+                pulled
+                  ? `${n.displayName}, dismiss`
+                  : `Focus ${n.displayName}`
+              }
               style={[
-                styles.disk,
+                styles.node,
                 {
-                  left: cxPx - c.ring,
-                  top: cyPx - c.ring,
-                  width: c.ring * 2,
-                  height: c.ring * 2,
-                  borderRadius: c.ring,
-                  backgroundColor: c.fill,
-                  borderColor: c.border,
+                  left: p.x - size / 2,
+                  top: p.y - size / 2,
+                  width: size,
+                  height: size,
+                  borderRadius: size,
+                  backgroundColor: pulled ? '#B8C2D4' : n.color,
+                  opacity: focusId && !pulled ? 0.35 : 0.85,
+                  zIndex: pulled ? 8 : 1,
                   pointerEvents: revealPlanets ? 'auto' : 'none',
                 },
               ]}
             />
-            {/* Content inside the pastel disk — text, not a round node */}
+          );
+        })}
+
+        {nearNodes.map((n) => {
+          const active = focusId === n.userId;
+          const p = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
+          const size = active ? 30 : 22;
+          return (
             <Pressable
-              onPress={() => onPressCircle(c.circle.id)}
+              key={n.userId}
+              onPress={() => setFocusId(active ? null : n.userId)}
+              accessibilityRole="button"
+              accessibilityLabel={n.displayName}
               style={[
-                styles.inDiskContent,
+                styles.node,
                 {
-                  left: c.labelX - 70,
-                  top: c.labelY - 28,
-                  width: 140,
+                  left: p.x - size / 2,
+                  top: p.y - size / 2,
+                  width: size,
+                  height: size,
+                  borderRadius: size,
+                  backgroundColor: active ? '#C5D0E0' : n.color,
+                  opacity: focusId && !active ? 0.4 : 1,
+                  zIndex: 3,
                   pointerEvents: revealPlanets ? 'auto' : 'none',
                 },
               ]}
+            />
+          );
+        })}
+
+        {closeNodes.map((n) => {
+          const p = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
+          const size = closeSize(n);
+          return (
+            <Pressable
+              key={n.userId}
+              onPress={() => visit(n.userId)}
+              onLongPress={() => void releaseNear(n.userId)}
               accessibilityRole="button"
-              accessibilityLabel={c.circle.name}
+              accessibilityLabel={`${n.displayName}, close friend, open diary`}
+              style={[
+                styles.closeWrap,
+                {
+                  left: p.x - size / 2 - 8,
+                  top: p.y - size / 2 - 4,
+                  width: size + 16,
+                  zIndex: n.depth === 'front' ? 7 : n.depth === 'back' ? 4 : 6,
+                  opacity: focusId ? 0.45 : 1,
+                  pointerEvents: revealPlanets ? 'auto' : 'none',
+                },
+              ]}
             >
-              <Text style={[styles.inDiskSymbol, { color: c.ink }]}>{c.circle.symbol}</Text>
-              <Text style={[styles.inDiskTitle, { color: c.ink }]} numberOfLines={2}>
-                {c.circle.name}
-              </Text>
-              <Text style={[styles.inDiskMeta, { color: c.ink }]}>
-                {c.friendCount > 0
-                  ? `${c.friendCount} friends · tap`
-                  : `${c.circle.activeMemberCount} members · tap`}
+              <View
+                style={[
+                  styles.closeOrb,
+                  {
+                    width: size,
+                    height: size,
+                    borderRadius: size,
+                    backgroundColor: n.color,
+                  },
+                ]}
+              >
+                <Text style={styles.closeLetter}>{n.displayName.slice(0, 1)}</Text>
+              </View>
+              <Text style={styles.closeName} numberOfLines={1}>
+                {n.displayName}
               </Text>
             </Pressable>
-          </View>
-        ))}
+          );
+        })}
       </Animated.View>
 
-      {/* A — common center, always above pastel disks */}
       <Animated.View
         style={[
           styles.sphereWrap,
@@ -268,6 +384,51 @@ export function FallbackUniverse({
           </View>
         </Pressable>
       </Animated.View>
+
+      {revealPlanets && focused && focused.tier !== 'close' ? (
+        <View style={styles.focusCard} accessibilityRole="summary">
+          <Text style={styles.focusName}>{focused.displayName}</Text>
+          <Text style={styles.focusMeta}>{circleName(focused.circleId)} · same circle</Text>
+          <Pressable
+            style={styles.focusBtn}
+            onPress={() => visit(focused.userId)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.focusBtnText}>visit diary</Text>
+          </Pressable>
+          {closeIds.length < 3 && !closeIds.includes(focused.userId) ? (
+            <Pressable
+              onPress={() => void keepNear(focused.userId)}
+              accessibilityRole="button"
+              style={styles.focusSecondary}
+            >
+              <Text style={styles.focusSecondaryText}>keep near me (private)</Text>
+            </Pressable>
+          ) : null}
+          <Pressable onPress={() => setFocusId(null)} accessibilityRole="button">
+            <Text style={styles.focusDismiss}>return to place</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {revealPlanets && circles.length > 0 ? (
+        <View style={styles.circleDock} pointerEvents="box-none">
+          {circles.slice(0, 4).map((c) => (
+            <Pressable
+              key={c.id}
+              onPress={() => onPressCircle(c.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${c.name} circle room`}
+              style={styles.circleChip}
+            >
+              <Text style={styles.circleChipSymbol}>{c.symbol}</Text>
+              <Text style={styles.circleChipName} numberOfLines={1}>
+                {c.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -275,7 +436,7 @@ export function FallbackUniverse({
 function StarField({ width, height }: { width: number; height: number }) {
   const stars = useMemo(
     () =>
-      Array.from({ length: 36 }, (_, i) => ({
+      Array.from({ length: 42 }, (_, i) => ({
         key: i,
         left: (i * 97) % width,
         top: (i * 53) % height,
@@ -307,30 +468,22 @@ function StarField({ width, height }: { width: number; height: number }) {
 
 const styles = StyleSheet.create({
   root: { overflow: 'hidden' },
-  disk: {
-    position: 'absolute',
+  node: { position: 'absolute' },
+  closeWrap: { position: 'absolute', alignItems: 'center' },
+  closeOrb: {
     borderWidth: 2,
-  },
-  inDiskContent: {
-    position: 'absolute',
-    zIndex: 5,
+    borderColor: 'rgba(255,255,255,0.28)',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    justifyContent: 'center',
   },
-  inDiskSymbol: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
-  inDiskTitle: {
-    marginTop: 2,
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  inDiskMeta: {
-    marginTop: 2,
-    fontSize: 10,
+  closeLetter: { color: '#1A1410', fontWeight: '700', fontSize: 16 },
+  closeName: {
+    marginTop: 6,
+    fontSize: 12,
     fontWeight: '500',
+    color: SPACE.ink,
+    maxWidth: 72,
     textAlign: 'center',
-    opacity: 0.85,
   },
   sphereWrap: {
     position: 'absolute',
@@ -348,7 +501,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    // RN web: prefer boxShadow over deprecated shadow* props
     boxShadow: `0 6px 18px ${INTRO_HANDOFF.sphere.glow}80`,
     elevation: 10,
   },
@@ -368,4 +520,56 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontWeight: '700' },
   name: { marginTop: 6, color: '#2A2430', fontWeight: '700' },
+  focusCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 88,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: SPACE.cardBorder,
+    backgroundColor: SPACE.card,
+    padding: 16,
+    zIndex: 30,
+  },
+  focusName: { fontSize: 22, fontWeight: '600', color: SPACE.ink },
+  focusMeta: { marginTop: 4, fontSize: 13, color: SPACE.whisper },
+  focusBtn: {
+    marginTop: 14,
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: '#F7E7C8',
+    justifyContent: 'center',
+  },
+  focusBtnText: { fontSize: 14, fontWeight: '700', color: '#3A2E18' },
+  focusSecondary: { marginTop: 10, minHeight: 36, justifyContent: 'center' },
+  focusSecondaryText: { fontSize: 13, color: SPACE.ink, textDecorationLine: 'underline' },
+  focusDismiss: { marginTop: 10, fontSize: 13, color: SPACE.whisper },
+  circleDock: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 18,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+    zIndex: 25,
+  },
+  circleChip: {
+    minHeight: 40,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(244,239,230,0.22)',
+    backgroundColor: 'rgba(14,21,38,0.72)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: 160,
+  },
+  circleChipSymbol: { color: SPACE.whisper, fontSize: 13 },
+  circleChipName: { color: SPACE.ink, fontSize: 12, fontWeight: '600', maxWidth: 110 },
 });

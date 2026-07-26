@@ -44,8 +44,8 @@ export const en = {
   },
 
   universe: {
-    brand: 'My Universe',
-    title: 'Map of your circles',
+    brand: 'Your Diary',
+    title: 'nearness you chose — private to you',
     createCircle: 'Create a circle (with 2 friends)',
     wroteToday: (n: number) => `${n} wrote today`,
     notice: 'Notice',
