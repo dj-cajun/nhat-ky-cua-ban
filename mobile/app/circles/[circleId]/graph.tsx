@@ -20,6 +20,9 @@ import {
   isCircleMember,
   listCircleMembers,
 } from '@/features/local/repository';
+import { BreathingView } from '@/features/space-ui/BreathingView';
+import { EnterFade } from '@/features/space-ui/EnterFade';
+import { spaceMotion } from '@/features/space-ui/space-motion';
 import type { Circle, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { useMessages } from '@/i18n';
@@ -158,52 +161,66 @@ export default function CircleGraphScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.symbol} accessible={false}>
-        {circle.symbol}
-      </Text>
-      <Text style={styles.title} numberOfLines={1}>
-        {circle.name}
-      </Text>
-      <Text style={styles.blurb}>
-        {friends.length > 0
-          ? `${friends.length} quiet orbits`
-          : 'invite friends into this room'}
-      </Text>
+      <EnterFade>
+        <Text style={styles.symbol} accessible={false}>
+          {circle.symbol}
+        </Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {circle.name}
+        </Text>
+        <Text style={styles.blurb}>
+          {friends.length > 0
+            ? `${friends.length} quiet orbits`
+            : 'invite friends into this room'}
+        </Text>
+      </EnterFade>
 
       <View style={styles.stage}>
-        <View style={styles.ring} pointerEvents="none" />
-        {placements.map((n) => (
-          <Pressable
+        <BreathingView active amplitude={1.02} style={styles.ringWrap}>
+          <View style={styles.ring} pointerEvents="none" />
+        </BreathingView>
+        {placements.map((n, i) => (
+          <EnterFade
             key={n.id}
-            onPress={() => openDiaryFromCircle(n.id, circle.id)}
-            accessibilityRole="button"
-            accessibilityLabel={`Visit ${n.name} diary`}
+            delayMs={120 + i * spaceMotion.roomStaggerMs}
             style={[styles.friendWrap, { left: n.x - 40, top: n.y - 40 }]}
           >
-            <View style={[styles.friendOrb, { backgroundColor: n.color }]}>
-              <Text style={styles.friendLetter}>{n.name.slice(0, 1)}</Text>
-            </View>
-            <Text style={styles.friendName} numberOfLines={1}>
-              {n.name}
-            </Text>
-          </Pressable>
+            <Pressable
+              onPress={() => openDiaryFromCircle(n.id, circle.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Visit ${n.name} diary`}
+              style={styles.friendHit}
+            >
+              <View style={[styles.friendOrb, { backgroundColor: n.color }]}>
+                <Text style={styles.friendLetter}>{n.name.slice(0, 1)}</Text>
+              </View>
+              <Text style={styles.friendName} numberOfLines={1}>
+                {n.name}
+              </Text>
+            </Pressable>
+          </EnterFade>
         ))}
         {friends.length === 0 ? (
           <Text style={styles.empty}>No friends in this circle yet</Text>
         ) : null}
       </View>
 
-      <View style={styles.objects}>
+      <EnterFade delayMs={220} style={styles.objects}>
         <Pressable
           style={styles.obj}
           onPress={() => router.push(`/circles/${circle.id}`)}
           accessibilityRole="button"
           accessibilityLabel="Circle notice"
         >
-          <Text style={styles.objLabel}>notice</Text>
-          <Text style={styles.objValue} numberOfLines={1}>
-            circle board
-          </Text>
+          <View style={styles.objGlyph} accessible={false}>
+            <View style={styles.objGlyphPin} />
+          </View>
+          <View style={styles.objCopy}>
+            <Text style={styles.objLabel}>notice</Text>
+            <Text style={styles.objValue} numberOfLines={1}>
+              circle board
+            </Text>
+          </View>
         </Pressable>
         <Pressable
           style={styles.obj}
@@ -211,21 +228,28 @@ export default function CircleGraphScreen() {
           accessibilityRole="button"
           accessibilityLabel="Alias board"
         >
-          <Text style={styles.objLabel}>board</Text>
-          <Text style={styles.objValue} numberOfLines={1}>
-            alias board
-          </Text>
+          <View style={styles.objGlyph} accessible={false}>
+            <View style={styles.objGlyphPage} />
+          </View>
+          <View style={styles.objCopy}>
+            <Text style={styles.objLabel}>board</Text>
+            <Text style={styles.objValue} numberOfLines={1}>
+              alias board
+            </Text>
+          </View>
         </Pressable>
-      </View>
+      </EnterFade>
 
       {friends[0] ? (
-        <Pressable
-          style={styles.cta}
-          onPress={() => openDiaryFromCircle(friends[0]!.id, circle.id)}
-          accessibilityRole="button"
-        >
-          <Text style={styles.ctaText}>step into a friend’s today →</Text>
-        </Pressable>
+        <EnterFade delayMs={280}>
+          <Pressable
+            style={styles.cta}
+            onPress={() => openDiaryFromCircle(friends[0]!.id, circle.id)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.ctaText}>step into a friend’s today →</Text>
+          </Pressable>
+        </EnterFade>
       ) : null}
     </SafeAreaView>
   );
@@ -273,10 +297,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   stage: { flex: 1, minHeight: 280, marginTop: 8 },
+  ringWrap: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   ring: {
-    position: 'absolute',
-    left: '18%',
-    top: '22%',
     width: '64%',
     height: '56%',
     borderRadius: 999,
@@ -287,9 +313,9 @@ const styles = StyleSheet.create({
   friendWrap: {
     position: 'absolute',
     width: 80,
-    alignItems: 'center',
     zIndex: 4,
   },
+  friendHit: { alignItems: 'center', width: 80 },
   friendOrb: {
     width: 64,
     height: 64,
@@ -332,7 +358,32 @@ const styles = StyleSheet.create({
     backgroundColor: ROOM.object,
     padding: 12,
     minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
+  objGlyph: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  objGlyphPin: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: ROOM.accent,
+    opacity: 0.85,
+  },
+  objGlyphPage: {
+    width: 16,
+    height: 20,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: ROOM.accent,
+    opacity: 0.85,
+  },
+  objCopy: { flex: 1, minWidth: 0 },
   objLabel: {
     fontSize: 10,
     letterSpacing: 1.4,

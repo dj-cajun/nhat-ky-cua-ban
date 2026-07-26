@@ -7,6 +7,7 @@ import type {
   HompyCirclePreview,
 } from '@/features/local/repository';
 import { SceneArt } from '@/features/e2-prototype/SceneArt';
+import { EnterFade } from '@/features/space-ui/EnterFade';
 import { useLocale, useMessages } from '@/i18n';
 import {
   DIARY_MOODS,
@@ -44,8 +45,8 @@ type Props = {
 };
 
 /**
- * E3 diary space — one emotional scene first (not pastel card grids).
- * Friend = warm window; mine = cool desk. Objects stay secondary.
+ * E3/E4 diary space — scene-first entry motion; objects as quiet glyphs.
+ * Friend = warm window; mine = cool desk.
  */
 export function DiaryHompyHome({
   me,
@@ -119,42 +120,48 @@ export function DiaryHompyHome({
           </Text>
         </Pressable>
 
-        <Pressable
-          onPress={() => {
-            if (isMine) onEditToday();
-          }}
-          accessibilityRole={isMine ? 'button' : 'summary'}
-          accessibilityLabel={
-            isMine
-              ? locale === 'ko'
-                ? '오늘 일기 쓰기'
-                : 'Edit today’s diary scene'
-              : `${owner.displayName}'s diary today`
-          }
-          disabled={!isMine}
-          style={({ pressed }) => [pressed && isMine && { opacity: 0.92 }]}
-        >
-          <View style={[styles.photo, { backgroundColor: palette.scene }]}>
-            <SceneArt variant={isMine ? 'myDesk' : 'friendWindow'} />
-            <View style={styles.photoScrim} />
-            <Text style={[styles.photoLabel, { color: palette.ink }]}>{photoLabel}</Text>
-          </View>
-        </Pressable>
+        <EnterFade translateY={14}>
+          <Pressable
+            onPress={() => {
+              if (isMine) onEditToday();
+            }}
+            accessibilityRole={isMine ? 'button' : 'summary'}
+            accessibilityLabel={
+              isMine
+                ? locale === 'ko'
+                  ? '오늘 일기 쓰기'
+                  : 'Edit today’s diary scene'
+                : `${owner.displayName}'s diary today`
+            }
+            disabled={!isMine}
+            style={({ pressed }) => [pressed && isMine && { opacity: 0.92 }]}
+          >
+            <View style={[styles.photo, { backgroundColor: palette.scene }]}>
+              <SceneArt variant={isMine ? 'myDesk' : 'friendWindow'} />
+              <View style={styles.photoScrim} />
+              <Text style={[styles.photoLabel, { color: palette.ink }]}>{photoLabel}</Text>
+            </View>
+          </Pressable>
+        </EnterFade>
 
-        <Text style={[styles.owner, { color: palette.muted }]}>
-          {owner.displayName.toUpperCase()} · TODAY
-        </Text>
-        <Text style={[styles.sentence, { color: palette.ink }]}>{sentence}</Text>
-        <Text style={[styles.mood, { color: palette.mood }]}>{moodLabel}</Text>
+        <EnterFade delayMs={90}>
+          <Text style={[styles.owner, { color: palette.muted }]}>
+            {owner.displayName.toUpperCase()} · TODAY
+          </Text>
+          <Text style={[styles.sentence, { color: palette.ink }]}>{sentence}</Text>
+          <Text style={[styles.mood, { color: palette.mood }]}>{moodLabel}</Text>
+        </EnterFade>
 
-        <Pressable
-          style={[styles.music, { backgroundColor: palette.musicBar }]}
-          onPress={() => onOpenMusic?.()}
-          accessibilityRole="button"
-          accessibilityLabel={musicLabel}
-        >
-          <Text style={[styles.musicText, { color: palette.ink }]}>♪  {musicLabel}</Text>
-        </Pressable>
+        <EnterFade delayMs={160}>
+          <Pressable
+            style={[styles.music, { backgroundColor: palette.musicBar }]}
+            onPress={() => onOpenMusic?.()}
+            accessibilityRole="button"
+            accessibilityLabel={musicLabel}
+          >
+            <Text style={[styles.musicText, { color: palette.ink }]}>♪  {musicLabel}</Text>
+          </Pressable>
+        </EnterFade>
 
         {isMine ? (
           <Text style={[styles.hint, { color: palette.muted }]}>
@@ -162,8 +169,9 @@ export function DiaryHompyHome({
           </Text>
         ) : null}
 
-        <View style={styles.objects}>
+        <EnterFade delayMs={220} style={styles.objects}>
           <ObjectChip
+            kind="album"
             label={locale === 'ko' ? '사진첩' : 'album'}
             palette={palette}
             onPress={() =>
@@ -174,6 +182,7 @@ export function DiaryHompyHome({
             }
           />
           <ObjectChip
+            kind="letters"
             label={locale === 'ko' ? '편지' : 'letters'}
             palette={palette}
             onPress={() =>
@@ -184,6 +193,7 @@ export function DiaryHompyHome({
             }
           />
           <ObjectChip
+            kind="days"
             label={locale === 'ko' ? '하루' : 'days'}
             palette={palette}
             onPress={() =>
@@ -195,6 +205,7 @@ export function DiaryHompyHome({
           />
           {isMine ? (
             <ObjectChip
+              kind="focus"
               label={locale === 'ko' ? '집중' : 'focus'}
               palette={palette}
               tomato
@@ -205,6 +216,7 @@ export function DiaryHompyHome({
           ) : null}
           {circleBoard ? (
             <ObjectChip
+              kind="board"
               label={locale === 'ko' ? '보드' : 'board'}
               palette={palette}
               onPress={() =>
@@ -212,7 +224,7 @@ export function DiaryHompyHome({
               }
             />
           ) : null}
-        </View>
+        </EnterFade>
 
         {!isMine ? (
           <Pressable
@@ -266,12 +278,16 @@ type DiaryPalette = {
   objectBorder: string;
 };
 
+type ObjectKind = 'album' | 'letters' | 'days' | 'focus' | 'board';
+
 function ObjectChip({
+  kind,
   label,
   palette,
   onPress,
   tomato,
 }: {
+  kind: ObjectKind;
   label: string;
   palette: DiaryPalette;
   onPress: () => void;
@@ -282,17 +298,48 @@ function ObjectChip({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={[
+      style={({ pressed }) => [
         styles.object,
         {
           backgroundColor: tomato ? 'rgba(212,106,92,0.22)' : palette.object,
           borderColor: tomato ? '#D46A5C' : palette.objectBorder,
+          opacity: pressed ? 0.85 : 1,
+          transform: [{ scale: pressed ? 0.97 : 1 }],
         },
       ]}
     >
+      <ObjectGlyph kind={kind} color={tomato ? '#D46A5C' : palette.mood} />
       <Text style={[styles.objectText, { color: palette.ink }]}>{label}</Text>
     </Pressable>
   );
+}
+
+function ObjectGlyph({ kind, color }: { kind: ObjectKind; color: string }) {
+  if (kind === 'album') {
+    return (
+      <View style={[styles.glyphFrame, { borderColor: color }]}>
+        <View style={[styles.glyphDot, { backgroundColor: color }]} />
+      </View>
+    );
+  }
+  if (kind === 'letters') {
+    return (
+      <View style={[styles.glyphEnvelope, { borderColor: color }]}>
+        <View style={[styles.glyphFlap, { borderBottomColor: color }]} />
+      </View>
+    );
+  }
+  if (kind === 'days') {
+    return (
+      <View style={[styles.glyphCal, { borderColor: color }]}>
+        <View style={[styles.glyphCalBar, { backgroundColor: color }]} />
+      </View>
+    );
+  }
+  if (kind === 'focus') {
+    return <View style={[styles.glyphTomato, { backgroundColor: color }]} />;
+  }
+  return <View style={[styles.glyphBoard, { borderColor: color }]} />;
 }
 
 const FRIEND = {
@@ -385,15 +432,60 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   object: {
-    minWidth: 80,
-    minHeight: 52,
+    minWidth: 84,
+    minHeight: 64,
     borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  objectText: { fontSize: 12, fontWeight: '500' },
+  glyphFrame: {
+    width: 22,
+    height: 18,
+    borderWidth: 1.5,
+    borderRadius: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  objectText: { fontSize: 13, fontWeight: '500' },
+  glyphDot: { width: 5, height: 5, borderRadius: 3, opacity: 0.8 },
+  glyphEnvelope: {
+    width: 22,
+    height: 16,
+    borderWidth: 1.5,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  glyphFlap: {
+    position: 'absolute',
+    top: -1,
+    left: 2,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 7,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  glyphCal: {
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  glyphCalBar: { height: 4, opacity: 0.85 },
+  glyphTomato: { width: 14, height: 14, borderRadius: 7, opacity: 0.9 },
+  glyphBoard: {
+    width: 18,
+    height: 14,
+    borderWidth: 1.5,
+    borderRadius: 2,
+  },
   noteBtn: {
     marginTop: 24,
     alignSelf: 'flex-start',

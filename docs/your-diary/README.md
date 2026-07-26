@@ -57,6 +57,7 @@
 | [22-phase-e-space-design.md](./22-phase-e-space-design.md) | **Phase E** 우주·다이어리 네 화면 콘셉트 |
 | [23-phase-e2-prototype-checklist.md](./23-phase-e2-prototype-checklist.md) | **E2** 프로토타입 리뷰 체크리스트 |
 | [24-phase-e3-structure.md](./24-phase-e3-structure.md) | **E3** 제품 화면 구조 교체 |
+| [25-phase-e4-motion.md](./25-phase-e4-motion.md) | **E4** 모션·인트로·오브제 |
 | [e2-prototype/index.html](./e2-prototype/index.html) | E2 브라우저 정적 미러 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
