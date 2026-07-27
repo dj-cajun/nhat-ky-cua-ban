@@ -56,7 +56,7 @@
 
 ## 다이어리 방문 (「미니홈피」는 구조 비유)
 
-- **UI 잠금 (100명까지)**: 파스텔 연필 미니홈피 `DiaryHompyHome` — [26](./26-mvp-100-users.md)
+- **UI 잠금 (정식 v1.0까지)**: 파스텔 연필 미니홈피 `DiaryHompyHome` — [26](./26-official-app-plan.md)
 - 기분, 10자 노트, 짧은 본문, 대표 사진, 음악 카드  
 - 공개 범위: `private` / `selected_circles` / `all_circles`  
 - `entry_date` + `timezone` (기본 `America/New_York`)  

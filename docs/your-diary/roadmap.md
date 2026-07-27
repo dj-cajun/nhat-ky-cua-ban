@@ -1,6 +1,6 @@
 # 로드맵
 
-> **최종 갱신**: 2026-07-25  
+> **최종 갱신**: 2026-07-27  
 > 단계가 끝날 때마다 이 표와 해당 phase 문서를 함께 갱신한다.
 
 ---
@@ -8,15 +8,17 @@
 ## 현재 위치
 
 **데모 MVP** (인트로→우주→서클→파스텔 홈피 시연 가능).  
-**다음 목표**: 실사용자 **≈100명** 클로즈드 앱 — 재기획 **[26-mvp-100-users.md](./26-mvp-100-users.md)**.
+**다음 목표**: **100점짜리 정식 앱 v1.0** — 재기획 **[26-official-app-plan.md](./26-official-app-plan.md)**.
 
-**디자인 잠금**: 다이어리 = 현재 파스텔 연필 미니홈피 (`DiaryHompyHome`). 셸 교체·장면 스트립 재도입 금지.
+**디자인 잠금**: 다이어리 = 현재 파스텔 연필 미니홈피 (`DiaryHompyHome`). v1.0까지 셸 교체 금지.
 
-학교 레이어: B·C·D 최소 완료 · B.1/H DEFERRED.  
-공간: E1–E4 반영 · **E5는 100명 트랙 P1(실데이터만, UI 유지)** 로 축소 편입.
+학교 레이어: B·C·D 최소 완료 · B.1/H → Track **S1**.  
+공간: E1–E4 반영 · E5는 **S1 실데이터(UI 유지)** 로 편입.
 
-> 100명 트랙: **P0 잠금 → P1 실데이터 → P2 실로그인/staging → Q 운영 → R 초대**.  
-> 11.5/H는 Track P2에 흡수. 포커스룸·연출 재실험은 **100명 이후**.
+```text
+S1 정식 뼈대 → S2 제품 완성도 → S3 클로즈드 베타 → S4 정식 v1.0(100점)
+S5+ 포커스룸·연출 가산 = 정식 이후
+```
 
 ---
 
@@ -44,11 +46,11 @@
 | **12·B.1 / H** | staging JWT·실기기 출시 게이트 | ⏸ DEFERRED | [21](./21-phase-b1-staging-signoff.md) · Phase H |
 | **12·C** | 학교 온보딩·상태 UX · 최소 ops | ✅ | [20](./20-school-trust-boundary-plan.md) · `021` |
 | **12·D** | 베타 ops 최소 완성 (overview·안전·역할) | ✅ | `022` · `/ops/overview` · `/ops/safety` |
-| **12·E** | 우주·다이어리 공간 재설계 | ✅ E1–E4 · **P1=실데이터만** | [22](./22-phase-e-space-design.md) · [26](./26-mvp-100-users.md) |
-| **12·F–G** | 포커스룸·통합·오류 | ⏸ **100명 이후** | [26](./26-mvp-100-users.md) |
-| **12·H** | staging JWT·실기기 | → **Track P2** | [21](./21-phase-b1-staging-signoff.md) · [26](./26-mvp-100-users.md) |
-| **100명 MVP** | 실유저 ≈100 클로즈드 | ⏳ P0✅ 문서 | [26](./26-mvp-100-users.md) |
-| 베타 | 학교 코드 한정 초대 · 서클 중심 | Track R | [26](./26-mvp-100-users.md) · [15](./15-beta-launch-checklist.md) |
+| **12·E** | 우주·다이어리 공간 재설계 | ✅ E1–E4 · **S1=실데이터** | [22](./22-phase-e-space-design.md) · [26](./26-official-app-plan.md) |
+| **12·F–G** | 포커스룸·통합·오류 | ⏸ **정식 이후 S5+** | [26](./26-official-app-plan.md) |
+| **12·H** | staging JWT·실기기 | → **S1** | [21](./21-phase-b1-staging-signoff.md) · [26](./26-official-app-plan.md) |
+| **정식 v1.0** | 100점짜리 App Store 앱 | ⏳ S1 대기 | [26](./26-official-app-plan.md) |
+| 베타 | 학교 코드 한정 초대 | **S3** | [26](./26-official-app-plan.md) · [15](./15-beta-launch-checklist.md) |
 
 ---
 
@@ -77,7 +79,7 @@
 
 | 날짜 | 내용 |
 |------|------|
-| 2026-07-27 | **100명 MVP 재기획** ([26](./26-mvp-100-users.md)) — 다이어리=현 파스텔 홈피 잠금 · P→Q→R 트랙 · F–G/연출 재실험은 100명 이후 |
+| 2026-07-27 | **100점짜리 정식 앱 기획** ([26](./26-official-app-plan.md)) — 「100명」오해 폐기 · S1→S4 v1.0 · 다이어리=현 파스텔 홈피 잠금 |
 | 2026-07-25 | **학교 신뢰 경계 기획** Phase A ([20](./20-school-trust-boundary-plan.md)) — 학교≠커뮤니티, 다이어리 중심 유지 |
 | 2026-07-25 | [20] 네 원칙 고정: 인증≠가입 · school_id 서버 결정 · 변경 시 권한 · 코드 역할 제한 + Phase B 완료 기준 |
 | 2026-07-25 | **Phase B 완료**: `019` schools_v2·공통 인가·RPC 교체·백필 NOT NULL·교차학교 deny·최소 school/ops UI |

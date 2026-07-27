@@ -4,7 +4,7 @@
 > **한 줄**: 같은 학교라는 신뢰의 경계 안에서 작은 서클을 만들고, 서로의 하루를 조용히 방문하는 폐쇄형 관계 다이어리  
 > **이 폴더 + `src/` + `mobile/`**: **유일한 현행 제품 기준**.  
 > **계층**: 학교(바깥 경계) → 서클(관계 단위) → 다이어리(중심). 학교 전체 피드·전교 검색은 만들지 않는다. 상세: [20](./20-school-trust-boundary-plan.md)  
-> **다음 목표**: 실유저 ≈100 — [26-mvp-100-users.md](./26-mvp-100-users.md) · **다이어리 UI 잠금** = 현 파스텔 연필 미니홈피
+> **다음 목표**: **100점짜리 정식 앱 v1.0** — [26-official-app-plan.md](./26-official-app-plan.md) · **다이어리 UI 잠금** = 현 파스텔 연필 미니홈피
 
 ---
 
@@ -59,7 +59,7 @@
 | [23-phase-e2-prototype-checklist.md](./23-phase-e2-prototype-checklist.md) | **E2** 프로토타입 리뷰 체크리스트 |
 | [24-phase-e3-structure.md](./24-phase-e3-structure.md) | **E3** 제품 화면 구조 교체 |
 | [25-phase-e4-motion.md](./25-phase-e4-motion.md) | **E4** 모션·인트로·오브제 |
-| [26-mvp-100-users.md](./26-mvp-100-users.md) | **100명 MVP** 재기획 · 다이어리 UI 잠금 · P→Q→R |
+| [26-official-app-plan.md](./26-official-app-plan.md) | **정식 v1.0 (100점)** 기획 · 다이어리 UI 잠금 · S1→S4 |
 | [e2-prototype/index.html](./e2-prototype/index.html) | E2 브라우저 정적 미러 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
