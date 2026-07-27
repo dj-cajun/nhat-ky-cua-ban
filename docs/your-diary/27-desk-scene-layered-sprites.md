@@ -145,7 +145,7 @@ Z-order (아래→위):
 1~7  desk_bg · window · cork · tomato · memo · lamp · frame · plant  ✅ 초안
 8    window_frame + sky_night/clear/cloudy/rain  ✅ 초안
 9    cork_empty · lamp_glow · books  ✅ 초안
-10   조립 프리뷰 · 좌표 폴리시 · 32~64px 저해상도화 (구현 직전)
+10   조립 프리뷰 ✅ · 좌표 폴리시 · 32~64px 저해상도화 (구현 직전 잔여)
 ```
 
 **뽀모도로 상태**: 별도 running PNG 없음.  
@@ -273,13 +273,13 @@ RN: 부모 `aspectRatio: 1.5` · 자식 `position: 'absolute'` + `%`.
 
 ```text
 D0  기획 고정 — 10자+사진첩 치환 · 코르크≠칠판 · 내 홈피만 ✅
-D0b desk_bg 톤 확정 (에셋 루프) ← 지금
-D0c window → corkboard 톤 맞춤
-D1  나머지 소품 + DeskScene 조립 프로토타입
-D2  내 DiaryHompyHome에 DeskScene 삽입 (친구는 파스텔 유지)
-D3  메모 ↔ tenCharText · 코르크 ↔ 실사진
-D4  창문 변형 · 배지·램프 · (선택) tomato
-D5  좌표 폴리시
+D0b desk_bg 톤 확정 (에셋 루프) ✅ 초안 세트 완료 (AI 고해상도 · 저해상도화는 구현 직전)
+D0c window → corkboard 톤 맞춤 ✅ 초안
+D1  나머지 소품 + DeskScene 조립 프로토타입 ✅ (`desk-scene.tsx` · assembly-preview)
+D2  내 DiaryHompyHome에 DeskScene 삽입 (친구는 파스텔 유지) ✅
+D3  메모 ↔ tenCharText · 코르크 ↔ 실사진  ← 메모 연결됨 · 코르크 URL은 후속
+D4  창문 변형 · 배지·램프 · (선택) tomato  ← 창문/램프 로컬 토글 포함
+D5  좌표 폴리시 · 32~64px 저해상도화
 ```
 
 **S1**: `desk_bg` 톤 잠금 **이후** 착수 (재작업 최소화).

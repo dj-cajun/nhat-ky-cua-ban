@@ -14,6 +14,7 @@ import type {
   GuestbookRow,
   HompyCirclePreview,
 } from '@/features/local/repository';
+import { DeskScene } from '@/features/diary-home/desk-scene';
 import { HompyBoardStack } from '@/features/diary-home/hompy-board-stack';
 import { DotPaper, OutlineBox } from '@/features/diary-home/hompy-outline';
 import { hompy } from '@/constants/hompy-theme';
@@ -229,27 +230,49 @@ export function DiaryHompyHome({
               ) : null}
             </View>
 
-            <OutlineBox
-              size="sm"
-              fill="rgba(255,255,255,0.72)"
-              stroke={hompy.blushInk}
-              style={styles.todayMe}
-              contentStyle={styles.todayMeInner}
-            >
-              <Text style={styles.todayLabel}>
-                {locale === 'ko' ? '오늘 나는' : 'Today I…'}
-              </Text>
-              <Text style={styles.todayText}>
-                {canView
-                  ? entry?.tenCharText?.trim() ||
-                    entry?.shortText?.trim() ||
-                    (isMine ? t.diary.emptyToday : t.diary.emptyOther)
-                  : t.diary.privateBlocked}
-              </Text>
-            </OutlineBox>
+            {!isMine ? (
+              <OutlineBox
+                size="sm"
+                fill="rgba(255,255,255,0.72)"
+                stroke={hompy.blushInk}
+                style={styles.todayMe}
+                contentStyle={styles.todayMeInner}
+              >
+                <Text style={styles.todayLabel}>
+                  {locale === 'ko' ? '오늘 나는' : 'Today I…'}
+                </Text>
+                <Text style={styles.todayText}>
+                  {canView
+                    ? entry?.tenCharText?.trim() ||
+                      entry?.shortText?.trim() ||
+                      t.diary.emptyOther
+                    : t.diary.privateBlocked}
+                </Text>
+              </OutlineBox>
+            ) : null}
           </OutlineBox>
 
-          {/* Calendar | Album — original 2-col */}
+          {/* MY: DeskScene replaces Today I… + mini album. Friend: pastel slots. */}
+          {isMine ? (
+            <OutlineBox
+              fill="#2A2430"
+              stroke={hompy.pencilBold}
+              contentStyle={styles.deskPad}
+            >
+              <DeskScene
+                memoText={
+                  canView
+                    ? entry?.tenCharText?.trim() || entry?.shortText?.trim() || undefined
+                    : undefined
+                }
+                onPressMemo={onEditToday}
+                onPressCork={onEditToday}
+                onPressFrame={onEditToday}
+              />
+            </OutlineBox>
+          ) : null}
+
+          {/* Calendar | Album — friend keeps album; mine calendar only under desk */}
           <View style={styles.grid2}>
             <OutlineBox
               fill={hompy.mint}
@@ -277,39 +300,41 @@ export function DiaryHompyHome({
               ))}
             </OutlineBox>
 
-            <OutlineBox
-              fill={hompy.peach}
-              stroke={hompy.peachInk}
-              style={styles.gridCell}
-              contentStyle={styles.panelPad}
-            >
-              <Text style={styles.panelTitle}>
-                {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
-              </Text>
-              <View style={styles.albumInner}>
-                <OutlineBox
-                  size="sm"
-                  fill="#FFFFFF"
-                  stroke={hompy.peachInk}
-                  style={styles.albumFrame}
-                  contentStyle={styles.albumFrameInner}
-                >
-                  <View style={styles.albumGlyph}>
-                    <View style={styles.albumGlyphOuter} />
-                    <View style={styles.albumGlyphInner} />
-                  </View>
-                </OutlineBox>
-                <Text style={styles.albumHint}>
-                  {canView && entry
-                    ? locale === 'ko'
-                      ? '오늘의 한 컷'
-                      : "Today’s frame"
-                    : locale === 'ko'
-                      ? '아직 사진이 없어요'
-                      : 'No photos yet'}
+            {!isMine ? (
+              <OutlineBox
+                fill={hompy.peach}
+                stroke={hompy.peachInk}
+                style={styles.gridCell}
+                contentStyle={styles.panelPad}
+              >
+                <Text style={styles.panelTitle}>
+                  {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
                 </Text>
-              </View>
-            </OutlineBox>
+                <View style={styles.albumInner}>
+                  <OutlineBox
+                    size="sm"
+                    fill="#FFFFFF"
+                    stroke={hompy.peachInk}
+                    style={styles.albumFrame}
+                    contentStyle={styles.albumFrameInner}
+                  >
+                    <View style={styles.albumGlyph}>
+                      <View style={styles.albumGlyphOuter} />
+                      <View style={styles.albumGlyphInner} />
+                    </View>
+                  </OutlineBox>
+                  <Text style={styles.albumHint}>
+                    {canView && entry
+                      ? locale === 'ko'
+                        ? '오늘의 한 컷'
+                        : "Today’s frame"
+                      : locale === 'ko'
+                        ? '아직 사진이 없어요'
+                        : 'No photos yet'}
+                  </Text>
+                </View>
+              </OutlineBox>
+            ) : null}
           </View>
 
           {/* School-style boards — circle / guestbook / free */}
@@ -431,6 +456,7 @@ const styles = StyleSheet.create({
   circleLine: { marginTop: 2, fontSize: 10, color: hompy.soft },
   todayMe: { marginTop: 12 },
   todayMeInner: { padding: 10 },
+  deskPad: { padding: 6 },
   todayLabel: {
     fontSize: 10,
     fontWeight: '700',
