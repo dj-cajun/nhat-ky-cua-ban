@@ -142,14 +142,10 @@ Z-order (아래→위):
 생성 순서 (**톤 확정 우선 · S1보다 먼저**):
 
 ```text
-1. desk_bg
-2. window_night 합본(초안) → 이후 window_frame + sky_* 로 분리
-3. corkboard (슬롯 알파 관통) + cork_empty
-4. tomato_timer — **idle 1장** · 작동 중은 코드 애니메이션(미세 흔들림/다이얼 회전)
-5. memo_note — 10자 핵심 입구
-6. lamp (+ glow) · photo_frame · books
-7. plant — 장식 후순위
-8. sky_clear / cloudy / rain (+ frame 분리)
+1~7  desk_bg · window · cork · tomato · memo · lamp · frame · plant  ✅ 초안
+8    window_frame + sky_night/clear/cloudy/rain  ✅ 초안
+9    cork_empty · lamp_glow · books  ✅ 초안
+10   조립 프리뷰 · 좌표 폴리시 · 32~64px 저해상도화 (구현 직전)
 ```
 
 **뽀모도로 상태**: 별도 running PNG 없음.  
@@ -302,7 +298,7 @@ D5  좌표 폴리시
 
 ## 12. 다음 액션
 
-1. **`desk_bg` 에셋 생성·톤 확정** (지금)  
-2. `window` → `corkboard` 순으로 맞춤  
-3. 소품 세트 → DeskScene 조립  
+1. ~~에셋 초안 세트~~ ✅ (`mobile/assets/desk/*`)  
+2. 조립 좌표 폴리시 · 히트박스 · `DeskScene` 프로토타입  
+3. 구현 투입 전 **32~64px 저해상도화** · 팔레트 고정  
 4. 톤 잠금 후 **S1** 병행  
