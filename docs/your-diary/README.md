@@ -59,7 +59,7 @@
 | [23-phase-e2-prototype-checklist.md](./23-phase-e2-prototype-checklist.md) | **E2** 프로토타입 리뷰 체크리스트 |
 | [24-phase-e3-structure.md](./24-phase-e3-structure.md) | **E3** 제품 화면 구조 교체 |
 | [25-phase-e4-motion.md](./25-phase-e4-motion.md) | **E4** 모션·인트로·오브제 |
-| [26-official-app-plan.md](./26-official-app-plan.md) | **정식 v1.0** · GO/NO-GO · S1–S4 · recent 우주 · 홈피 잠금 |
+| [27-desk-scene-layered-sprites.md](./27-desk-scene-layered-sprites.md) | **책상 장면 방법 2** · 레이어드 스프라이트 · Desk Track |
 | [e2-prototype/index.html](./e2-prototype/index.html) | E2 브라우저 정적 미러 |
 | [roadmap.md](./roadmap.md) | 단계별 로드맵 · 완료/다음 |
 
