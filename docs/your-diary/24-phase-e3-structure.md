@@ -9,7 +9,7 @@
 
 | 공간 | 제품 경로 | E3 구조 |
 |------|-----------|---------|
-| 우주 | `/(tabs)/universe` → `FallbackUniverse` | 중앙 나 + 크기·거리 계층 · close-3 로컬 수동 |
+| 우주 | `/(tabs)/universe` → `FallbackUniverse` | 중앙 나 + **recent 방문 공간 배치** (수동 close-3 폐기 · [26](./26-official-app-plan.md)) |
 | 서클 | `/circles/[id]/graph` | 분위기 룸 · 친구 오브 · notice/board 코너 |
 | 친구/내 다이어리 | `/diary/[userId]` → `DiaryHompyHome` | **파스텔 연필 미니홈피만** (장면 스트립 제거) |
 
@@ -18,7 +18,7 @@
 - AsyncStorage `universe.closeFriendIds.v1` — **뷰어 전용**
 - 먼 점 포커스 → `keep near me (private)`
 - 가까운 오브 길게 눌러 해제
-- 자동 친밀도·알림·서버 동기화 **없음** (E5 이전)
+- 자동 친밀도·알림·서버 동기화 **없음** · 수동 close-3 편집 **없음** (v1.0: recent 방문 로컬 배치 — [26](./26-official-app-plan.md))
 
 ## 비범위
 

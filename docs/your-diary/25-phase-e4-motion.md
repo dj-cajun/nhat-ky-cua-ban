@@ -28,7 +28,8 @@
 
 ## 비범위
 
-- 서버 close-3
+- 서버 close-3 / 수동 편집 UI  
+  (v1.0 우주 = recent 방문 배치 — [26](./26-official-app-plan.md))
 - 토마토 집중방 실기능
 - 과도한 bounce / 글로우 스팸
 

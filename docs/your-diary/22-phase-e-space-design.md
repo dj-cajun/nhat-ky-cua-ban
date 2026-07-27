@@ -134,14 +134,16 @@ Spatial relationship hierarchy:
 ```text
 E1  이 문서 콘셉트 확정          ✅
 E2  정적 프로토타입 (4화면)     ✅ 승인 (A/B/C PASS)
-E2.1 우주 관계 거리(크기+거리)  ✅ PASS · 수동 close-3 · 자동 친밀도 금지
-E2.2 친구/내 다이어리 장면 미디어 ✅ PASS · friendWindow / myDesk 차별
+E2.1 우주 관계 거리(크기+거리)  ✅ PASS (프로토타입) · **v1.0 정책 갱신**: 수동 close-3 폐기 → recent 방문 배치 ([26](./26-official-app-plan.md))
+E2.2 친구/내 다이어리 장면 미디어 ✅ PASS · 이후 제품은 파스텔 홈피 베이스 잠금
 E3  핵심 화면 구현 (구조 교체)  ✅ · [24](./24-phase-e3-structure.md)
 E4  모션·인트로·오브제            ✅ · [25](./25-phase-e4-motion.md)
-E5  실제 기능 연결 (공지/편지/달력/토마토) ← 다음
+E5  → **Track S1** 실데이터·인증 ([26](./26-official-app-plan.md)) ← 다음
 ```
 
-E2–E4로 공간·흐름·호흡이 잡혔다. E5는 오브제·close-3 등을 **실데이터/인가**에 연결한다.
+E2–E4로 공간·흐름·호흡이 잡혔다.  
+**v1.0 우주**: 수동 close-3 없음 · recent 방문 로컬 배치(S1은 가까운 3+점으로 축소 가능).  
+실기능 연결은 **S1→S4** ([26](./26-official-app-plan.md)).
 
 ---
 

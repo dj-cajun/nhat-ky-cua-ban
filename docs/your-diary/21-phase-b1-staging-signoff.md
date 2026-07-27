@@ -1,9 +1,14 @@
-# 21 — Phase B.1 Staging Sign-off
+# 21 — Phase B.1 / H Staging Sign-off (전수)
 
-> **Phase B.1: DEFERRED UNTIL STAGING LAUNCH GATE (Phase H)** — test plan and runbook prepared; empirical execution after beta is feature-complete.
+> **역할 구분 ([26](./26-official-app-plan.md))**  
+> · **S1**: 핵심 경로 staging **smoke test**만 (JWT·학교/서클 deny·일기·세션 누수)  
+> · **S4 / Phase H**: 이 문서의 **A–E/M 전수 실측 + 최종 sign-off**  
+> S1에서 이 전수 런북을 “앱 완성 전 최종 게이트”로 실행하지 않는다.
 >
-> **지금은 기능 구현 단계.** B.1 실측으로 개발을 멈추지 않는다. Phase C+ 진행.  
-> **게이트**: **B = 구현 완료**, **B.1 = staging 실측으로 증명 완료**  
+> **Phase B.1: DEFERRED UNTIL STAGING LAUNCH GATE (Phase H / Track S4)** — test plan and runbook prepared; full empirical execution at v1.0 exit gate.
+>
+> **지금은 S1~S3 구현·베타.** 전수 실측으로 개발을 멈추지 않는다.  
+> **게이트**: **B = 구현 완료**, **B.1/H = staging 전수로 증명 완료 (S4)**  
 > **판단 재료**: 이 문서의 실제 결과만 (코드 설명·기획 문서로 대체 불가)  
 > **동결**: [`b1-staging-run-freeze.md`](./b1-staging-run-freeze.md)  
 > **권한 요청·계정·증거 위치**: [`b1-staging-access-request.md`](./b1-staging-access-request.md)  
