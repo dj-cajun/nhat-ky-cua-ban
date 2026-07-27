@@ -11,6 +11,7 @@ import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
+import { hompy } from '@/constants/hompy-theme';
 import { e2 } from '@/features/e2-prototype/tokens';
 
 /**
@@ -43,12 +44,12 @@ export default function E2PrototypeLayout() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerShown: false,
           animation: 'fade',
-          contentStyle: { backgroundColor: e2.space.void },
+          contentStyle: { backgroundColor: hompy.table },
         }}
       />
     </>
