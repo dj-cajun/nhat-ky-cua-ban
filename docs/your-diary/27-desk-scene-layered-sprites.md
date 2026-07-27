@@ -129,7 +129,7 @@ Z-order (아래→위):
 | `corkboard` | `corkboard.png` | **오돌토돌 코르크**+두꺼운 보드감 · **사진 슬롯 알파 관통(3)** · 유리와 대비 | 1 |
 | `cork_empty` | `cork_empty_slot.png` | 빈 폴라로이드 플레이스홀더 | 1 |
 | `tomato` | `tomato_timer.png` | 토마토 뽀모도로 **대기(idle) 1장만** | 1 |
-| `memo` | `memo_note.png` | 짧은 줄만 있는 메모 (10자 입구) | 1 |
+| `memo` | `memo_note.png` | 짧은 줄만 있는 **메모지 단독** (연필 없음 · 탭=10자 입구) | 1 |
 | `frame` | `photo_frame.png` | 작은 액자 (안의 그림은 최소·교체 가능 슬롯이면 더 좋음) | 1 |
 | `lamp` | `lamp.png` | 램프 본체 | 1 |
 | `lamp_glow` | `lamp_glow.png` | 부드러운 원뿔 광 (또는 코드로 View opacity) | 1 |
