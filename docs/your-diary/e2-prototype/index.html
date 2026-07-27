@@ -197,47 +197,79 @@
         align-self: center; margin-top: 14px; border: 0; background: none; font-size: 14px; font-weight: 500; cursor: pointer;
       }
 
-      #friend { background: linear-gradient(180deg, #241820, #140e14); color: var(--friend-ink); }
-      #mine { background: linear-gradient(180deg, #152028, #0c141a); color: var(--mine-ink); }
-      .photo {
-        width: 100%; aspect-ratio: .92; border-radius: 28px; display: flex; align-items: flex-end;
-        padding: 18px; position: relative; overflow: hidden; margin-top: 8px;
+      /* Diary = pastel mini-hompy base + scene strip (not dark scene-only) */
+      #friend, #mine {
+        background: #e8dfd2;
+        color: #2a2430;
       }
-      #friend .photo { background: #2e1a24; }
-      #mine .photo { background: #152834; }
-      .photo .scene-art {
-        position: absolute; inset: 0; width: 100%; height: 100%;
+      #friend .meta, #mine .meta,
+      #friend .rail button, #mine .rail button,
+      #friend .back, #mine .back,
+      #friend .cta, #mine .cta { color: #2a2430; }
+      #friend .rail button, #mine .rail button {
+        border-color: rgba(42,36,48,.25);
       }
-      .photo .scrim {
-        position: absolute; left: 0; right: 0; bottom: 0; height: 38%;
-        background: rgba(10,8,12,.42); pointer-events: none;
+      #friend .rail button.on, #mine .rail button.on {
+        background: rgba(42,36,48,.08);
+        border-color: rgba(42,36,48,.45);
       }
-      .photo span {
-        position: relative; z-index: 2; font-size: 13px; letter-spacing: 1.2px;
-        text-transform: uppercase; font-weight: 500; color: inherit;
-        text-shadow: 0 1px 4px rgba(0,0,0,.45);
+      .hompy {
+        margin-top: 6px; border: 2px solid #4a3f55; background: #f7f1e8;
+        border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 8px;
       }
-      .owner { margin-top: 18px; font-size: 11px; letter-spacing: 2px; opacity: .75; font-weight: 500; }
-      .sentence {
-        margin-top: 10px; font-family: var(--display); font-style: italic; font-weight: 500;
-        font-size: 26px; line-height: 1.3;
+      .scene-strip {
+        border: 1.5px solid #6a4050; border-radius: 4px; overflow: hidden; background: #3a2430; color: #f8ede8;
+        padding: 0; text-align: left; width: 100%; cursor: pointer;
       }
-      .mood { margin-top: 12px; font-size: 15px; font-weight: 600; }
-      #friend .mood { color: var(--friend-mood); }
-      #mine .mood { color: var(--mine-mood); }
-      .music {
-        margin-top: 16px; border-radius: 999px; padding: 12px 16px; font-size: 13px;
-        background: rgba(248,237,232,.16);
+      #mine .scene-strip { border-color: #5a7a88; background: #1e3340; }
+      .scene-strip .scene-art { position: relative; display: block; width: 100%; aspect-ratio: 1.55; }
+      .scene-strip .scrim {
+        position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
+        background: rgba(10,8,12,.38); pointer-events: none;
       }
-      #mine .music { background: rgba(234,243,246,.16); }
-      .obj-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
-      .obj-row .chip {
-        min-height: 52px; min-width: 80px; border-radius: 18px; border: 1px solid rgba(248,237,232,.26);
-        background: rgba(248,237,232,.12); display: grid; place-items: center; padding: 0 14px; font-size: 13px; font-weight: 500;
+      .scene-strip .scene-label {
+        position: absolute; left: 12px; bottom: 10px; z-index: 2;
+        font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600;
       }
-      #mine .obj-row .chip { border-color: rgba(234,243,246,.26); background: rgba(234,243,246,.12); }
-      .tomato { border-color: var(--tomato) !important; background: rgba(212,106,92,.22) !important; }
-      .hint { margin-top: 14px; font-size: 13px; opacity: .72; }
+      .scene-strip .scene-sentence {
+        margin: 0; padding: 12px; font-family: var(--display); font-style: italic; font-size: 14px; line-height: 1.4;
+        background: rgba(20,16,18,.55); color: #f4efe6;
+      }
+      .profile-box {
+        display: flex; gap: 10px; align-items: center; padding: 12px;
+        background: #f3d6de; border: 1.5px solid #c98a9a; border-radius: 4px;
+      }
+      .profile-box .av {
+        width: 48px; height: 48px; border: 1.5px solid #c98a9a; background: #fff;
+        display: grid; place-items: center; font-weight: 700; border-radius: 4px;
+      }
+      .profile-box .meta b { display: block; font-size: 15px; }
+      .profile-box .meta small { color: #6a5a66; }
+      .today-box {
+        margin-top: 8px; padding: 10px; background: rgba(255,255,255,.72);
+        border: 1.5px solid #c98a9a; border-radius: 4px; font-size: 13px;
+      }
+      .today-box span { display: block; font-size: 10px; font-weight: 700; color: #6a5a66; margin-bottom: 4px; }
+      .grid2 { display: flex; gap: 8px; }
+      .panel {
+        flex: 1; min-height: 110px; border: 1.5px solid; border-radius: 4px; padding: 8px; font-size: 11px;
+      }
+      .panel.mint { background: #d8efe3; border-color: #7aaa90; }
+      .panel.peach { background: #f5e0d0; border-color: #d0a080; }
+      .panel strong { display: block; font-size: 10px; margin-bottom: 6px; color: #6a5a66; }
+      .board-box {
+        padding: 10px; background: #e4dff0; border: 1.5px solid #9a90b8; border-radius: 4px;
+      }
+      .board-box .music {
+        margin-top: 8px; border: 1.5px solid #4a3f55; background: #fff; border-radius: 4px;
+        padding: 10px; font-size: 12px; color: #2a2430;
+      }
+      .board-box .tomato {
+        margin-top: 8px; display: inline-block; border: 1.5px solid #d46a5c;
+        background: rgba(212,106,92,.18); border-radius: 4px; padding: 8px 12px;
+        font-size: 11px; font-weight: 700; cursor: pointer; color: #2a2430;
+      }
+      .hint { margin-top: 8px; font-size: 12px; color: #6a5a66; }
       .doc {
         width: min(390px, 100%); margin-top: 18px; color: #ddd; font-size: 13px; line-height: 1.5;
       }
@@ -326,7 +358,7 @@
       </section>
 
       <section id="friend" class="screen" aria-label="Friend Diary">
-        <div class="meta"><span>from circle</span><span>E2.2 STATIC</span></div>
+        <div class="meta"><span>from circle</span><span>HOMPY + SCENE</span></div>
         <nav class="rail" aria-label="Prototype screens">
           <button data-go="universe">Universe</button>
           <button data-go="circle">Circle</button>
@@ -334,54 +366,59 @@
           <button data-go="mine">Mine</button>
         </nav>
         <button class="back" data-go="circle">← Brooklyn Friends</button>
-        <div class="photo" aria-label="Minseo afternoon window scene">
-          <svg class="scene-art" viewBox="0 0 360 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <defs>
-              <linearGradient id="fwRoom" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#4A2C38"/><stop offset=".45" stop-color="#2E1A24"/><stop offset="1" stop-color="#1A1016"/>
-              </linearGradient>
-              <linearGradient id="fwSky" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#F3C9A0"/><stop offset=".55" stop-color="#E8A07A"/><stop offset="1" stop-color="#C46B6B"/>
-              </linearGradient>
-              <linearGradient id="fwBeam" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#FFD9B0" stop-opacity=".55"/><stop offset="1" stop-color="#FFD9B0" stop-opacity="0"/>
-              </linearGradient>
-              <linearGradient id="fwDesk" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#5A3A32"/><stop offset="1" stop-color="#2A1814"/>
-              </linearGradient>
-            </defs>
-            <rect width="360" height="390" fill="url(#fwRoom)"/>
-            <rect x="36" y="42" width="210" height="236" rx="10" fill="#1C1218"/>
-            <rect x="48" y="54" width="186" height="212" fill="url(#fwSky)"/>
-            <rect x="136" y="54" width="10" height="212" fill="#2A1A20" opacity=".85"/>
-            <rect x="48" y="152" width="186" height="10" fill="#2A1A20" opacity=".85"/>
-            <path d="M36 42 C58 88 52 170 40 278 L36 278 Z" fill="#E8B4A0" opacity=".28"/>
-            <path d="M120 266 L292 330 L330 390 L90 390 Z" fill="url(#fwBeam)"/>
-            <rect x="0" y="300" width="360" height="90" fill="url(#fwDesk)"/>
-            <ellipse cx="250" cy="318" rx="78" ry="18" fill="#F0C8A0" opacity=".22"/>
-            <rect x="228" y="292" width="28" height="34" rx="6" fill="#D4A090" opacity=".75"/>
-            <ellipse cx="242" cy="292" rx="14" ry="5" fill="#E8C4B0" opacity=".8"/>
-            <circle cx="168" cy="120" r="1.6" fill="#FFF2E0" opacity=".55"/>
-            <circle cx="198" cy="168" r="1.2" fill="#FFF2E0" opacity=".4"/>
-            <circle cx="112" cy="200" r="1.4" fill="#FFF2E0" opacity=".45"/>
-          </svg>
-          <div class="scrim"></div>
-          <span>afternoon window</span>
+        <div class="hompy">
+          <div class="scene-strip" aria-label="Minseo afternoon window scene">
+            <div style="position:relative">
+              <svg class="scene-art" viewBox="0 0 360 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fwRoom" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#4A2C38"/><stop offset=".45" stop-color="#2E1A24"/><stop offset="1" stop-color="#1A1016"/>
+                  </linearGradient>
+                  <linearGradient id="fwSky" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#F3C9A0"/><stop offset=".55" stop-color="#E8A07A"/><stop offset="1" stop-color="#C46B6B"/>
+                  </linearGradient>
+                  <linearGradient id="fwBeam" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#FFD9B0" stop-opacity=".55"/><stop offset="1" stop-color="#FFD9B0" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="fwDesk" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#5A3A32"/><stop offset="1" stop-color="#2A1814"/>
+                  </linearGradient>
+                </defs>
+                <rect width="360" height="390" fill="url(#fwRoom)"/>
+                <rect x="36" y="42" width="210" height="236" rx="10" fill="#1C1218"/>
+                <rect x="48" y="54" width="186" height="212" fill="url(#fwSky)"/>
+                <rect x="136" y="54" width="10" height="212" fill="#2A1A20" opacity=".85"/>
+                <rect x="48" y="152" width="186" height="10" fill="#2A1A20" opacity=".85"/>
+                <path d="M36 42 C58 88 52 170 40 278 L36 278 Z" fill="#E8B4A0" opacity=".28"/>
+                <path d="M120 266 L292 330 L330 390 L90 390 Z" fill="url(#fwBeam)"/>
+                <rect x="0" y="300" width="360" height="90" fill="url(#fwDesk)"/>
+                <ellipse cx="250" cy="318" rx="78" ry="18" fill="#F0C8A0" opacity=".22"/>
+                <rect x="228" y="292" width="28" height="34" rx="6" fill="#D4A090" opacity=".75"/>
+              </svg>
+              <div class="scrim"></div>
+              <span class="scene-label">afternoon window</span>
+            </div>
+            <p class="scene-sentence">the light stayed on the desk a little longer today</p>
+          </div>
+          <div class="profile-box">
+            <div class="av">M</div>
+            <div class="meta"><b>Minseo</b><small>quiet bright</small></div>
+          </div>
+          <div class="today-box"><span>Today I…</span>the light stayed on the desk a little longer today</div>
+          <div class="grid2">
+            <div class="panel mint"><strong>week</strong>S · M · T · W · T · F · S</div>
+            <div class="panel peach"><strong>mini album</strong>today’s frame</div>
+          </div>
+          <div class="board-box">
+            boards · guestbook · free
+            <div class="music">♪ Moonlight Drive · soft instrumental</div>
+          </div>
+          <button class="cta" data-go="mine" style="align-self:flex-start">same world · open my diary →</button>
         </div>
-        <div class="owner">MINSEO · TODAY</div>
-        <p class="sentence">the light stayed on the desk a little longer today</p>
-        <div class="mood">quiet bright</div>
-        <div class="music">♪ Moonlight Drive · soft instrumental</div>
-        <div class="obj-row" aria-label="Secondary objects">
-          <div class="chip">album</div>
-          <div class="chip">letters</div>
-          <div class="chip">days</div>
-        </div>
-        <button class="cta" data-go="mine" style="align-self:flex-start;margin-top:28px">same world · open my diary →</button>
       </section>
 
       <section id="mine" class="screen" aria-label="My Diary">
-        <div class="meta"><span>same world</span><span>E2.2 STATIC</span></div>
+        <div class="meta"><span>same world</span><span>HOMPY + SCENE</span></div>
         <nav class="rail" aria-label="Prototype screens">
           <button data-go="universe">Universe</button>
           <button data-go="circle">Circle</button>
@@ -389,63 +426,63 @@
           <button class="on" data-go="mine">Mine</button>
         </nav>
         <button class="back" data-go="friend">← friend’s today</button>
-        <button class="photo" id="writeScene" aria-label="Edit today’s diary scene" style="border:0;width:100%;text-align:left;color:inherit;cursor:pointer">
-          <svg class="scene-art" viewBox="0 0 360 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <defs>
-              <linearGradient id="mdRoom" x1="0" y1="0" x2="0.3" y2="1">
-                <stop offset="0" stop-color="#243848"/><stop offset=".5" stop-color="#152834"/><stop offset="1" stop-color="#0C161E"/>
-              </linearGradient>
-              <linearGradient id="mdWindow" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#9FCBD8" stop-opacity=".55"/><stop offset="1" stop-color="#9FCBD8" stop-opacity="0"/>
-              </linearGradient>
-              <linearGradient id="mdDesk" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#2A4050"/><stop offset="1" stop-color="#142028"/>
-              </linearGradient>
-              <linearGradient id="mdPaper" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#EAF3F6"/><stop offset="1" stop-color="#C5D8E0"/>
-              </linearGradient>
-              <linearGradient id="mdLamp" x1=".5" y1="0" x2=".5" y2="1">
-                <stop offset="0" stop-color="#F7E7C8" stop-opacity=".7"/><stop offset="1" stop-color="#F7E7C8" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <rect width="360" height="390" fill="url(#mdRoom)"/>
-            <rect x="0" y="0" width="120" height="390" fill="url(#mdWindow)"/>
-            <rect x="18" y="48" width="8" height="200" rx="3" fill="#7FAFBE" opacity=".35"/>
-            <rect x="34" y="48" width="8" height="200" rx="3" fill="#7FAFBE" opacity=".22"/>
-            <path d="M0 250 L360 210 L360 390 L0 390 Z" fill="url(#mdDesk)"/>
-            <path d="M88 268 L230 248 L246 318 L104 340 Z" fill="url(#mdPaper)" opacity=".92"/>
-            <path d="M158 258 L172 330" stroke="#8AA4B0" stroke-width="2" opacity=".55"/>
-            <path d="M112 290 Q150 286 188 282" stroke="#5A7280" stroke-width="1.5" opacity=".35" fill="none"/>
-            <path d="M116 304 Q156 300 196 296" stroke="#5A7280" stroke-width="1.5" opacity=".28" fill="none"/>
-            <path d="M250 300 L310 278" stroke="#D46A5C" stroke-width="4" stroke-linecap="round" opacity=".85"/>
-            <circle cx="292" cy="168" r="46" fill="url(#mdLamp)"/>
-            <rect x="284" y="168" width="16" height="52" rx="4" fill="#C8D8E0" opacity=".55"/>
-            <ellipse cx="292" cy="168" rx="28" ry="12" fill="#F4EFE6" opacity=".55"/>
-            <circle cx="70" cy="120" r="1.4" fill="#D7EEF4" opacity=".45"/>
-            <circle cx="140" cy="88" r="1.1" fill="#D7EEF4" opacity=".35"/>
-          </svg>
-          <div class="scrim"></div>
-          <span>my desk corner</span>
-        </button>
-        <div class="owner">ALEX · TODAY</div>
-        <p class="sentence" id="mySentence">I kept one sentence and let the rest wait</p>
-        <div class="mood">slow clear</div>
-        <div class="music">♪ Harbor Morning · lo-fi piano</div>
-        <p class="hint" id="writeHint">tap the scene to write today</p>
-        <div class="obj-row" aria-label="Secondary objects including focus">
-          <div class="chip">album</div>
-          <div class="chip">letters</div>
-          <div class="chip">days</div>
-          <button class="chip tomato" id="tomato" aria-label="Focus room entrance">focus</button>
+        <div class="hompy">
+          <button class="scene-strip" id="writeScene" aria-label="Edit today’s diary scene">
+            <div style="position:relative">
+              <svg class="scene-art" viewBox="0 0 360 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <defs>
+                  <linearGradient id="mdRoom" x1="0" y1="0" x2="0.3" y2="1">
+                    <stop offset="0" stop-color="#243848"/><stop offset=".5" stop-color="#152834"/><stop offset="1" stop-color="#0C161E"/>
+                  </linearGradient>
+                  <linearGradient id="mdWindow" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stop-color="#9FCBD8" stop-opacity=".55"/><stop offset="1" stop-color="#9FCBD8" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="mdDesk" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#2A4050"/><stop offset="1" stop-color="#142028"/>
+                  </linearGradient>
+                  <linearGradient id="mdPaper" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#EAF3F6"/><stop offset="1" stop-color="#C5D8E0"/>
+                  </linearGradient>
+                  <linearGradient id="mdLamp" x1=".5" y1="0" x2=".5" y2="1">
+                    <stop offset="0" stop-color="#F7E7C8" stop-opacity=".7"/><stop offset="1" stop-color="#F7E7C8" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <rect width="360" height="390" fill="url(#mdRoom)"/>
+                <rect x="0" y="0" width="120" height="390" fill="url(#mdWindow)"/>
+                <path d="M0 250 L360 210 L360 390 L0 390 Z" fill="url(#mdDesk)"/>
+                <path d="M88 268 L230 248 L246 318 L104 340 Z" fill="url(#mdPaper)" opacity=".92"/>
+                <path d="M250 300 L310 278" stroke="#D46A5C" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+                <circle cx="292" cy="168" r="46" fill="url(#mdLamp)"/>
+              </svg>
+              <div class="scrim"></div>
+              <span class="scene-label">my desk corner</span>
+            </div>
+            <p class="scene-sentence" id="mySentence">I kept one sentence and let the rest wait</p>
+          </button>
+          <div class="profile-box">
+            <div class="av">A</div>
+            <div class="meta"><b>Alex</b><small>slow clear</small></div>
+          </div>
+          <div class="today-box"><span>Today I…</span><span id="todayBody">I kept one sentence and let the rest wait</span></div>
+          <div class="grid2">
+            <div class="panel mint"><strong>week</strong>S · M · T · W · T · F · S</div>
+            <div class="panel peach"><strong>mini album</strong>today’s frame</div>
+          </div>
+          <div class="board-box">
+            boards · guestbook · free
+            <div class="music">♪ Harbor Morning · lo-fi piano</div>
+            <button class="tomato" id="tomato" type="button">focus room</button>
+            <p class="hint" id="focusHint" hidden>focus room stays a small door — not a dashboard</p>
+          </div>
+          <p class="hint" id="writeHint">tap the scene to write today</p>
+          <button class="cta" data-go="universe" style="align-self:flex-start">← return to the universe</button>
         </div>
-        <p class="hint" id="focusHint" hidden>focus room stays a small door — not a dashboard</p>
-        <button class="cta" data-go="universe" style="align-self:flex-start;margin-top:32px">← return to the universe</button>
       </section>
     </div>
 
     <div class="doc">
-      <p><strong>E2.2 browser mirror</strong> — distinct diary scene atmospheres. In-app: <code>/prototype/e2</code></p>
-      <p>Checklist: <code>docs/your-diary/23-phase-e2-prototype-checklist.md</code> · Spatial rules in <code>22</code></p>
+      <p><strong>Browser mirror</strong> — diary = mini-hompy + scene strip. In-app: <code>/prototype/e2</code> or real <code>/diary/[userId]</code></p>
+      <p>Pull branch <code>cursor/school-trust-boundary-plan-9985</code> then <code>npx expo start -c</code></p>
     </div>
 
     <script>
@@ -459,6 +496,8 @@
       });
       document.getElementById('writeScene').addEventListener('click', () => {
         document.getElementById('mySentence').textContent = '…keeping one quiet line';
+        const body = document.getElementById('todayBody');
+        if (body) body.textContent = '…keeping one quiet line';
         document.getElementById('writeHint').textContent = 'writing mode (prototype · no save)';
       });
       document.getElementById('tomato').addEventListener('click', () => {
