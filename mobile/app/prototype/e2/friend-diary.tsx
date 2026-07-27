@@ -20,7 +20,7 @@ import { e2Fixtures } from '@/features/e2-prototype/fixtures';
 import { hompy } from '@/constants/hompy-theme';
 
 /**
- * Same component as product diary — pastel pencil mini-hompy (+ scene strip).
+ * Same component as product diary — pastel pencil mini-hompy only.
  */
 export default function E2FriendDiaryPrototype() {
   return (

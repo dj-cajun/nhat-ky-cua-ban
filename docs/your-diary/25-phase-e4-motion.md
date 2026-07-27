@@ -16,14 +16,14 @@
 | 2 | 자기 오브 호흡 | `FallbackUniverse` + `BreathingView` | settle 후 약한 숨 |
 | 3 | 먼 점 당김 | `SpatialDot` | 포커스 시 가까이·확대 |
 | 4 | 서클 입장 | `EnterFade` + ring breath | 룸 진입 호흡 |
-| 5 | 다이어리 장면 입장 | `EnterFade` + 장면 스트립 | 미니홈피 **위에** 오늘 분위기 가산 |
+| 5 | 다이어리 입장 | `EnterFade`(선택) | 파스텔 미니홈피 블록 입장감 |
 
 토큰: `mobile/src/features/space-ui/space-motion.ts`
 
 ## 오브제
 
 - 서클: notice / board에 작은 글리프
-- 다이어리: **기존 미니홈피 레이아웃 유지** + 상단 오늘 장면 스트립(가산) · 사진첩 탭 연결 · 집중방 버튼(자리만)
+- 다이어리: **기존 파스텔 미니홈피 레이아웃만** 유지 (어두운 장면 스트립 제거)
 - 라이브 데이터 연결은 E5
 
 ## 비범위

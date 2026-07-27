@@ -19,7 +19,7 @@ import {
 import { hompy } from '@/constants/hompy-theme';
 
 /**
- * Same component as product diary — pastel pencil mini-hompy (+ scene strip).
+ * Same component as product diary — pastel pencil mini-hompy only.
  */
 export default function E2MyDiaryPrototype() {
   const [entry, setEntry] = useState(e2MyEntry);

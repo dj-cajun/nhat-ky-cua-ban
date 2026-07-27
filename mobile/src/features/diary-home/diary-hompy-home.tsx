@@ -16,8 +16,6 @@ import type {
 } from '@/features/local/repository';
 import { HompyBoardStack } from '@/features/diary-home/hompy-board-stack';
 import { DotPaper, OutlineBox } from '@/features/diary-home/hompy-outline';
-import { SceneArt } from '@/features/e2-prototype/SceneArt';
-import { EnterFade } from '@/features/space-ui/EnterFade';
 import { hompy } from '@/constants/hompy-theme';
 import { useLocale, useMessages } from '@/i18n';
 import {
@@ -56,8 +54,8 @@ type Props = {
 };
 
 /**
- * Pastel mini-hompy (base) + today’s scene strip (additive).
- * Do not replace the hompy layout — layer atmosphere on top of it.
+ * Pastel mini-hompy — web `DiaryHomePage` outline (cy-shell / sk-outline).
+ * No brand line, no my-home/friend visit strip.
  */
 export function DiaryHompyHome({
   me,
@@ -84,18 +82,6 @@ export function DiaryHompyHome({
   const moodMeta = DIARY_MOODS.find((m) => m.id === entry?.mood);
   const circle = circles[0];
   const week = useMemo(() => buildWeek(recentEntries, locale), [recentEntries, locale]);
-  const sceneLabel = isMine
-    ? locale === 'ko'
-      ? '내 책상 모서리'
-      : 'my desk corner'
-    : locale === 'ko'
-      ? '오후 창'
-      : 'afternoon window';
-  const sceneSentence = canView
-    ? entry?.shortText?.trim() ||
-      entry?.tenCharText?.trim() ||
-      null
-    : null;
 
   const boardSections = useMemo(
     () => [
@@ -209,54 +195,7 @@ export function DiaryHompyHome({
             </Pressable>
           </OutlineBox>
 
-          {/* Additive: today’s atmosphere scene (does not replace hompy blocks) */}
-          <EnterFade translateY={12}>
-            <Pressable
-              onPress={() => {
-                if (isMine) onEditToday();
-              }}
-              accessibilityRole={isMine ? 'button' : 'summary'}
-              accessibilityLabel={
-                isMine
-                  ? locale === 'ko'
-                    ? '오늘 장면 — 일기 쓰기'
-                    : 'Today’s scene — write'
-                  : `${owner.displayName}'s today scene`
-              }
-              disabled={!isMine}
-            >
-              <OutlineBox
-                fill={isMine ? '#1E3340' : '#3A2430'}
-                stroke={isMine ? '#5A7A88' : '#6A4050'}
-                style={styles.sceneBox}
-                contentStyle={styles.sceneContent}
-              >
-                <View style={styles.sceneArt}>
-                  <SceneArt variant={isMine ? 'myDesk' : 'friendWindow'} />
-                  <View style={styles.sceneScrim} />
-                  <Text style={styles.sceneLabel}>{sceneLabel}</Text>
-                </View>
-                {sceneSentence ? (
-                  <Text style={styles.sceneSentence} numberOfLines={3}>
-                    {sceneSentence}
-                  </Text>
-                ) : (
-                  <Text style={styles.sceneHint}>
-                    {isMine
-                      ? locale === 'ko'
-                        ? '장면을 눌러 오늘을 쓰세요'
-                        : 'tap the scene to write today'
-                      : locale === 'ko'
-                        ? '오늘의 분위기'
-                        : 'today’s atmosphere'}
-                  </Text>
-                )}
-              </OutlineBox>
-            </Pressable>
-          </EnterFade>
-
           {/* Profile — cy-box-blush */}
-          <EnterFade delayMs={80}>
           <OutlineBox
             fill={hompy.blush}
             stroke={hompy.blushInk}
@@ -309,10 +248,8 @@ export function DiaryHompyHome({
               </Text>
             </OutlineBox>
           </OutlineBox>
-          </EnterFade>
 
           {/* Calendar | Album — original 2-col */}
-          <EnterFade delayMs={140}>
           <View style={styles.grid2}>
             <OutlineBox
               fill={hompy.mint}
@@ -340,56 +277,42 @@ export function DiaryHompyHome({
               ))}
             </OutlineBox>
 
-            <Pressable
+            <OutlineBox
+              fill={hompy.peach}
+              stroke={hompy.peachInk}
               style={styles.gridCell}
-              onPress={() =>
-                router.push({
-                  pathname: '/diary/[userId]/album',
-                  params: { userId: owner.id },
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={locale === 'ko' ? '미니 사진첩' : 'Mini album'}
+              contentStyle={styles.panelPad}
             >
-              <OutlineBox
-                fill={hompy.peach}
-                stroke={hompy.peachInk}
-                style={styles.gridCellFill}
-                contentStyle={styles.panelPad}
-              >
-                <Text style={styles.panelTitle}>
-                  {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
+              <Text style={styles.panelTitle}>
+                {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
+              </Text>
+              <View style={styles.albumInner}>
+                <OutlineBox
+                  size="sm"
+                  fill="#FFFFFF"
+                  stroke={hompy.peachInk}
+                  style={styles.albumFrame}
+                  contentStyle={styles.albumFrameInner}
+                >
+                  <View style={styles.albumGlyph}>
+                    <View style={styles.albumGlyphOuter} />
+                    <View style={styles.albumGlyphInner} />
+                  </View>
+                </OutlineBox>
+                <Text style={styles.albumHint}>
+                  {canView && entry
+                    ? locale === 'ko'
+                      ? '오늘의 한 컷'
+                      : "Today’s frame"
+                    : locale === 'ko'
+                      ? '아직 사진이 없어요'
+                      : 'No photos yet'}
                 </Text>
-                <View style={styles.albumInner}>
-                  <OutlineBox
-                    size="sm"
-                    fill="#FFFFFF"
-                    stroke={hompy.peachInk}
-                    style={styles.albumFrame}
-                    contentStyle={styles.albumFrameInner}
-                  >
-                    <View style={styles.albumGlyph}>
-                      <View style={styles.albumGlyphOuter} />
-                      <View style={styles.albumGlyphInner} />
-                    </View>
-                  </OutlineBox>
-                  <Text style={styles.albumHint}>
-                    {canView && entry
-                      ? locale === 'ko'
-                        ? '오늘의 한 컷'
-                        : "Today’s frame"
-                      : locale === 'ko'
-                        ? '아직 사진이 없어요'
-                        : 'No photos yet'}
-                  </Text>
-                </View>
-              </OutlineBox>
-            </Pressable>
+              </View>
+            </OutlineBox>
           </View>
-          </EnterFade>
 
           {/* School-style boards — circle / guestbook / free */}
-          <EnterFade delayMs={200}>
           <OutlineBox
             fill={hompy.lavender}
             stroke={hompy.lavenderInk}
@@ -409,14 +332,6 @@ export function DiaryHompyHome({
                   onPress={() => onOpenMusic?.()}
                 />
               )}
-              {isMine ? (
-                <HardBtn
-                  label={locale === 'ko' ? '집중방' : 'Focus room'}
-                  onPress={() => {
-                    /* E5: focus room live */
-                  }}
-                />
-              ) : null}
             </View>
 
             {!isMine ? (
@@ -433,7 +348,6 @@ export function DiaryHompyHome({
               </View>
             ) : null}
           </OutlineBox>
-          </EnterFade>
         </ScrollView>
       </OutlineBox>
     </View>
@@ -501,48 +415,6 @@ const styles = StyleSheet.create({
   },
   headerBtn: { minHeight: 36, justifyContent: 'center', minWidth: 72 },
   headerBtnText: { fontSize: 11, fontWeight: '700', color: hompy.ink },
-  sceneBox: { overflow: 'hidden' },
-  sceneContent: { padding: 0 },
-  sceneArt: {
-    width: '100%',
-    aspectRatio: 1.55,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    padding: 12,
-  },
-  sceneScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '42%',
-    backgroundColor: 'rgba(10,8,12,0.38)',
-  },
-  sceneLabel: {
-    zIndex: 2,
-    fontSize: 11,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    fontWeight: '600',
-    color: '#F8EDE8',
-  },
-  sceneSentence: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    lineHeight: 20,
-    fontStyle: 'italic',
-    fontWeight: '500',
-    color: '#F4EFE6',
-    backgroundColor: 'rgba(20,16,18,0.55)',
-  },
-  sceneHint: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 12,
-    color: 'rgba(244,239,230,0.72)',
-    backgroundColor: 'rgba(20,16,18,0.45)',
-  },
   profilePad: { padding: 12 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatarBox: { width: 56, height: 56 },
@@ -568,7 +440,6 @@ const styles = StyleSheet.create({
   todayText: { fontSize: 13, color: hompy.ink, lineHeight: 18 },
   grid2: { flexDirection: 'row', gap: 8 },
   gridCell: { flex: 1, minHeight: 168 },
-  gridCellFill: { flex: 1, minHeight: 168 },
   panelPad: { padding: 8, flexGrow: 1 },
   panelTitle: {
     fontSize: 10,

@@ -197,7 +197,7 @@
         align-self: center; margin-top: 14px; border: 0; background: none; font-size: 14px; font-weight: 500; cursor: pointer;
       }
 
-      /* Diary = pastel mini-hompy base + scene strip (not dark scene-only) */
+      /* Diary = pastel pencil mini-hompy only (no dark scene strip) */
       #friend, #mine {
         background: #e8dfd2;
         color: #2a2430;
@@ -216,24 +216,8 @@
       .hompy {
         margin-top: 6px; border: 2px solid #4a3f55; background: #f7f1e8;
         border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 8px;
-      }
-      .scene-strip {
-        border: 1.5px solid #6a4050; border-radius: 4px; overflow: hidden; background: #3a2430; color: #f8ede8;
-        padding: 0; text-align: left; width: 100%; cursor: pointer;
-      }
-      #mine .scene-strip { border-color: #5a7a88; background: #1e3340; }
-      .scene-strip .scene-art { position: relative; display: block; width: 100%; aspect-ratio: 1.55; }
-      .scene-strip .scrim {
-        position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
-        background: rgba(10,8,12,.38); pointer-events: none;
-      }
-      .scene-strip .scene-label {
-        position: absolute; left: 12px; bottom: 10px; z-index: 2;
-        font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600;
-      }
-      .scene-strip .scene-sentence {
-        margin: 0; padding: 12px; font-family: var(--display); font-style: italic; font-size: 14px; line-height: 1.4;
-        background: rgba(20,16,18,.55); color: #f4efe6;
+        background-image: radial-gradient(rgba(74,63,85,.12) 1px, transparent 1px);
+        background-size: 14px 14px;
       }
       .profile-box {
         display: flex; gap: 10px; align-items: center; padding: 12px;
@@ -358,7 +342,7 @@
       </section>
 
       <section id="friend" class="screen" aria-label="Friend Diary">
-        <div class="meta"><span>from circle</span><span>HOMPY + SCENE</span></div>
+        <div class="meta"><span>from circle</span><span>PASTEL HOMPY</span></div>
         <nav class="rail" aria-label="Prototype screens">
           <button data-go="universe">Universe</button>
           <button data-go="circle">Circle</button>
@@ -367,50 +351,17 @@
         </nav>
         <button class="back" data-go="circle">← Brooklyn Friends</button>
         <div class="hompy">
-          <div class="scene-strip" aria-label="Minseo afternoon window scene">
-            <div style="position:relative">
-              <svg class="scene-art" viewBox="0 0 360 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-                <defs>
-                  <linearGradient id="fwRoom" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#4A2C38"/><stop offset=".45" stop-color="#2E1A24"/><stop offset="1" stop-color="#1A1016"/>
-                  </linearGradient>
-                  <linearGradient id="fwSky" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#F3C9A0"/><stop offset=".55" stop-color="#E8A07A"/><stop offset="1" stop-color="#C46B6B"/>
-                  </linearGradient>
-                  <linearGradient id="fwBeam" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#FFD9B0" stop-opacity=".55"/><stop offset="1" stop-color="#FFD9B0" stop-opacity="0"/>
-                  </linearGradient>
-                  <linearGradient id="fwDesk" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#5A3A32"/><stop offset="1" stop-color="#2A1814"/>
-                  </linearGradient>
-                </defs>
-                <rect width="360" height="390" fill="url(#fwRoom)"/>
-                <rect x="36" y="42" width="210" height="236" rx="10" fill="#1C1218"/>
-                <rect x="48" y="54" width="186" height="212" fill="url(#fwSky)"/>
-                <rect x="136" y="54" width="10" height="212" fill="#2A1A20" opacity=".85"/>
-                <rect x="48" y="152" width="186" height="10" fill="#2A1A20" opacity=".85"/>
-                <path d="M36 42 C58 88 52 170 40 278 L36 278 Z" fill="#E8B4A0" opacity=".28"/>
-                <path d="M120 266 L292 330 L330 390 L90 390 Z" fill="url(#fwBeam)"/>
-                <rect x="0" y="300" width="360" height="90" fill="url(#fwDesk)"/>
-                <ellipse cx="250" cy="318" rx="78" ry="18" fill="#F0C8A0" opacity=".22"/>
-                <rect x="228" y="292" width="28" height="34" rx="6" fill="#D4A090" opacity=".75"/>
-              </svg>
-              <div class="scrim"></div>
-              <span class="scene-label">afternoon window</span>
-            </div>
-            <p class="scene-sentence">the light stayed on the desk a little longer today</p>
-          </div>
           <div class="profile-box">
             <div class="av">M</div>
-            <div class="meta"><b>Minseo</b><small>quiet bright</small></div>
+            <div class="meta"><b>Minseo</b><small>Calm · Brooklyn Friends</small></div>
           </div>
           <div class="today-box"><span>Today I…</span>the light stayed on the desk a little longer today</div>
           <div class="grid2">
-            <div class="panel mint"><strong>week</strong>S · M · T · W · T · F · S</div>
+            <div class="panel mint"><strong>2026.7</strong>S · M · T · W · T · F · S</div>
             <div class="panel peach"><strong>mini album</strong>today’s frame</div>
           </div>
           <div class="board-box">
-            boards · guestbook · free
+            circle board · guestbook · free board
             <div class="music">♪ Moonlight Drive · soft instrumental</div>
           </div>
           <button class="cta" data-go="mine" style="align-self:flex-start">same world · open my diary →</button>
@@ -418,7 +369,7 @@
       </section>
 
       <section id="mine" class="screen" aria-label="My Diary">
-        <div class="meta"><span>same world</span><span>HOMPY + SCENE</span></div>
+        <div class="meta"><span>same world</span><span>PASTEL HOMPY</span></div>
         <nav class="rail" aria-label="Prototype screens">
           <button data-go="universe">Universe</button>
           <button data-go="circle">Circle</button>
@@ -427,61 +378,28 @@
         </nav>
         <button class="back" data-go="friend">← friend’s today</button>
         <div class="hompy">
-          <button class="scene-strip" id="writeScene" aria-label="Edit today’s diary scene">
-            <div style="position:relative">
-              <svg class="scene-art" viewBox="0 0 360 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-                <defs>
-                  <linearGradient id="mdRoom" x1="0" y1="0" x2="0.3" y2="1">
-                    <stop offset="0" stop-color="#243848"/><stop offset=".5" stop-color="#152834"/><stop offset="1" stop-color="#0C161E"/>
-                  </linearGradient>
-                  <linearGradient id="mdWindow" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0" stop-color="#9FCBD8" stop-opacity=".55"/><stop offset="1" stop-color="#9FCBD8" stop-opacity="0"/>
-                  </linearGradient>
-                  <linearGradient id="mdDesk" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#2A4050"/><stop offset="1" stop-color="#142028"/>
-                  </linearGradient>
-                  <linearGradient id="mdPaper" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#EAF3F6"/><stop offset="1" stop-color="#C5D8E0"/>
-                  </linearGradient>
-                  <linearGradient id="mdLamp" x1=".5" y1="0" x2=".5" y2="1">
-                    <stop offset="0" stop-color="#F7E7C8" stop-opacity=".7"/><stop offset="1" stop-color="#F7E7C8" stop-opacity="0"/>
-                  </linearGradient>
-                </defs>
-                <rect width="360" height="390" fill="url(#mdRoom)"/>
-                <rect x="0" y="0" width="120" height="390" fill="url(#mdWindow)"/>
-                <path d="M0 250 L360 210 L360 390 L0 390 Z" fill="url(#mdDesk)"/>
-                <path d="M88 268 L230 248 L246 318 L104 340 Z" fill="url(#mdPaper)" opacity=".92"/>
-                <path d="M250 300 L310 278" stroke="#D46A5C" stroke-width="4" stroke-linecap="round" opacity=".85"/>
-                <circle cx="292" cy="168" r="46" fill="url(#mdLamp)"/>
-              </svg>
-              <div class="scrim"></div>
-              <span class="scene-label">my desk corner</span>
-            </div>
-            <p class="scene-sentence" id="mySentence">I kept one sentence and let the rest wait</p>
-          </button>
           <div class="profile-box">
             <div class="av">A</div>
-            <div class="meta"><b>Alex</b><small>slow clear</small></div>
+            <div class="meta"><b>Alex</b><small>Grateful · Brooklyn Friends</small></div>
           </div>
           <div class="today-box"><span>Today I…</span><span id="todayBody">I kept one sentence and let the rest wait</span></div>
           <div class="grid2">
-            <div class="panel mint"><strong>week</strong>S · M · T · W · T · F · S</div>
+            <div class="panel mint"><strong>2026.7</strong>S · M · T · W · T · F · S</div>
             <div class="panel peach"><strong>mini album</strong>today’s frame</div>
           </div>
           <div class="board-box">
-            boards · guestbook · free
+            circle board · guestbook · free board
             <div class="music">♪ Harbor Morning · lo-fi piano</div>
-            <button class="tomato" id="tomato" type="button">focus room</button>
-            <p class="hint" id="focusHint" hidden>focus room stays a small door — not a dashboard</p>
+            <button class="tomato" id="editToday" type="button">Edit today</button>
+            <p class="hint" id="writeHint">tap Edit today to write (prototype · no save)</p>
           </div>
-          <p class="hint" id="writeHint">tap the scene to write today</p>
           <button class="cta" data-go="universe" style="align-self:flex-start">← return to the universe</button>
         </div>
       </section>
     </div>
 
     <div class="doc">
-      <p><strong>Browser mirror</strong> — diary = mini-hompy + scene strip. In-app: <code>/prototype/e2</code> or real <code>/diary/[userId]</code></p>
+      <p><strong>Browser mirror</strong> — diary = pastel pencil mini-hompy only. In-app: <code>/prototype/e2</code> or real <code>/diary/[userId]</code></p>
       <p>Pull branch <code>cursor/school-trust-boundary-plan-9985</code> then <code>npx expo start -c</code></p>
     </div>
 
@@ -494,14 +412,10 @@
       document.querySelectorAll('[data-go]').forEach((el) => {
         el.addEventListener('click', () => go(el.getAttribute('data-go')));
       });
-      document.getElementById('writeScene').addEventListener('click', () => {
-        document.getElementById('mySentence').textContent = '…keeping one quiet line';
+      document.getElementById('editToday').addEventListener('click', () => {
         const body = document.getElementById('todayBody');
         if (body) body.textContent = '…keeping one quiet line';
         document.getElementById('writeHint').textContent = 'writing mode (prototype · no save)';
-      });
-      document.getElementById('tomato').addEventListener('click', () => {
-        document.getElementById('focusHint').hidden = false;
       });
 
       const universe = document.getElementById('universe');
