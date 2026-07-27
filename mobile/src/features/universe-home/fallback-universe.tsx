@@ -184,9 +184,9 @@ export function FallbackUniverse({
       <StarField width={width} height={height} />
 
       <Animated.View
-        style={[StyleSheet.absoluteFill, diagramStyle, { pointerEvents: 'none' }]}
+        style={[StyleSheet.absoluteFill, diagramStyle, { pointerEvents: 'box-none' }]}
       >
-        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
           {closeNodes.map((n) => {
             const p = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
             return (

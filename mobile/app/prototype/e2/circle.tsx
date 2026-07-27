@@ -37,8 +37,23 @@ export default function E2CirclePrototype() {
           <Text style={styles.blurb}>{circle.blurb}</Text>
         </View>
 
-        <View style={[styles.stage, { height: stageH }]}>
-          <View style={styles.centerRing} />
+        <View style={[styles.stage, { height: stageH }]} pointerEvents="box-none">
+          <View style={styles.centerRing} pointerEvents="none" />
+          <Pressable
+            onPress={() => router.push('/prototype/e2/my-diary')}
+            accessibilityRole="button"
+            accessibilityLabel="Open my diary"
+            style={[
+              styles.self,
+              {
+                left: (width - 100) * 0.5 - 28,
+                top: (stageH - 90) * 0.48 - 10,
+              },
+            ]}
+          >
+            <View style={styles.selfOrb} />
+            <Text style={styles.selfName}>you</Text>
+          </Pressable>
           {e2Fixtures.friends.map((f) => (
             <Pressable
               key={f.id}
@@ -139,10 +154,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: e2.circle.accentSoft,
   },
+  self: {
+    position: 'absolute',
+    width: 72,
+    alignItems: 'center',
+    zIndex: 3,
+  },
+  selfOrb: {
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'rgba(255,230,168,0.65)',
+    backgroundColor: 'rgba(240,195,106,0.9)',
+  },
+  selfName: {
+    marginTop: 6,
+    fontFamily: e2.type.bodySemi,
+    fontSize: 12,
+    color: e2.circle.ink,
+  },
   friend: {
     position: 'absolute',
     width: 90,
     alignItems: 'center',
+    zIndex: 2,
   },
   friendOrb: {
     width: e2.orbFriend,

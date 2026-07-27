@@ -22,7 +22,6 @@ import {
 } from '@/features/local/repository';
 import { BreathingView } from '@/features/space-ui/BreathingView';
 import { EnterFade } from '@/features/space-ui/EnterFade';
-import { spaceMotion } from '@/features/space-ui/space-motion';
 import type { Circle, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { useMessages } from '@/i18n';
@@ -145,6 +144,9 @@ export default function CircleGraphScreen() {
     );
   }
 
+  const stageCx = width / 2;
+  const stageCy = height * 0.48;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <View style={styles.wash} />
@@ -156,8 +158,13 @@ export default function CircleGraphScreen() {
         >
           <Text style={styles.back}>← {t.universe.brand}</Text>
         </Pressable>
-        <Pressable onPress={() => router.push(`/circles/${circle.id}`)} hitSlop={12}>
-          <Text style={styles.open}>{t.universe.tapPlanet}</Text>
+        <Pressable
+          onPress={() => openDiaryFromCircle(me.id, circle.id)}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t.universe.tapSphere}
+        >
+          <Text style={styles.open}>{t.universe.tapSphere}</Text>
         </Pressable>
       </View>
 
@@ -170,35 +177,55 @@ export default function CircleGraphScreen() {
         </Text>
         <Text style={styles.blurb}>
           {friends.length > 0
-            ? `${friends.length} quiet orbits`
+            ? `${friends.length} quiet orbits · tap a circle`
             : 'invite friends into this room'}
         </Text>
       </EnterFade>
 
-      <View style={styles.stage}>
-        <BreathingView active amplitude={1.02} style={styles.ringWrap}>
+      <View style={styles.stage} pointerEvents="box-none">
+        <BreathingView
+          active
+          amplitude={1.02}
+          style={[styles.ringWrap, { pointerEvents: 'none' }]}
+        >
           <View style={styles.ring} pointerEvents="none" />
         </BreathingView>
-        {placements.map((n, i) => (
-          <EnterFade
+
+        {/* Self orb — center → my mini-hompy */}
+        <Pressable
+          onPress={() => openDiaryFromCircle(me.id, circle.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`${me.displayName} diary`}
+          style={[
+            styles.selfWrap,
+            { left: stageCx - 36, top: stageCy - 36 },
+          ]}
+        >
+          <View style={styles.selfOrb}>
+            <Text style={styles.selfLetter}>{me.displayName.slice(0, 1)}</Text>
+          </View>
+          <Text style={styles.selfName} numberOfLines={1}>
+            {me.displayName}
+          </Text>
+        </Pressable>
+
+        {placements.map((n) => (
+          <Pressable
             key={n.id}
-            delayMs={120 + i * spaceMotion.roomStaggerMs}
+            onPress={() => openDiaryFromCircle(n.id, circle.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Visit ${n.name} diary`}
             style={[styles.friendWrap, { left: n.x - 40, top: n.y - 40 }]}
           >
-            <Pressable
-              onPress={() => openDiaryFromCircle(n.id, circle.id)}
-              accessibilityRole="button"
-              accessibilityLabel={`Visit ${n.name} diary`}
-              style={styles.friendHit}
-            >
+            <View style={styles.friendHit}>
               <View style={[styles.friendOrb, { backgroundColor: n.color }]}>
                 <Text style={styles.friendLetter}>{n.name.slice(0, 1)}</Text>
               </View>
               <Text style={styles.friendName} numberOfLines={1}>
                 {n.name}
               </Text>
-            </Pressable>
-          </EnterFade>
+            </View>
+          </Pressable>
         ))}
         {friends.length === 0 ? (
           <Text style={styles.empty}>No friends in this circle yet</Text>
@@ -208,7 +235,7 @@ export default function CircleGraphScreen() {
       <EnterFade delayMs={220} style={styles.objects}>
         <Pressable
           style={styles.obj}
-          onPress={() => router.push(`/circles/${circle.id}`)}
+          onPress={() => router.push(`/circles/${circle.id}/notice`)}
           accessibilityRole="button"
           accessibilityLabel="Circle notice"
         >
@@ -239,18 +266,6 @@ export default function CircleGraphScreen() {
           </View>
         </Pressable>
       </EnterFade>
-
-      {friends[0] ? (
-        <EnterFade delayMs={280}>
-          <Pressable
-            style={styles.cta}
-            onPress={() => openDiaryFromCircle(friends[0]!.id, circle.id)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.ctaText}>step into a friend’s today →</Text>
-          </Pressable>
-        </EnterFade>
-      ) : null}
     </SafeAreaView>
   );
 }
@@ -310,10 +325,35 @@ const styles = StyleSheet.create({
     borderColor: ROOM.accent,
     opacity: 0.35,
   },
+  selfWrap: {
+    position: 'absolute',
+    width: 72,
+    alignItems: 'center',
+    zIndex: 6,
+  },
+  selfOrb: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: 'rgba(255,230,168,0.65)',
+    backgroundColor: 'rgba(240,195,106,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selfLetter: { fontSize: 18, fontWeight: '700', color: '#1A1410' },
+  selfName: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    color: ROOM.ink,
+    maxWidth: 72,
+    textAlign: 'center',
+  },
   friendWrap: {
     position: 'absolute',
     width: 80,
-    zIndex: 4,
+    zIndex: 5,
   },
   friendHit: { alignItems: 'center', width: 80 },
   friendOrb: {
@@ -391,13 +431,4 @@ const styles = StyleSheet.create({
     color: ROOM.muted,
   },
   objValue: { marginTop: 4, fontSize: 13, fontWeight: '500', color: ROOM.ink },
-  cta: {
-    alignSelf: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 16,
-    zIndex: 2,
-  },
-  ctaText: { color: ROOM.ink, fontSize: 14, fontWeight: '500' },
 });
