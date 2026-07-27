@@ -128,23 +128,30 @@ Z-order (아래→위):
 | `sky_rain` | `sky_rain.png` | 비 | |
 | `corkboard` | `corkboard.png` | **오돌토돌 코르크**+두꺼운 보드감 · **사진 슬롯 알파 관통(3)** · 유리와 대비 | 1 |
 | `cork_empty` | `cork_empty_slot.png` | 빈 폴라로이드 플레이스홀더 | 1 |
-| `plant` | `plant.png` | 화분 | 1 |
-| `books` | `books.png` | 책 2–3권 스택 | 1 |
-| `tomato` | `tomato_timer.png` | 토마토 뽀모도로 | idle / (선택) running 틴트는 코드 |
-| `memo` | `memo_note.png` | 짧은 줄만 있는 메모 | 1 |
+| `tomato` | `tomato_timer.png` | 토마토 뽀모도로 **대기(idle) 1장만** | 1 |
+| `memo` | `memo_note.png` | 짧은 줄만 있는 메모 (10자 입구) | 1 |
 | `frame` | `photo_frame.png` | 작은 액자 (안의 그림은 최소·교체 가능 슬롯이면 더 좋음) | 1 |
 | `lamp` | `lamp.png` | 램프 본체 | 1 |
 | `lamp_glow` | `lamp_glow.png` | 부드러운 원뿔 광 (또는 코드로 View opacity) | 1 |
+| `plant` | `plant.png` | 화분 (**장식 · 후순위**) | 1 |
+| `books` | `books.png` | 책 2–3권 스택 (장식) | 1 |
+
 
 생성 순서 (**톤 확정 우선 · S1보다 먼저**):
 
 ```text
 1. desk_bg
-2. window_night 합본(초안) → 이후 window_frame + sky_* 로 분리 재작업
-3. corkboard (+ cork_empty)  ← 유리와 대비되는 코르크 질감
-4. plant / books / tomato / memo / frame / lamp / glow
-5. sky_clear / cloudy / rain (+ frame 분리 확정)
+2. window_night 합본(초안) → 이후 window_frame + sky_* 로 분리
+3. corkboard (슬롯 알파 관통) + cork_empty
+4. tomato_timer — **idle 1장** · 작동 중은 코드 애니메이션(미세 흔들림/다이얼 회전)
+5. memo_note — 10자 핵심 입구
+6. lamp (+ glow) · photo_frame · books
+7. plant — 장식 후순위
+8. sky_clear / cloudy / rain (+ frame 분리)
 ```
+
+**뽀모도로 상태**: 별도 running PNG 없음.  
+`tomato_timer.png`(고정) + 작동 중일 때 RN/CSS로 살짝 흔들림 또는 눈금/다이얼 회전.
 
 **날씨**: 창문 **전체를 매번 다시 그리지 않는다.**  
 `window_frame`(공통) + `sky_*`(유리 안쪽만 교체).  
