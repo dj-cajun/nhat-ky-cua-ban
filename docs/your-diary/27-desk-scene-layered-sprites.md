@@ -119,12 +119,13 @@ Z-order (아래→위):
 
 | ID | 파일 | 내용 | 변형 |
 |----|------|------|------|
-| `desk_bg` | `desk_bg.png` | 벽+책상만. **창·보드·소품 없음** (자리 가이드용 희미한 영역 OK, 최종은 비우기) | 1 |
-| `window_clear` | `window_clear.png` | 맑은 낮/맑은 밤 중 **밤 기본** | |
-| `window_cloudy` | `window_cloudy.png` | 흐림 | |
-| `window_rain` | `window_rain.png` | 비 | |
-| `window_night` | `window_night.png` | 별 밤 (시안 기본과 동일 계열) | ← 기본값 |
-| `corkboard` | `corkboard.png` | 프레임+코르크 · **사진 자리 비움**(투명 슬롯) | 1 |
+| `desk_bg` | `desk_bg.png` | 벽+책상만. 왼쪽 창 홈·오른쪽 코르크 홈(서로 다른 재질 힌트) · 소품 없음 | 1 |
+| `window_frame` | `window_frame.png` | **나무 창틀만** (공통 · 유리/하늘 없음 · 투명 BG) | 1 |
+| `sky_night` | `sky_night.png` | 유리 안쪽만 — 밤·별·반사 사선 | ← 기본 |
+| `sky_clear` | `sky_clear.png` | 맑은 낮/밝은 하늘 | |
+| `sky_cloudy` | `sky_cloudy.png` | 흐림 | |
+| `sky_rain` | `sky_rain.png` | 비 | |
+| `corkboard` | `corkboard.png` | **오돌토돌 코르크**+두꺼운 보드감 · 사진 슬롯 투명 · 유리와 대비 | 1 |
 | `cork_empty` | `cork_empty_slot.png` | 빈 폴라로이드 플레이스홀더 | 1 |
 | `plant` | `plant.png` | 화분 | 1 |
 | `books` | `books.png` | 책 2–3권 스택 | 1 |
@@ -137,14 +138,16 @@ Z-order (아래→위):
 생성 순서 (**톤 확정 우선 · S1보다 먼저**):
 
 ```text
-1. desk_bg     ← 픽셀 밀도·채도·정면 원근 확정 (여러 번 조정 OK)
-2. window_*    ← desk_bg 팔레트에 맞춤
-3. corkboard + cork_empty  ← 사진 전용 (칠판 아님)
+1. desk_bg
+2. window_night 합본(초안) → 이후 window_frame + sky_* 로 분리 재작업
+3. corkboard (+ cork_empty)  ← 유리와 대비되는 코르크 질감
 4. plant / books / tomato / memo / frame / lamp / glow
+5. sky_clear / cloudy / rain (+ frame 분리 확정)
 ```
 
-**S1(실로그인·일기 CRUD)은 `desk_bg` 톤이 잠긴 뒤** 병행한다.  
-책상 톤이 바뀌면 S1 UI를 다시 건드리지 않도록 순서를 지킨다.
+**날씨**: 창문 **전체를 매번 다시 그리지 않는다.**  
+`window_frame`(공통) + `sky_*`(유리 안쪽만 교체).  
+현재 `window_night.png`는 **틀+하늘 합본 초안** — 분리 구조로 이행할 때 레퍼런스로 쓴다.
 
 **금지 에셋**: 모니터·PC·키보드·마우스·화면 · **칠판/게시판 보드**.
 
@@ -246,13 +249,15 @@ RN: 부모 `aspectRatio: 1.5` · 자식 `position: 'absolute'` + `%`.
 
 개별:
 
-1. **desk_bg** — wall + empty desk surface only, half-left empty window hole, half-right empty corkboard hole (or blank wall rectangles), no props  
-2. **window_night** — only the window frame + dark starry sky glass, transparent outside frame  
-3. **window_clear / cloudy / rain** — same frame size as night, different sky  
-4. **corkboard** — frame + cork texture, empty pin area (transparent slots)  
+1. **desk_bg** — wall + empty desk, differentiated window vs cork recesses  
+2. **window_frame** — wood frame only, transparent panes  
+3. **sky_*** — glass interior only (night/clear/cloudy/rain), fits inside frame  
+4. **corkboard** — thick cork board, bumpy cork texture, empty transparent photo slots, NOT glass  
 5. **cork_empty_slot** — blank polaroid  
-6. **plant / books / tomato / memo / frame / lamp** — single object each, transparent BG  
-7. **lamp_glow** — soft amber cone/circle, highly transparent edges OK as pixel dither  
+6. **plant / books / tomato / memo / frame / lamp** — single objects  
+7. **lamp_glow** — amber cone  
+
+참고: `window_night.png` = 합본 초안 (frame+sky). 런타임은 frame+sky 조립 권장.
 
 시안 PNG는 `docs/your-diary/desk-scene/ref/` 에 참고로만 보관.
 
