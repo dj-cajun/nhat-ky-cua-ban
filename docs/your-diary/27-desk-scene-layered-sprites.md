@@ -82,19 +82,20 @@
 Z-order (아래→위):
 
 ```text
-0  desk_bg          벽+책상면 (소품·창·보드 구멍/자리만)
-1  window_*         창 유리/하늘 (날씨 변형)
-2  corkboard_frame  보드 프레임+코르크 질감
-3  cork_slot_0..n   실사진 또는 빈 폴라로이드
-4  plant
-5  books
-6  tomato_timer
-7  memo_note
-8  photo_frame      (장식 액자 · 탭→앨범)
-9  lamp_base
-10 lamp_glow        (가산 광 · 애니메이션)
-11 badges           (쪽지 점·상태 · 동적 View)
-12 hit overlays     (개발용 디버그 시에만 표시)
+0  desk_bg
+1  sky_*            유리 안쪽 (날씨) — window_frame 뒤에 깔거나 clip
+2  window_frame     나무 창틀 (공통)
+3  corkboard        코르크 보드 (사진 전용)
+4  cork_slot_0..n   실사진 또는 cork_empty
+5  plant
+6  books
+7  tomato_timer
+8  memo_note
+9  photo_frame
+10 lamp_base
+11 lamp_glow
+12 badges
+13 hit overlays
 ```
 
 ---
@@ -125,7 +126,7 @@ Z-order (아래→위):
 | `sky_clear` | `sky_clear.png` | 맑은 낮/밝은 하늘 | |
 | `sky_cloudy` | `sky_cloudy.png` | 흐림 | |
 | `sky_rain` | `sky_rain.png` | 비 | |
-| `corkboard` | `corkboard.png` | **오돌토돌 코르크**+두꺼운 보드감 · 사진 슬롯 투명 · 유리와 대비 | 1 |
+| `corkboard` | `corkboard.png` | **오돌토돌 코르크**+두꺼운 보드감 · **사진 슬롯 알파 관통(3)** · 유리와 대비 | 1 |
 | `cork_empty` | `cork_empty_slot.png` | 빈 폴라로이드 플레이스홀더 | 1 |
 | `plant` | `plant.png` | 화분 | 1 |
 | `books` | `books.png` | 책 2–3권 스택 | 1 |
