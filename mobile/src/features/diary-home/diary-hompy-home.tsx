@@ -1,13 +1,24 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { DiaryMusicCard } from '@/features/diary-music/diary-music.types';
+import { DiaryMusicCardView } from '@/features/diary-music/diary-music-card';
 import type {
   FreeBoardRow,
   GuestbookRow,
   HompyCirclePreview,
 } from '@/features/local/repository';
+import { HompyBoardStack } from '@/features/diary-home/hompy-board-stack';
+import { DotPaper, OutlineBox } from '@/features/diary-home/hompy-outline';
 import { SceneArt } from '@/features/e2-prototype/SceneArt';
 import { EnterFade } from '@/features/space-ui/EnterFade';
+import { hompy } from '@/constants/hompy-theme';
 import { useLocale, useMessages } from '@/i18n';
 import {
   DIARY_MOODS,
@@ -45,16 +56,21 @@ type Props = {
 };
 
 /**
- * E3/E4 diary space — scene-first entry motion; objects as quiet glyphs.
- * Friend = warm window; mine = cool desk.
+ * Pastel mini-hompy (base) + today’s scene strip (additive).
+ * Do not replace the hompy layout — layer atmosphere on top of it.
  */
 export function DiaryHompyHome({
   me,
   owner,
   entry,
+  recentEntries,
   guestbook,
+  guestbookAuthors,
   freeBoard,
+  freeBoardAuthors,
   circleBoard,
+  circleBoardItems,
+  circles,
   music,
   canView,
   onEditToday,
@@ -65,30 +81,91 @@ export function DiaryHompyHome({
   const t = useMessages();
   const [locale] = useLocale();
   const isMine = me.id === owner.id;
-  const palette = isMine ? MY : FRIEND;
   const moodMeta = DIARY_MOODS.find((m) => m.id === entry?.mood);
-  const sentence = canView
-    ? entry?.shortText?.trim() ||
-      entry?.tenCharText?.trim() ||
-      (isMine ? t.diary.emptyToday : t.diary.emptyOther)
-    : t.diary.privateBlocked;
-  const moodLabel = moodMeta
-    ? `${moodMeta.emoji} ${moodMeta.label}`
-    : t.diary.noMood;
-  const musicLabel = music
-    ? `${music.trackName}${
-        music.artistNames?.length ? ` · ${music.artistNames.join(', ')}` : ''
-      }`
-    : locale === 'ko'
-      ? '오늘의 음악'
-      : "Today’s music";
-  const photoLabel = isMine
+  const circle = circles[0];
+  const week = useMemo(() => buildWeek(recentEntries, locale), [recentEntries, locale]);
+  const sceneLabel = isMine
     ? locale === 'ko'
       ? '내 책상 모서리'
       : 'my desk corner'
     : locale === 'ko'
       ? '오후 창'
       : 'afternoon window';
+  const sceneSentence = canView
+    ? entry?.shortText?.trim() ||
+      entry?.tenCharText?.trim() ||
+      null
+    : null;
+
+  const boardSections = useMemo(
+    () => [
+      {
+        key: 'circle',
+        title: locale === 'ko' ? '써클게시판' : 'Circle board',
+        titleTone: 'circle' as const,
+        visible: Boolean(circleBoard),
+        empty:
+          locale === 'ko'
+            ? '아직 써클 글이 없어요.'
+            : 'No circle posts yet.',
+        lines: circleBoardItems.map((p) => ({
+          id: p.id,
+          authorLabel: p.aliasName,
+          body: p.body,
+        })),
+        onOpen: () => {
+          if (!circleBoard) return;
+          router.push(`/circles/${circleBoard.circleId}/anonymous-board`);
+        },
+      },
+      {
+        key: 'guestbook',
+        title: locale === 'ko' ? '방명록' : 'Guestbook',
+        titleTone: 'guestbook' as const,
+        visible: true,
+        empty:
+          locale === 'ko' ? '아직 방명록이 없어요.' : 'No guestbook notes yet.',
+        lines: guestbook.slice(0, 3).map((g) => ({
+          id: g.id,
+          authorLabel: guestbookAuthors[g.authorUserId] ?? '·',
+          body: g.body,
+        })),
+        onOpen: () =>
+          router.push({
+            pathname: '/diary/[userId]/guestbook',
+            params: { userId: owner.id },
+          }),
+      },
+      {
+        key: 'free',
+        title: locale === 'ko' ? '자유게시판' : 'Free board',
+        titleTone: 'free' as const,
+        visible: true,
+        empty:
+          locale === 'ko' ? '아직 자유게시판 글이 없어요.' : 'No free-board posts yet.',
+        lines: freeBoard.slice(0, 3).map((p) => ({
+          id: p.id,
+          authorLabel: freeBoardAuthors[p.authorUserId] ?? '·',
+          body: p.body,
+        })),
+        onOpen: () =>
+          router.push({
+            pathname: '/diary/[userId]/free-board',
+            params: { userId: owner.id },
+          }),
+      },
+    ],
+    [
+      locale,
+      circleBoard,
+      circleBoardItems,
+      guestbook,
+      guestbookAuthors,
+      freeBoard,
+      freeBoardAuthors,
+      owner.id,
+    ],
+  );
 
   const handleBack = () => {
     if (onBack) {
@@ -102,396 +179,462 @@ export function DiaryHompyHome({
     backLabel ?? (locale === 'ko' ? '내 우주' : 'Universe');
 
   return (
-    <View style={[styles.shell, { backgroundColor: palette.washEdge }]}>
-      <View style={[styles.wash, { backgroundColor: palette.wash }]} />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+    <View style={styles.shell}>
+      <OutlineBox
+        size="lg"
+        fill={hompy.canvas}
+        stroke={hompy.pencilBold}
+        style={styles.canvasBox}
+        contentStyle={styles.canvasContent}
       >
-        <Pressable
-          onPress={handleBack}
-          accessibilityRole="button"
-          style={styles.back}
-          hitSlop={8}
+        <DotPaper />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.backText, { color: palette.muted }]}>
-            ← {resolvedBackLabel}
-          </Text>
-        </Pressable>
-
-        <EnterFade translateY={14}>
-          <Pressable
-            onPress={() => {
-              if (isMine) onEditToday();
-            }}
-            accessibilityRole={isMine ? 'button' : 'summary'}
-            accessibilityLabel={
-              isMine
-                ? locale === 'ko'
-                  ? '오늘 일기 쓰기'
-                  : 'Edit today’s diary scene'
-                : `${owner.displayName}'s diary today`
-            }
-            disabled={!isMine}
-            style={({ pressed }) => [pressed && isMine && { opacity: 0.92 }]}
+          {/* Header — back only (no brand line) */}
+          <OutlineBox
+            fill={hompy.sky}
+            stroke={hompy.skyInk}
+            contentStyle={styles.header}
           >
-            <View style={[styles.photo, { backgroundColor: palette.scene }]}>
-              <SceneArt variant={isMine ? 'myDesk' : 'friendWindow'} />
-              <View style={styles.photoScrim} />
-              <Text style={[styles.photoLabel, { color: palette.ink }]}>{photoLabel}</Text>
-            </View>
-          </Pressable>
-        </EnterFade>
+            <Pressable
+              onPress={handleBack}
+              accessibilityRole="button"
+              style={styles.headerBtn}
+              hitSlop={8}
+            >
+              <Text style={styles.headerBtnText}>← {resolvedBackLabel}</Text>
+            </Pressable>
+          </OutlineBox>
 
-        <EnterFade delayMs={90}>
-          <Text style={[styles.owner, { color: palette.muted }]}>
-            {owner.displayName.toUpperCase()} · TODAY
-          </Text>
-          <Text style={[styles.sentence, { color: palette.ink }]}>{sentence}</Text>
-          <Text style={[styles.mood, { color: palette.mood }]}>{moodLabel}</Text>
-        </EnterFade>
-
-        <EnterFade delayMs={160}>
-          <Pressable
-            style={[styles.music, { backgroundColor: palette.musicBar }]}
-            onPress={() => onOpenMusic?.()}
-            accessibilityRole="button"
-            accessibilityLabel={musicLabel}
-          >
-            <Text style={[styles.musicText, { color: palette.ink }]}>♪  {musicLabel}</Text>
-          </Pressable>
-        </EnterFade>
-
-        {isMine ? (
-          <Text style={[styles.hint, { color: palette.muted }]}>
-            {locale === 'ko' ? '장면을 눌러 오늘을 쓰세요' : 'tap the scene to write today'}
-          </Text>
-        ) : null}
-
-        <EnterFade delayMs={220} style={styles.objects}>
-          <ObjectChip
-            kind="album"
-            label={locale === 'ko' ? '사진첩' : 'album'}
-            palette={palette}
-            onPress={() =>
-              router.push({
-                pathname: '/diary/[userId]/album',
-                params: { userId: owner.id },
-              })
-            }
-          />
-          <ObjectChip
-            kind="letters"
-            label={locale === 'ko' ? '편지' : 'letters'}
-            palette={palette}
-            onPress={() =>
-              router.push({
-                pathname: '/diary/[userId]/guestbook',
-                params: { userId: owner.id },
-              })
-            }
-          />
-          <ObjectChip
-            kind="days"
-            label={locale === 'ko' ? '하루' : 'days'}
-            palette={palette}
-            onPress={() =>
-              router.push({
-                pathname: '/diary/[userId]/calendar',
-                params: { userId: owner.id },
-              })
-            }
-          />
-          {isMine ? (
-            <ObjectChip
-              kind="focus"
-              label={locale === 'ko' ? '집중' : 'focus'}
-              palette={palette}
-              tomato
+          {/* Additive: today’s atmosphere scene (does not replace hompy blocks) */}
+          <EnterFade translateY={12}>
+            <Pressable
               onPress={() => {
-                /* E5: focus room */
+                if (isMine) onEditToday();
               }}
-            />
-          ) : null}
-          {circleBoard ? (
-            <ObjectChip
-              kind="board"
-              label={locale === 'ko' ? '보드' : 'board'}
-              palette={palette}
-              onPress={() =>
-                router.push(`/circles/${circleBoard.circleId}/anonymous-board`)
+              accessibilityRole={isMine ? 'button' : 'summary'}
+              accessibilityLabel={
+                isMine
+                  ? locale === 'ko'
+                    ? '오늘 장면 — 일기 쓰기'
+                    : 'Today’s scene — write'
+                  : `${owner.displayName}'s today scene`
               }
-            />
-          ) : null}
-        </EnterFade>
+              disabled={!isMine}
+            >
+              <OutlineBox
+                fill={isMine ? '#1E3340' : '#3A2430'}
+                stroke={isMine ? '#5A7A88' : '#6A4050'}
+                style={styles.sceneBox}
+                contentStyle={styles.sceneContent}
+              >
+                <View style={styles.sceneArt}>
+                  <SceneArt variant={isMine ? 'myDesk' : 'friendWindow'} />
+                  <View style={styles.sceneScrim} />
+                  <Text style={styles.sceneLabel}>{sceneLabel}</Text>
+                </View>
+                {sceneSentence ? (
+                  <Text style={styles.sceneSentence} numberOfLines={3}>
+                    {sceneSentence}
+                  </Text>
+                ) : (
+                  <Text style={styles.sceneHint}>
+                    {isMine
+                      ? locale === 'ko'
+                        ? '장면을 눌러 오늘을 쓰세요'
+                        : 'tap the scene to write today'
+                      : locale === 'ko'
+                        ? '오늘의 분위기'
+                        : 'today’s atmosphere'}
+                  </Text>
+                )}
+              </OutlineBox>
+            </Pressable>
+          </EnterFade>
 
-        {!isMine ? (
-          <Pressable
-            style={styles.noteBtn}
-            onPress={() =>
-              router.push({
-                pathname: '/messages/compose',
-                params: { recipientId: owner.id },
-              })
-            }
-            accessibilityRole="button"
+          {/* Profile — cy-box-blush */}
+          <EnterFade delayMs={80}>
+          <OutlineBox
+            fill={hompy.blush}
+            stroke={hompy.blushInk}
+            contentStyle={styles.profilePad}
           >
-            <Text style={[styles.noteBtnText, { color: palette.ink }]}>
-              {t.diary.leaveNote}
-            </Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            style={styles.noteBtn}
-            onPress={onEditToday}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.noteBtnText, { color: palette.ink }]}>
-              {t.diary.editToday}
-            </Text>
-          </Pressable>
-        )}
+            <View style={styles.profileRow}>
+              <OutlineBox
+                size="sm"
+                fill="#FFFFFF"
+                stroke={hompy.blushInk}
+                style={styles.avatarBox}
+                contentStyle={styles.avatarInner}
+              >
+                <Text style={styles.avatarText}>{owner.displayName.slice(0, 1)}</Text>
+              </OutlineBox>
+              <View style={styles.profileMeta}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {owner.displayName}
+                </Text>
+                <Text style={styles.moodLine}>
+                  {moodMeta ? `${moodMeta.emoji} ${moodMeta.label}` : t.diary.noMood}
+                </Text>
+                {circle ? (
+                  <Text style={styles.circleLine} numberOfLines={1}>
+                    {circle.symbol} {circle.name}
+                  </Text>
+                ) : null}
+              </View>
+              {isMine ? (
+                <HardBtn label={t.diary.editToday} onPress={onEditToday} />
+              ) : null}
+            </View>
 
-        {/* Keep free-board reachable without dominating the scene */}
-        {freeBoard.length > 0 || guestbook.length > 0 ? (
-          <Text style={[styles.metaQuiet, { color: palette.muted }]}>
-            {locale === 'ko'
-              ? '편지·보드 글은 오브제로 이어집니다'
-              : 'letters & boards stay in the objects'}
-          </Text>
-        ) : null}
-      </ScrollView>
+            <OutlineBox
+              size="sm"
+              fill="rgba(255,255,255,0.72)"
+              stroke={hompy.blushInk}
+              style={styles.todayMe}
+              contentStyle={styles.todayMeInner}
+            >
+              <Text style={styles.todayLabel}>
+                {locale === 'ko' ? '오늘 나는' : 'Today I…'}
+              </Text>
+              <Text style={styles.todayText}>
+                {canView
+                  ? entry?.tenCharText?.trim() ||
+                    entry?.shortText?.trim() ||
+                    (isMine ? t.diary.emptyToday : t.diary.emptyOther)
+                  : t.diary.privateBlocked}
+              </Text>
+            </OutlineBox>
+          </OutlineBox>
+          </EnterFade>
+
+          {/* Calendar | Album — original 2-col */}
+          <EnterFade delayMs={140}>
+          <View style={styles.grid2}>
+            <OutlineBox
+              fill={hompy.mint}
+              stroke={hompy.mintInk}
+              style={styles.gridCell}
+              contentStyle={styles.panelPad}
+            >
+              <Text style={styles.panelTitle}>
+                {new Date().getFullYear()}.{new Date().getMonth() + 1}
+              </Text>
+              {week.map((d) => (
+                <Pressable
+                  key={d.key}
+                  style={styles.weekRow}
+                  onPress={() => {
+                    if (isMine) onEditToday();
+                  }}
+                >
+                  <Text style={styles.weekDay}>{d.day}</Text>
+                  <Text style={styles.weekN}>{d.n}</Text>
+                  <Text style={styles.weekNote} numberOfLines={1}>
+                    {d.note}
+                  </Text>
+                </Pressable>
+              ))}
+            </OutlineBox>
+
+            <Pressable
+              style={styles.gridCell}
+              onPress={() =>
+                router.push({
+                  pathname: '/diary/[userId]/album',
+                  params: { userId: owner.id },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={locale === 'ko' ? '미니 사진첩' : 'Mini album'}
+            >
+              <OutlineBox
+                fill={hompy.peach}
+                stroke={hompy.peachInk}
+                style={styles.gridCellFill}
+                contentStyle={styles.panelPad}
+              >
+                <Text style={styles.panelTitle}>
+                  {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
+                </Text>
+                <View style={styles.albumInner}>
+                  <OutlineBox
+                    size="sm"
+                    fill="#FFFFFF"
+                    stroke={hompy.peachInk}
+                    style={styles.albumFrame}
+                    contentStyle={styles.albumFrameInner}
+                  >
+                    <View style={styles.albumGlyph}>
+                      <View style={styles.albumGlyphOuter} />
+                      <View style={styles.albumGlyphInner} />
+                    </View>
+                  </OutlineBox>
+                  <Text style={styles.albumHint}>
+                    {canView && entry
+                      ? locale === 'ko'
+                        ? '오늘의 한 컷'
+                        : "Today’s frame"
+                      : locale === 'ko'
+                        ? '아직 사진이 없어요'
+                        : 'No photos yet'}
+                  </Text>
+                </View>
+              </OutlineBox>
+            </Pressable>
+          </View>
+          </EnterFade>
+
+          {/* School-style boards — circle / guestbook / free */}
+          <EnterFade delayMs={200}>
+          <OutlineBox
+            fill={hompy.lavender}
+            stroke={hompy.lavenderInk}
+            contentStyle={styles.boardPad}
+          >
+            <HompyBoardStack sections={boardSections} locale={locale} />
+
+            <View style={styles.linkRow}>
+              {/* Additive: Spotify slot */}
+              {music ? (
+                <View style={styles.musicWrap}>
+                  <DiaryMusicCardView music={music} onOpen={() => onOpenMusic?.()} />
+                </View>
+              ) : (
+                <HardBtn
+                  label={`♪ ${locale === 'ko' ? '오늘의 음악 (Spotify)' : "Today’s music (Spotify)"}`}
+                  onPress={() => onOpenMusic?.()}
+                />
+              )}
+              {isMine ? (
+                <HardBtn
+                  label={locale === 'ko' ? '집중방' : 'Focus room'}
+                  onPress={() => {
+                    /* E5: focus room live */
+                  }}
+                />
+              ) : null}
+            </View>
+
+            {!isMine ? (
+              <View style={styles.safetyRow}>
+                <HardBtn
+                  label={t.diary.leaveNote}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/messages/compose',
+                      params: { recipientId: owner.id },
+                    })
+                  }
+                />
+              </View>
+            ) : null}
+          </OutlineBox>
+          </EnterFade>
+        </ScrollView>
+      </OutlineBox>
     </View>
   );
 }
 
-type DiaryPalette = {
-  wash: string;
-  washEdge: string;
-  scene: string;
-  ink: string;
-  muted: string;
-  mood: string;
-  musicBar: string;
-  object: string;
-  objectBorder: string;
-};
-
-type ObjectKind = 'album' | 'letters' | 'days' | 'focus' | 'board';
-
-function ObjectChip({
-  kind,
-  label,
-  palette,
-  onPress,
-  tomato,
-}: {
-  kind: ObjectKind;
-  label: string;
-  palette: DiaryPalette;
-  onPress: () => void;
-  tomato?: boolean;
-}) {
+function HardBtn({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.object,
-        {
-          backgroundColor: tomato ? 'rgba(212,106,92,0.22)' : palette.object,
-          borderColor: tomato ? '#D46A5C' : palette.objectBorder,
-          opacity: pressed ? 0.85 : 1,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-        },
-      ]}
-    >
-      <ObjectGlyph kind={kind} color={tomato ? '#D46A5C' : palette.mood} />
-      <Text style={[styles.objectText, { color: palette.ink }]}>{label}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <OutlineBox
+        size="sm"
+        fill="#FFFFFF"
+        stroke={hompy.hard}
+        contentStyle={styles.hardBtnInner}
+      >
+        <Text style={styles.hardBtnText}>{label}</Text>
+      </OutlineBox>
     </Pressable>
   );
 }
 
-function ObjectGlyph({ kind, color }: { kind: ObjectKind; color: string }) {
-  if (kind === 'album') {
-    return (
-      <View style={[styles.glyphFrame, { borderColor: color }]}>
-        <View style={[styles.glyphDot, { backgroundColor: color }]} />
-      </View>
-    );
-  }
-  if (kind === 'letters') {
-    return (
-      <View style={[styles.glyphEnvelope, { borderColor: color }]}>
-        <View style={[styles.glyphFlap, { borderBottomColor: color }]} />
-      </View>
-    );
-  }
-  if (kind === 'days') {
-    return (
-      <View style={[styles.glyphCal, { borderColor: color }]}>
-        <View style={[styles.glyphCalBar, { backgroundColor: color }]} />
-      </View>
-    );
-  }
-  if (kind === 'focus') {
-    return <View style={[styles.glyphTomato, { backgroundColor: color }]} />;
-  }
-  return <View style={[styles.glyphBoard, { borderColor: color }]} />;
+function buildWeek(entries: DiaryEntry[], locale: string) {
+  const days =
+    locale === 'ko'
+      ? ['일', '월', '화', '수', '목', '금', '토']
+      : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const byDate = new Map(entries.map((e) => [e.entryDate, e]));
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(today.getDate() - today.getDay());
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const row = byDate.get(key);
+    return {
+      key,
+      day: days[i]!,
+      n: d.getDate(),
+      note: row?.tenCharText?.trim() || '·',
+    };
+  });
 }
 
-const FRIEND = {
-  wash: '#241820',
-  washEdge: '#140E14',
-  scene: '#3A2430',
-  ink: '#F8EDE8',
-  muted: 'rgba(248,237,232,0.72)',
-  mood: '#E8B4A0',
-  musicBar: 'rgba(248,237,232,0.16)',
-  object: 'rgba(248,237,232,0.12)',
-  objectBorder: 'rgba(248,237,232,0.26)',
-} as const;
-
-const MY = {
-  wash: '#152028',
-  washEdge: '#0C141A',
-  scene: '#1E3340',
-  ink: '#EAF3F6',
-  muted: 'rgba(234,243,246,0.72)',
-  mood: '#9FCBD8',
-  musicBar: 'rgba(234,243,246,0.16)',
-  object: 'rgba(234,243,246,0.12)',
-  objectBorder: 'rgba(234,243,246,0.26)',
-} as const;
-
 const styles = StyleSheet.create({
-  shell: { flex: 1 },
-  wash: { ...StyleSheet.absoluteFill, opacity: 0.95 },
+  shell: {
+    flex: 1,
+    backgroundColor: hompy.table,
+    padding: 8,
+  },
+  canvasBox: { flex: 1 },
+  canvasContent: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
+    gap: 8,
+    padding: 8,
+    paddingBottom: 28,
   },
-  back: { minHeight: 44, justifyContent: 'center', marginBottom: 4 },
-  backText: { fontSize: 13, fontWeight: '500' },
-  photo: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 44,
+  },
+  headerBtn: { minHeight: 36, justifyContent: 'center', minWidth: 72 },
+  headerBtnText: { fontSize: 11, fontWeight: '700', color: hompy.ink },
+  sceneBox: { overflow: 'hidden' },
+  sceneContent: { padding: 0 },
+  sceneArt: {
     width: '100%',
-    aspectRatio: 0.92,
-    borderRadius: 28,
+    aspectRatio: 1.55,
     overflow: 'hidden',
     justifyContent: 'flex-end',
-    padding: 18,
-    marginTop: 4,
+    padding: 12,
   },
-  photoScrim: {
+  sceneScrim: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: '38%',
-    backgroundColor: 'rgba(10,8,12,0.42)',
+    height: '42%',
+    backgroundColor: 'rgba(10,8,12,0.38)',
   },
-  photoLabel: {
-    fontSize: 13,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    fontWeight: '500',
+  sceneLabel: {
     zIndex: 2,
-  },
-  owner: {
-    marginTop: 18,
     fontSize: 11,
-    letterSpacing: 2,
-    fontWeight: '500',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    color: '#F8EDE8',
   },
-  sentence: {
-    marginTop: 10,
-    fontSize: 26,
-    lineHeight: 34,
-    fontStyle: 'italic',
-    fontWeight: '500',
-  },
-  mood: { marginTop: 12, fontSize: 15, fontWeight: '600' },
-  music: {
-    marginTop: 16,
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  musicText: { fontSize: 13 },
-  hint: { marginTop: 14, fontSize: 13 },
-  objects: {
-    marginTop: 28,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  object: {
-    minWidth: 84,
-    minHeight: 64,
-    borderRadius: 18,
-    borderWidth: 1,
+  sceneSentence: {
     paddingHorizontal: 12,
     paddingVertical: 10,
+    fontSize: 14,
+    lineHeight: 20,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: '#F4EFE6',
+    backgroundColor: 'rgba(20,16,18,0.55)',
+  },
+  sceneHint: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 12,
+    color: 'rgba(244,239,230,0.72)',
+    backgroundColor: 'rgba(20,16,18,0.45)',
+  },
+  profilePad: { padding: 12 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatarBox: { width: 56, height: 56 },
+  avatarInner: {
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
   },
-  objectText: { fontSize: 12, fontWeight: '500' },
-  glyphFrame: {
-    width: 22,
-    height: 18,
+  avatarText: { fontSize: 22, fontWeight: '700', color: hompy.ink },
+  profileMeta: { flex: 1, minWidth: 0 },
+  name: { fontSize: 16, fontWeight: '700', color: hompy.ink },
+  moodLine: { marginTop: 2, fontSize: 11, color: hompy.muted },
+  circleLine: { marginTop: 2, fontSize: 10, color: hompy.soft },
+  todayMe: { marginTop: 12 },
+  todayMeInner: { padding: 10 },
+  todayLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: hompy.muted,
+    marginBottom: 4,
+  },
+  todayText: { fontSize: 13, color: hompy.ink, lineHeight: 18 },
+  grid2: { flexDirection: 'row', gap: 8 },
+  gridCell: { flex: 1, minHeight: 168 },
+  gridCellFill: { flex: 1, minHeight: 168 },
+  panelPad: { padding: 8, flexGrow: 1 },
+  panelTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: hompy.muted,
+    marginBottom: 6,
+  },
+  weekRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(74,63,85,0.18)',
+    borderStyle: 'dotted',
+    paddingBottom: 3,
+    marginBottom: 3,
+  },
+  weekDay: { width: 14, fontSize: 10, fontWeight: '700', color: hompy.soft },
+  weekN: { width: 16, fontSize: 10, color: hompy.ink },
+  weekNote: { flex: 1, fontSize: 10, color: hompy.muted },
+  albumInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 120,
+  },
+  albumFrame: { width: 72, height: 72 },
+  albumFrameInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  albumGlyph: {
+    width: 40,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  albumGlyphOuter: {
+    position: 'absolute',
+    width: 40,
+    height: 28,
     borderWidth: 1.5,
-    borderRadius: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: hompy.peachInk,
+    borderRadius: 4,
+    top: 4,
   },
-  glyphDot: { width: 5, height: 5, borderRadius: 3, opacity: 0.8 },
-  glyphEnvelope: {
+  albumGlyphInner: {
     width: 22,
     height: 16,
     borderWidth: 1.5,
+    borderColor: hompy.peachInk,
     borderRadius: 2,
-    overflow: 'hidden',
+    opacity: 0.7,
   },
-  glyphFlap: {
-    position: 'absolute',
-    top: -1,
-    left: 2,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 7,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-  },
-  glyphCal: {
-    width: 18,
-    height: 18,
-    borderWidth: 1.5,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  glyphCalBar: { height: 4, opacity: 0.85 },
-  glyphTomato: { width: 14, height: 14, borderRadius: 7, opacity: 0.9 },
-  glyphBoard: {
-    width: 18,
-    height: 14,
-    borderWidth: 1.5,
-    borderRadius: 2,
-  },
-  noteBtn: {
-    marginTop: 24,
-    alignSelf: 'flex-start',
-    minHeight: 44,
+  albumHint: { fontSize: 10, color: hompy.muted, textAlign: 'center' },
+  boardPad: { padding: 8, gap: 10 },
+  linkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 4, alignItems: 'center' },
+  musicWrap: { flexGrow: 1, flexBasis: 200 },
+  hardBtnInner: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minHeight: 34,
     justifyContent: 'center',
   },
-  noteBtnText: { fontSize: 14, fontWeight: '500', textDecorationLine: 'underline' },
-  metaQuiet: { marginTop: 16, fontSize: 11 },
+  hardBtnText: { fontSize: 10, fontWeight: '700', color: hompy.ink },
+  safetyRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
 });

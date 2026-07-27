@@ -405,16 +405,10 @@ export default function DiaryScreen() {
     );
   }
 
-  // E3 diary space (scene-first). Edit form keeps a simple shell.
+  // Pastel mini-hompy (+ today’s scene strip). Edit form keeps the same shell.
   if (!editing && me) {
     return (
-      <SafeAreaView
-        style={[
-          styles.hompySafe,
-          { backgroundColor: isMine ? '#0C141A' : '#140E14' },
-        ]}
-        edges={['top', 'left', 'right']}
-      >
+      <SafeAreaView style={styles.hompySafe} edges={['top', 'left', 'right']}>
         <OfflineBanner
           visible={offline || draftHint}
           message={draftHint ? t.diary.draftSaved : undefined}
@@ -633,7 +627,7 @@ export default function DiaryScreen() {
 }
 
 const styles = StyleSheet.create({
-  hompySafe: { flex: 1, backgroundColor: '#0C141A' },
+  hompySafe: { flex: 1, backgroundColor: hompy.table },
   hompySafety: { paddingHorizontal: 16, paddingBottom: 8 },
   editCanvas: {
     padding: 16,
