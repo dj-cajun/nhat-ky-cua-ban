@@ -864,6 +864,55 @@ export async function submitSchoolInviteCode(
   };
 }
 
+/**
+ * Local-first S1 gate: valid invite code → verified immediately + demo directory friends.
+ * Keeps `submitSchoolInviteCode` pending for ops/security tests; mobile UI uses this
+ * so school → intro → universe → circle → diary works without ops console.
+ */
+export async function activateLocalBetaSchool(
+  userId: string,
+  code: string,
+): Promise<{ schoolId: string; membershipStatus: 'verified'; requestId: string }> {
+  await loadLocalDb();
+  const trimmed = code.trim();
+  if (!trimmed) throw new AppError('VALIDATION', 'Enter a school code.');
+  const invite = memory.schoolInviteCodes.find((c) => c.code === trimmed && !c.disabled);
+  if (!invite) throw new AppError('FORBIDDEN', 'Invalid school code.');
+
+  assertNotSuspended(userId);
+  ensureDemoFriends(userId);
+  ensureVerifiedSchoolMembership(userId, invite.schoolId);
+
+  const request: SchoolVerificationRequestRow = {
+    id: uid(),
+    schoolId: invite.schoolId,
+    userId,
+    status: 'approved',
+    method: 'beta_code',
+    createdAt: now(),
+    reviewedAt: now(),
+    reviewNote: 'local-auto-verify',
+  };
+  memory.schoolVerificationRequests.push(request);
+  pushSchoolAudit({
+    schoolId: invite.schoolId,
+    actorId: userId,
+    eventType: 'verification_approved',
+    payload: { requestId: request.id, method: 'beta_code', local: true },
+  });
+  await persist();
+  return {
+    schoolId: invite.schoolId,
+    membershipStatus: 'verified',
+    requestId: request.id,
+  };
+}
+
+/** True when membership can enter universe / create circles. */
+export function isSchoolAccessReady(status: SchoolMembershipStatus): boolean {
+  return status === 'verified' || status === 'pending_change';
+}
+
 export async function getMySchoolMembership(userId: string): Promise<{
   status: SchoolMembershipStatus;
   schoolId?: string;

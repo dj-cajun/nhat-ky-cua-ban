@@ -67,7 +67,7 @@ export async function resolveDeepLink(target: DeepLinkTarget): Promise<DeepLinkR
           }
           return { ok: true, href: `/circles/${target.circleId}/join` };
         }
-        return { ok: true, href: `/circles/${target.circleId}` };
+        return { ok: true, href: `/circles/${target.circleId}/graph` };
       }
       case 'report': {
         // Ops deep link: destination still re-checks operator role on screen load

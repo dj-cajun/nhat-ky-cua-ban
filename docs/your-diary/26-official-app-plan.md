@@ -39,9 +39,11 @@
 
 ```text
 실로그인 → 학교 인증 → 인트로(1회) → 우주
-→ 서클 방 → 원 탭 → 파스텔 미니홈피
+→ 서클 방(graph orbs) → 원 탭 → 파스텔 미니홈피
 → 오늘 쓰기 · 방문 · 게시판 · (쪽지/공지/음악)
 ```
+
+**로컬 모바일 연결 (2026-07-28)**: 온보딩 → `/school` → `BETA-SCHOOL-2026`(`activateLocalBetaSchool`) → 인트로 강제 → 우주 → 서클 chip/친구 → `/circles/[id]/graph` → 내/친구 다이어리. 콜드스타트·우주 verified 가드. 생성/딥링크/join·circle index도 graph로 통일. (`submitSchoolInviteCode`는 ops/보안용 pending 유지.)
 
 ---
 

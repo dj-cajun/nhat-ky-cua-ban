@@ -51,7 +51,12 @@ import {
   listPhotosForUser,
   listCorkSlotUris,
   listPhotosVisibleTo,
+  activateLocalBetaSchool,
+  getMySchoolMembership,
+  isSchoolAccessReady,
+  listDirectory,
 } from '@/features/local/repository';
+import { BETA_SCHOOL_CODE } from '@/features/local/school';
 
 describe('open_circle_from_draft rules', () => {
   beforeEach(async () => {
@@ -478,5 +483,23 @@ describe('photo album + cork slots', () => {
     await addPhoto(me.id, 'file:///photos/private.jpg');
     await expect(listPhotosVisibleTo(other.id, me.id)).rejects.toThrow(/can’t view|Forbidden|FORBIDDEN/i);
     expect(await listPhotosVisibleTo(me.id, me.id)).toHaveLength(1);
+  });
+});
+
+describe('local beta school activation', () => {
+  beforeEach(async () => {
+    store.clear();
+    await clearLocalDb();
+  });
+
+  it('activates beta code to verified and seeds directory friends', async () => {
+    const me = await signUpLocal('Alex');
+    const res = await activateLocalBetaSchool(me.id, BETA_SCHOOL_CODE);
+    expect(res.membershipStatus).toBe('verified');
+    const m = await getMySchoolMembership(me.id);
+    expect(m.status).toBe('verified');
+    expect(isSchoolAccessReady(m.status)).toBe(true);
+    const dir = await listDirectory(me.id);
+    expect(dir.some((p) => p.displayName === 'Minseo')).toBe(true);
   });
 });

@@ -4,13 +4,20 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppLoadingState } from '@/components/states';
 import {
+  activateLocalBetaSchool,
   getMySchoolMembership,
   getSessionProfile,
+  isSchoolAccessReady,
   listActiveSchoolsForChange,
   requestSchoolChange,
-  submitSchoolInviteCode,
 } from '@/features/local/repository';
 import type { SchoolMembershipStatus } from '@/features/local/school';
+import {
+  clearIntroSeen,
+  requestIntroReplay,
+  resetIntroLaunchSession,
+  resetUniverseVisitSession,
+} from '@/features/universe-home';
 import { colors } from '@/constants/theme';
 import { useMessages } from '@/i18n';
 import { toAppError } from '@/lib/errors';
@@ -86,14 +93,24 @@ export default function SchoolStatusScreen() {
     setBusy(true);
     setError('');
     try {
-      await submitSchoolInviteCode(userId, code);
+      // Local-first: valid beta code verifies → force intro → universe.
+      await activateLocalBetaSchool(userId, code);
       setCode('');
-      await reload();
+      resetUniverseVisitSession();
+      resetIntroLaunchSession();
+      await clearIntroSeen();
+      await requestIntroReplay();
+      router.replace('/(tabs)/universe');
     } catch (e) {
       setError(toAppError(e).message);
     } finally {
       setBusy(false);
     }
+  };
+
+  const enterUniverse = () => {
+    if (!canEnterCircles) return;
+    router.replace('/(tabs)/universe');
   };
 
   const onChangeRequest = async () => {
@@ -140,7 +157,7 @@ export default function SchoolStatusScreen() {
     status === 'rejected' ||
     status === 'expired' ||
     status === 'needs_more_info';
-  const canEnterCircles = status === 'verified' || status === 'pending_change';
+  const canEnterCircles = isSchoolAccessReady(status);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -246,19 +263,15 @@ export default function SchoolStatusScreen() {
         {canEnterCircles ? (
           <Pressable
             style={[styles.btn, styles.btnGhost]}
-            onPress={() => router.replace('/(tabs)/universe')}
+            onPress={() => enterUniverse()}
             accessibilityRole="button"
           >
             <Text style={styles.btnGhostText}>{t.school.continueUniverse}</Text>
           </Pressable>
         ) : (
-          <Pressable
-            style={[styles.btn, styles.btnGhost]}
-            onPress={() => router.replace('/(tabs)/universe')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.btnGhostText}>{t.school.continueUniverse}</Text>
-          </Pressable>
+          <Text style={styles.hint}>
+            {t.school.opsHint}
+          </Text>
         )}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

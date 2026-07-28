@@ -98,7 +98,7 @@ export default function JoinRequestStatusScreen() {
       {(progress.status === 'approved' || member) && (
         <Pressable
           style={styles.btn}
-          onPress={() => router.replace(`/circles/${progress.circleId}`)}
+          onPress={() => router.replace(`/circles/${progress.circleId}/graph`)}
         >
           <Text style={styles.btnText}>{t.join.done}</Text>
         </Pressable>

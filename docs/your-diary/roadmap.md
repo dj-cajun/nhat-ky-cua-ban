@@ -78,6 +78,7 @@ S1-1 인증·학교 → S1-2 서클·원→홈피 → S1-3 홈피 CRUD → S1-4 
 
 | 날짜 | 내용 |
 |------|------|
+| 2026-07-28 | **코어 루프 연결**: 학교→인트로→우주→graph→다이어리 · local beta 즉시 verified · 미인증 게이트 |
 | 2026-07-27 | **Desk 범위 확정**: 코르크≠칠판(게시판은 홈피 스택) · DeskScene=내 홈피만 · 에셋은 desk_bg→window→cork 순 · S1은 톤 잠금 후 |
 | 2026-07-27 | **책상=10자+사진첩 치환** ([27](./27-desk-scene-layered-sprites.md)) — Today I·미니앨범 → DeskScene · 홈피 셸·주간·게시판 유지 |
 | 2026-07-27 | **책상 장면 방법 2 기획** ([27](./27-desk-scene-layered-sprites.md)) — 레이어드 스프라이트 · 옵션 A 가산 위젯 · S1과 분리된 Desk Track |

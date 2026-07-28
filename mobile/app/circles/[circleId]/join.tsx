@@ -140,7 +140,7 @@ export default function CircleJoinScreen() {
         <Text style={styles.hint}>{t.join.membersHidden}</Text>
 
         {preview.isMember || progress?.status === 'approved' ? (
-          <Pressable style={styles.btn} onPress={() => router.replace(`/circles/${circleId}`)}>
+          <Pressable style={styles.btn} onPress={() => router.replace(`/circles/${circleId}/graph`)}>
             <Text style={styles.btnText}>{t.join.done}</Text>
           </Pressable>
         ) : (

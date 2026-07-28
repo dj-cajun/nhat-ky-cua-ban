@@ -11,6 +11,7 @@ import {
   getMySchoolMembership,
   getProfile,
   getSessionProfile,
+  isSchoolAccessReady,
   listCircleMembers,
   listMyCircleSummaries,
 } from '@/features/local/repository';
@@ -18,7 +19,10 @@ import type { SchoolMembershipStatus } from '@/features/local/school';
 import { UniverseHome } from '@/features/universe-home';
 import type { UniverseGraphFriend } from '@/features/universe-home/fallback-universe';
 import { INTRO_HANDOFF } from '@/features/universe-home/handoff';
-import { openCircleGraph } from '@/features/universe-home/circle-visit';
+import {
+  openCircleGraph,
+  openDiaryFromCircle,
+} from '@/features/universe-home/circle-visit';
 import type { CircleSummary, Profile } from '@/types/domain';
 import { toAppError } from '@/lib/errors';
 import { isFeatureEnabled } from '@/lib/feature-flags';
@@ -44,9 +48,13 @@ export default function UniverseScreen() {
         router.replace('/(auth)/sign-in');
         return;
       }
-      setProfile(p);
       const membership = await getMySchoolMembership(p.id);
       setSchoolStatus(membership.status);
+      if (!isSchoolAccessReady(membership.status)) {
+        router.replace('/school');
+        return;
+      }
+      setProfile(p);
       const myCircles = await listMyCircleSummaries(p.id);
       setCircles(myCircles);
 
@@ -111,6 +119,7 @@ export default function UniverseScreen() {
   if (!profile) return null;
 
   const canCreate = isFeatureEnabled('circle_creation_enabled');
+  const primaryCircleId = circles[0]?.id;
 
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
@@ -124,13 +133,32 @@ export default function UniverseScreen() {
         friends={friends}
         canCreate={canCreate}
         onIntroPlayingChange={setIntroPlaying}
-        onPressSelf={() => router.push(`/diary/${profile.id}`)}
+        onPressSelf={() => {
+          if (primaryCircleId) {
+            openDiaryFromCircle(profile.id, primaryCircleId);
+            return;
+          }
+          router.push(`/diary/${profile.id}`);
+        }}
         onPressCircle={(id) => {
           track(AnalyticsEvents.circle_opened, { circle_id: id, market: 'US' });
           openCircleGraph(id);
         }}
         onPressFriend={(userId) => {
-          track(AnalyticsEvents.diary_viewed, { market: 'US' });
+          const row = friends.find((f) => f.userId === userId);
+          // Core path: universe → circle room (orbs) — not a direct diary skip.
+          if (row?.circleId) {
+            track(AnalyticsEvents.circle_opened, {
+              circle_id: row.circleId,
+              market: 'US',
+            });
+            openCircleGraph(row.circleId);
+            return;
+          }
+          if (primaryCircleId) {
+            openCircleGraph(primaryCircleId);
+            return;
+          }
           router.push(`/diary/${userId}`);
         }}
         onCreateCircle={() =>

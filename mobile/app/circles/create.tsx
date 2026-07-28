@@ -10,6 +10,7 @@ import {
   proposeCircleDraft,
   updateCircleDesign,
 } from '@/features/local/repository';
+import { openCircleGraph } from '@/features/universe-home/circle-visit';
 import { toAppError } from '@/lib/errors';
 import { track } from '@/lib/logger';
 import type { Profile } from '@/types/domain';
@@ -72,7 +73,7 @@ export default function CreateCircleScreen() {
       const circle = await demoAcceptAll(draftId);
       await updateCircleDesign(circle.id, me.id, { name: name.trim() });
       track('circle_creation_completed', { circle_size_bucket: '3-5', market: 'US' });
-      router.replace(`/circles/${circle.id}`);
+      openCircleGraph(circle.id);
     } catch (e) {
       setError(toAppError(e).message);
     }
