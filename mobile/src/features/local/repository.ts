@@ -300,12 +300,19 @@ export interface FreeBoardRow {
   createdAt: string;
 }
 
-interface PhotoAssetRow {
+/** Local-first photo row (later: Supabase `photo_assets` + `diary-photos` bucket). */
+export interface PhotoAssetRow {
   id: string;
   userId: string;
+  /** file:// under documentDirectory, or demo/http URI for display */
   storagePath: string;
   createdAt: string;
 }
+
+export type PhotoAsset = PhotoAssetRow;
+
+export const MAX_ALBUM_PHOTOS = 30;
+export const CORK_SLOT_COUNT = 3;
 
 const empty: LocalDb = {
   profiles: [],
@@ -3418,8 +3425,36 @@ export async function createPhotoSignedUrlToken(
   return { photoId: photo.id, storagePath: photo.storagePath, allowed: true };
 }
 
-export async function addDemoPhoto(userId: string, path: string): Promise<PhotoAssetRow> {
+export async function listPhotosForUser(
+  userId: string,
+  limit = MAX_ALBUM_PHOTOS,
+): Promise<PhotoAsset[]> {
   await loadLocalDb();
+  return memory.photos
+    .filter((p) => p.userId === userId)
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(0, Math.max(0, limit));
+}
+
+/** Newest photos fill cork slots (max 3); unused slots are null. */
+export async function listCorkSlotUris(
+  userId: string,
+): Promise<Array<string | null>> {
+  const photos = await listPhotosForUser(userId, CORK_SLOT_COUNT);
+  const slots: Array<string | null> = photos.map((p) => p.storagePath);
+  while (slots.length < CORK_SLOT_COUNT) slots.push(null);
+  return slots;
+}
+
+export async function addPhoto(userId: string, storagePath: string): Promise<PhotoAsset> {
+  await loadLocalDb();
+  assertNotSuspended(userId);
+  const path = storagePath.trim();
+  if (!path) throw new AppError('VALIDATION', 'Photo path required.');
+  const owned = memory.photos.filter((p) => p.userId === userId);
+  if (owned.length >= MAX_ALBUM_PHOTOS) {
+    throw new AppError('VALIDATION', `Album limit is ${MAX_ALBUM_PHOTOS} photos.`);
+  }
   const row: PhotoAssetRow = {
     id: uid(),
     userId,
@@ -3429,6 +3464,24 @@ export async function addDemoPhoto(userId: string, path: string): Promise<PhotoA
   memory.photos.push(row);
   await persist();
   return row;
+}
+
+/** @deprecated Prefer addPhoto — kept for existing tests/seeds. */
+export async function addDemoPhoto(userId: string, path: string): Promise<PhotoAssetRow> {
+  return addPhoto(userId, path);
+}
+
+export async function deletePhoto(ownerId: string, photoId: string): Promise<void> {
+  await loadLocalDb();
+  assertNotSuspended(ownerId);
+  const idx = memory.photos.findIndex((p) => p.id === photoId);
+  if (idx < 0) throw new AppError('NOT_FOUND', 'Photo not found.');
+  const photo = memory.photos[idx]!;
+  if (photo.userId !== ownerId) {
+    throw new AppError('FORBIDDEN', 'You can’t delete this.');
+  }
+  memory.photos.splice(idx, 1);
+  await persist();
 }
 
 async function sharesOpenCircleLocal(a: string, b: string, write: boolean): Promise<boolean> {

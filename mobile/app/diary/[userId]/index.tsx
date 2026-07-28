@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Pressable,
@@ -38,6 +38,7 @@ import {
   listHompyCircleBoardPreview,
   listMyCircleSummaries,
   listRecentDiaryEntries,
+  listCorkSlotUris,
   recordFriendDiaryVisit,
   type FreeBoardRow,
   type GuestbookRow,
@@ -92,6 +93,7 @@ export default function DiaryScreen() {
   const [visitMembers, setVisitMembers] = useState<VisitMember[]>([]);
   const [canView, setCanView] = useState(true);
   const [music, setMusic] = useState<DiaryMusicCard | null>(null);
+  const [corkSlots, setCorkSlots] = useState<Array<string | null>>([null, null, null]);
   const [editing, setEditing] = useState(false);
   const [pickingMusic, setPickingMusic] = useState(false);
   const [mood, setMood] = useState<DiaryMood | undefined>();
@@ -146,6 +148,16 @@ export default function DiaryScreen() {
       }
     }
     setVisitMembers(visits.slice(0, 8));
+
+    if (session.id === ownerId) {
+      try {
+        setCorkSlots(await listCorkSlotUris(ownerId));
+      } catch {
+        setCorkSlots([null, null, null]);
+      }
+    } else {
+      setCorkSlots([null, null, null]);
+    }
 
     try {
       const gb = await listGuestbook(ownerId, session.id);
@@ -229,6 +241,15 @@ export default function DiaryScreen() {
       }
     })();
   }, [userId, loadMusic, loadHompySide]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!me || !userId || me.id !== userId) return;
+      void listCorkSlotUris(userId)
+        .then(setCorkSlots)
+        .catch(() => setCorkSlots([null, null, null]));
+    }, [me, userId]),
+  );
 
   const isMine = me?.id === userId;
   const moodMeta = DIARY_MOODS.find((m) => m.id === (entry?.mood ?? mood));
@@ -429,7 +450,14 @@ export default function DiaryScreen() {
           visitMembers={visitMembers}
           music={music}
           canView={canView}
+          corkSlots={corkSlots}
           onEditToday={() => setEditing(true)}
+          onOpenAlbum={() =>
+            router.push({
+              pathname: '/diary/[userId]/album',
+              params: { userId },
+            })
+          }
           onOpenMusic={() => void onOpenMusic()}
           fromCircleId={circleReturnId ?? undefined}
           backLabel={

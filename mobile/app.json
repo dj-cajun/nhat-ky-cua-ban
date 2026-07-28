@@ -38,7 +38,13 @@
       "expo-secure-store",
       "expo-font",
       "expo-video",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Your Diary to save photos to your corkboard album."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

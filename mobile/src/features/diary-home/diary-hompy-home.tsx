@@ -49,6 +49,9 @@ type Props = {
   canView: boolean;
   onEditToday: () => void;
   onOpenMusic?: () => void;
+  onOpenAlbum?: () => void;
+  /** My desk cork preview (newest 3 photo URIs). Friend path ignores. */
+  corkSlots?: Array<string | null>;
   onBack?: () => void;
   backLabel?: string;
   fromCircleId?: string;
@@ -74,6 +77,8 @@ export function DiaryHompyHome({
   canView,
   onEditToday,
   onOpenMusic,
+  onOpenAlbum,
+  corkSlots,
   onBack,
   backLabel,
 }: Props) {
@@ -260,14 +265,15 @@ export function DiaryHompyHome({
               contentStyle={styles.deskPad}
             >
               <DeskScene
+                corkSlots={corkSlots}
                 memoText={
                   canView
                     ? entry?.tenCharText?.trim() || entry?.shortText?.trim() || undefined
                     : undefined
                 }
                 onPressMemo={onEditToday}
-                onPressCork={onEditToday}
-                onPressFrame={onEditToday}
+                onPressCork={onOpenAlbum ?? onEditToday}
+                onPressFrame={onOpenAlbum ?? onEditToday}
               />
             </OutlineBox>
           ) : null}

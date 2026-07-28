@@ -46,6 +46,10 @@ import {
   listHompyCircleBoardPreview,
   isContentHiddenForMe,
   upsertDiary,
+  addPhoto,
+  deletePhoto,
+  listPhotosForUser,
+  listCorkSlotUris,
 } from '@/features/local/repository';
 
 describe('open_circle_from_draft rules', () => {
@@ -419,5 +423,51 @@ describe('hompy boards', () => {
     });
     const rows = await listGuestbook(me.id, me.id);
     expect(rows[0]?.body).toBe('첫 방문');
+  });
+});
+
+describe('photo album + cork slots', () => {
+  beforeEach(async () => {
+    store.clear();
+    await clearLocalDb();
+  });
+
+  it('saves photos and fills cork slots with newest three', async () => {
+    const me = await signUpLocal('Alex');
+    await addPhoto(me.id, 'file:///photos/a.jpg');
+    await addPhoto(me.id, 'file:///photos/b.jpg');
+    await addPhoto(me.id, 'file:///photos/c.jpg');
+    await addPhoto(me.id, 'file:///photos/d.jpg');
+
+    const listed = await listPhotosForUser(me.id);
+    expect(listed).toHaveLength(4);
+    expect(listed[0]?.storagePath).toBe('file:///photos/d.jpg');
+
+    const slots = await listCorkSlotUris(me.id);
+    expect(slots).toEqual([
+      'file:///photos/d.jpg',
+      'file:///photos/c.jpg',
+      'file:///photos/b.jpg',
+    ]);
+  });
+
+  it('pads cork slots with null when fewer than three photos', async () => {
+    const me = await signUpLocal('Alex');
+    await addPhoto(me.id, 'file:///photos/only.jpg');
+    expect(await listCorkSlotUris(me.id)).toEqual([
+      'file:///photos/only.jpg',
+      null,
+      null,
+    ]);
+  });
+
+  it('deletes own photo and refuses foreign delete', async () => {
+    const me = await signUpLocal('Alex');
+    const other = await signUpLocal('Blake');
+    const photo = await addPhoto(me.id, 'file:///photos/keep.jpg');
+    await expect(deletePhoto(other.id, photo.id)).rejects.toThrow(/can’t delete|Forbidden|FORBIDDEN/i);
+    await deletePhoto(me.id, photo.id);
+    expect(await listPhotosForUser(me.id)).toEqual([]);
+    expect(await listCorkSlotUris(me.id)).toEqual([null, null, null]);
   });
 });

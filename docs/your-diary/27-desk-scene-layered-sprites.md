@@ -277,10 +277,13 @@ D0b desk_bg 톤 확정 (에셋 루프) ✅ 초안 세트 완료 (AI 고해상도
 D0c window → corkboard 톤 맞춤 ✅ 초안
 D1  나머지 소품 + DeskScene 조립 프로토타입 ✅ (`desk-scene.tsx` · assembly-preview)
 D2  내 DiaryHompyHome에 DeskScene 삽입 (친구는 파스텔 유지) ✅
-D3  메모 ↔ tenCharText · 코르크 ↔ 실사진  ← 메모 연결됨 · 코르크 URL은 후속
+D3  메모 ↔ tenCharText · 코르크 ↔ 실사진 ✅ (로컬 저장 · 앨범 · corkSlots)
 D4  창문 변형 · 배지·램프 · (선택) tomato  ← 창문/램프 로컬 토글 포함
 D5  좌표 폴리시 · 32~64px 저해상도화
 ```
+
+**사진**: 기기 앨범에서 고르기 → `documentDirectory` 복사 → `photos` 로컬 DB.  
+코르크 슬롯 = **최신 3장** URI. 클라우드(`diary-photos` 버킷) 업로드는 후속.
 
 **S1**: `desk_bg` 톤 잠금 **이후** 착수 (재작업 최소화).
 
