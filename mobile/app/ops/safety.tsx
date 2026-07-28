@@ -6,7 +6,6 @@ import { BETA_SCHOOL_ID } from '@/features/local/school';
 import { getSessionProfile } from '@/features/local/repository';
 import { opsService } from '@/features/ops/ops.service';
 import {
-  AppErrorState,
   AppForbiddenState,
   AppLoadingState,
 } from '@/components/states';

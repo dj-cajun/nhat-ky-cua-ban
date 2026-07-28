@@ -29,6 +29,8 @@ export type DeskSceneProps = {
   onPressLamp?: () => void;
 };
 
+/* Metro asset requires — same pattern as intro-asset.generated.ts */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const ASSETS = {
   deskBg: require('../../../assets/desk/desk_bg.png') as ImageSourcePropType,
   windowFrame: require('../../../assets/desk/window_frame.png') as ImageSourcePropType,
@@ -48,6 +50,7 @@ const ASSETS = {
     rain: require('../../../assets/desk/sky_rain.png') as ImageSourcePropType,
   },
 } as const;
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 /** Normalized layout from docs/your-diary/27-desk-scene-layered-sprites.md §5 */
 const LAYOUT = {

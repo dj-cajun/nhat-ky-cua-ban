@@ -567,12 +567,6 @@ function assertActiveCircleMemberRow(circleId: string, userId: string): boolean 
   );
 }
 
-async function assertCanAccessCircle(circleId: string, userId: string): Promise<void> {
-  if (!(await canAccessCircle(circleId, userId))) {
-    throw new AppError('FORBIDDEN', 'School or circle access denied.');
-  }
-}
-
 async function assertCanWriteCircle(circleId: string, userId: string): Promise<void> {
   if (!(await canWriteCircle(circleId, userId))) {
     throw new AppError('FORBIDDEN', 'Verified school membership required to write.');
