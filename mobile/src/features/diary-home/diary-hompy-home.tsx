@@ -50,6 +50,7 @@ type Props = {
   onEditToday: () => void;
   onOpenMusic?: () => void;
   onOpenAlbum?: () => void;
+  onOpenCalendar?: () => void;
   /** My desk cork preview (newest 3 photo URIs). Friend path ignores. */
   corkSlots?: Array<string | null>;
   onBack?: () => void;
@@ -78,6 +79,7 @@ export function DiaryHompyHome({
   onEditToday,
   onOpenMusic,
   onOpenAlbum,
+  onOpenCalendar,
   corkSlots,
   onBack,
   backLabel,
@@ -272,8 +274,8 @@ export function DiaryHompyHome({
                     : undefined
                 }
                 onPressMemo={onEditToday}
-                onPressCork={onOpenAlbum ?? onEditToday}
-                onPressFrame={onOpenAlbum ?? onEditToday}
+                onPressCork={onOpenAlbum}
+                onPressFrame={onOpenAlbum}
               />
             </OutlineBox>
           ) : null}
@@ -286,15 +288,22 @@ export function DiaryHompyHome({
               style={styles.gridCell}
               contentStyle={styles.panelPad}
             >
-              <Text style={styles.panelTitle}>
-                {new Date().getFullYear()}.{new Date().getMonth() + 1}
-              </Text>
+              <Pressable
+                onPress={onOpenCalendar}
+                accessibilityRole="button"
+                accessibilityLabel={locale === 'ko' ? '지난 글 캘린더' : 'Past entries calendar'}
+              >
+                <Text style={styles.panelTitle}>
+                  {new Date().getFullYear()}.{new Date().getMonth() + 1}
+                </Text>
+              </Pressable>
               {week.map((d) => (
                 <Pressable
                   key={d.key}
                   style={styles.weekRow}
                   onPress={() => {
                     if (isMine) onEditToday();
+                    else onOpenCalendar?.();
                   }}
                 >
                   <Text style={styles.weekDay}>{d.day}</Text>
@@ -307,39 +316,46 @@ export function DiaryHompyHome({
             </OutlineBox>
 
             {!isMine ? (
-              <OutlineBox
-                fill={hompy.peach}
-                stroke={hompy.peachInk}
+              <Pressable
                 style={styles.gridCell}
-                contentStyle={styles.panelPad}
+                onPress={onOpenAlbum}
+                accessibilityRole="button"
+                accessibilityLabel={locale === 'ko' ? '미니 사진첩' : 'Mini album'}
               >
-                <Text style={styles.panelTitle}>
-                  {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
-                </Text>
-                <View style={styles.albumInner}>
-                  <OutlineBox
-                    size="sm"
-                    fill="#FFFFFF"
-                    stroke={hompy.peachInk}
-                    style={styles.albumFrame}
-                    contentStyle={styles.albumFrameInner}
-                  >
-                    <View style={styles.albumGlyph}>
-                      <View style={styles.albumGlyphOuter} />
-                      <View style={styles.albumGlyphInner} />
-                    </View>
-                  </OutlineBox>
-                  <Text style={styles.albumHint}>
-                    {canView && entry
-                      ? locale === 'ko'
-                        ? '오늘의 한 컷'
-                        : "Today’s frame"
-                      : locale === 'ko'
-                        ? '아직 사진이 없어요'
-                        : 'No photos yet'}
+                <OutlineBox
+                  fill={hompy.peach}
+                  stroke={hompy.peachInk}
+                  style={styles.gridCellFill}
+                  contentStyle={styles.panelPad}
+                >
+                  <Text style={styles.panelTitle}>
+                    {locale === 'ko' ? '미니 사진첩' : 'Mini album'}
                   </Text>
-                </View>
-              </OutlineBox>
+                  <View style={styles.albumInner}>
+                    <OutlineBox
+                      size="sm"
+                      fill="#FFFFFF"
+                      stroke={hompy.peachInk}
+                      style={styles.albumFrame}
+                      contentStyle={styles.albumFrameInner}
+                    >
+                      <View style={styles.albumGlyph}>
+                        <View style={styles.albumGlyphOuter} />
+                        <View style={styles.albumGlyphInner} />
+                      </View>
+                    </OutlineBox>
+                    <Text style={styles.albumHint}>
+                      {canView
+                        ? locale === 'ko'
+                          ? '탭해서 사진첩 열기'
+                          : 'Tap to open album'
+                        : locale === 'ko'
+                          ? '아직 사진이 없어요'
+                          : 'No photos yet'}
+                    </Text>
+                  </View>
+                </OutlineBox>
+              </Pressable>
             ) : null}
           </View>
 
@@ -472,6 +488,7 @@ const styles = StyleSheet.create({
   todayText: { fontSize: 13, color: hompy.ink, lineHeight: 18 },
   grid2: { flexDirection: 'row', gap: 8 },
   gridCell: { flex: 1, minHeight: 168 },
+  gridCellFill: { flex: 1, minHeight: 168 },
   panelPad: { padding: 8, flexGrow: 1 },
   panelTitle: {
     fontSize: 10,

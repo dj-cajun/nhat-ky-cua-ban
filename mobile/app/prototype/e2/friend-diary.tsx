@@ -45,6 +45,18 @@ export default function E2FriendDiaryPrototype() {
         )}
         canView
         onEditToday={() => {}}
+        onOpenAlbum={() =>
+          router.push({
+            pathname: '/diary/[userId]/album',
+            params: { userId: e2DiaryFriend.id },
+          })
+        }
+        onOpenCalendar={() =>
+          router.push({
+            pathname: '/diary/[userId]/calendar',
+            params: { userId: e2DiaryFriend.id },
+          })
+        }
         onOpenMusic={() => {}}
         backLabel={e2Fixtures.circles[0].name}
         onBack={() => router.push('/prototype/e2/circle')}

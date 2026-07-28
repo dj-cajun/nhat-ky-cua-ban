@@ -6,6 +6,7 @@ import {
   deletePhoto,
   listCorkSlotUris,
   listPhotosForUser,
+  listPhotosVisibleTo,
   type PhotoAsset,
 } from '@/features/local/repository';
 
@@ -57,6 +58,14 @@ async function removeLocalFile(storagePath: string): Promise<void> {
 
 export async function loadAlbumPhotos(userId: string): Promise<PhotoAsset[]> {
   return listPhotosForUser(userId);
+}
+
+/** Gated album list for viewer → owner (friends need shared circle). */
+export async function loadAlbumPhotosForViewer(
+  viewerId: string,
+  ownerId: string,
+): Promise<PhotoAsset[]> {
+  return listPhotosVisibleTo(viewerId, ownerId);
 }
 
 export async function loadCorkSlots(userId: string): Promise<Array<string | null>> {

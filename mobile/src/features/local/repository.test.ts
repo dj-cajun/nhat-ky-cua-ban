@@ -50,6 +50,7 @@ import {
   deletePhoto,
   listPhotosForUser,
   listCorkSlotUris,
+  listPhotosVisibleTo,
 } from '@/features/local/repository';
 
 describe('open_circle_from_draft rules', () => {
@@ -469,5 +470,13 @@ describe('photo album + cork slots', () => {
     await deletePhoto(me.id, photo.id);
     expect(await listPhotosForUser(me.id)).toEqual([]);
     expect(await listCorkSlotUris(me.id)).toEqual([null, null, null]);
+  });
+
+  it('gates friend album list behind shared circle', async () => {
+    const me = await signUpLocal('Alex');
+    const other = await signUpLocal('Blake');
+    await addPhoto(me.id, 'file:///photos/private.jpg');
+    await expect(listPhotosVisibleTo(other.id, me.id)).rejects.toThrow(/can’t view|Forbidden|FORBIDDEN/i);
+    expect(await listPhotosVisibleTo(me.id, me.id)).toHaveLength(1);
   });
 });

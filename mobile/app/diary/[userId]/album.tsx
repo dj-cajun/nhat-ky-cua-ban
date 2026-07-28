@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppErrorState, AppLoadingState } from '@/components/states';
 import {
   loadAlbumPhotos,
+  loadAlbumPhotosForViewer,
   pickAndSavePhoto,
   removeAlbumPhoto,
   type PhotoAsset,
@@ -52,7 +53,7 @@ export default function DiaryAlbumScreen() {
         return;
       }
       setIsMine(session.id === owner.id);
-      setPhotos(await loadAlbumPhotos(owner.id));
+      setPhotos(await loadAlbumPhotosForViewer(session.id, owner.id));
     } catch (e) {
       setError(toAppError(e).message);
     } finally {

@@ -3446,6 +3446,28 @@ export async function listCorkSlotUris(
   return slots;
 }
 
+/**
+ * Owner always; others need a shared open circle and no block.
+ * Used by album screen (read-only for friends).
+ */
+export async function listPhotosVisibleTo(
+  viewerId: string,
+  ownerId: string,
+  limit = MAX_ALBUM_PHOTOS,
+): Promise<PhotoAsset[]> {
+  await loadLocalDb();
+  assertNotSuspended(viewerId);
+  if (viewerId !== ownerId) {
+    if (await isBlockedBetween(viewerId, ownerId)) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+    if (!(await sharesOpenCircleLocal(viewerId, ownerId, false))) {
+      throw new AppError('FORBIDDEN', 'You can’t view this.');
+    }
+  }
+  return listPhotosForUser(ownerId, limit);
+}
+
 export async function addPhoto(userId: string, storagePath: string): Promise<PhotoAsset> {
   await loadLocalDb();
   assertNotSuspended(userId);

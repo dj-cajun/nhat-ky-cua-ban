@@ -292,8 +292,18 @@ export default function DiaryScreen() {
       setPickingMusic(false);
       setDraftHint(false);
       await loadMusic(saved.id, me.id);
+      try {
+        setRecentEntries(await listRecentDiaryEntries(me.id, 21));
+      } catch {
+        /* keep prior week strip */
+      }
+      try {
+        setCorkSlots(await listCorkSlotUris(me.id));
+      } catch {
+        /* keep prior cork */
+      }
       track(AnalyticsEvents.diary_saved, {
-        has_photo: false,
+        has_photo: corkSlots.some(Boolean),
         has_music: Boolean(music),
         market: 'US',
       });
@@ -389,13 +399,35 @@ export default function DiaryScreen() {
   };
 
   const onOpenMusic = async () => {
-    if (!music) return;
+    if (!music) {
+      if (isMine) {
+        setEditing(true);
+        setPickingMusic(true);
+      }
+      return;
+    }
     try {
       await openSpotifyTrack(music);
       track('diary_music_opened_in_spotify', { market: 'US' });
     } catch (e) {
       setError(toAppError(e).message || t.diaryMusic.openFailed);
     }
+  };
+
+  const openAlbum = () => {
+    if (!userId) return;
+    router.push({
+      pathname: '/diary/[userId]/album',
+      params: { userId },
+    });
+  };
+
+  const openCalendar = () => {
+    if (!userId) return;
+    router.push({
+      pathname: '/diary/[userId]/calendar',
+      params: { userId },
+    });
   };
 
   if (loading && !owner) {
@@ -452,12 +484,8 @@ export default function DiaryScreen() {
           canView={canView}
           corkSlots={corkSlots}
           onEditToday={() => setEditing(true)}
-          onOpenAlbum={() =>
-            router.push({
-              pathname: '/diary/[userId]/album',
-              params: { userId },
-            })
-          }
+          onOpenAlbum={openAlbum}
+          onOpenCalendar={openCalendar}
           onOpenMusic={() => void onOpenMusic()}
           fromCircleId={circleReturnId ?? undefined}
           backLabel={

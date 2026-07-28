@@ -65,6 +65,9 @@ export const e2MyEntry = entryFor(
   e2Fixtures.myToday.sentence,
 );
 
+/** Prototype cork preview — empty slots use cork_empty sprites. */
+export const e2CorkSlots: Array<string | null> = [null, null, null];
+
 export const e2Guestbook: GuestbookRow[] = [
   {
     id: 'gb1',

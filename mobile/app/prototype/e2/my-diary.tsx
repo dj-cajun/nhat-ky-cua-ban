@@ -7,6 +7,7 @@ import { ProtoChrome } from '@/features/e2-prototype/ProtoChrome';
 import {
   e2CircleBoard,
   e2CircleBoardItems,
+  e2CorkSlots,
   e2DiaryCircles,
   e2DiaryMe,
   e2FreeBoard,
@@ -19,10 +20,11 @@ import {
 import { hompy } from '@/constants/hompy-theme';
 
 /**
- * Same component as product diary — pastel pencil mini-hompy only.
+ * Same component as product diary — pastel pencil mini-hompy + DeskScene.
  */
 export default function E2MyDiaryPrototype() {
   const [entry, setEntry] = useState(e2MyEntry);
+  const [corkSlots] = useState(e2CorkSlots);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -41,6 +43,7 @@ export default function E2MyDiaryPrototype() {
         circles={e2DiaryCircles}
         music={e2MusicCard(entry.id, 'Harbor Morning', 'lo-fi piano')}
         canView
+        corkSlots={corkSlots}
         onEditToday={() =>
           setEntry((prev) => ({
             ...prev,
@@ -48,6 +51,18 @@ export default function E2MyDiaryPrototype() {
             tenCharText: 'quiet line',
             updatedAt: new Date().toISOString(),
           }))
+        }
+        onOpenAlbum={() =>
+          router.push({
+            pathname: '/diary/[userId]/album',
+            params: { userId: e2DiaryMe.id },
+          })
+        }
+        onOpenCalendar={() =>
+          router.push({
+            pathname: '/diary/[userId]/calendar',
+            params: { userId: e2DiaryMe.id },
+          })
         }
         onOpenMusic={() => {}}
         backLabel="friend’s today"
