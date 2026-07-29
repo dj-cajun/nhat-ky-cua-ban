@@ -13,5 +13,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Cloudflare quick tunnel / Cursor port-forward hostnames
+    allowedHosts: true,
   },
 });
