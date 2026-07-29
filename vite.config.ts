@@ -15,5 +15,9 @@ export default defineConfig({
     host: true,
     // Cloudflare quick tunnel / Cursor port-forward hostnames
     allowedHosts: true,
+    hmr: {
+      // Don't block the demo UI with Vite websocket overlays over tunnels
+      overlay: false,
+    },
   },
 });

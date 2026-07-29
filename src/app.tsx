@@ -61,6 +61,7 @@ function YourDiaryApp() {
 
     v1Store.ensureDemoDirectory(profile.id);
     seedDemoAtmosphere(profile.id);
+    v1Store.ensureDemoOpenCircle(profile.id);
     setProfile(profile);
     setCircles(v1Store.listMyCircles(profile.id));
     setDiaryOwner(profile.id);
@@ -87,6 +88,7 @@ function YourDiaryApp() {
           if (!profile) return;
           v1Store.ensureDemoDirectory(profile.id);
           seedDemoAtmosphere(profile.id);
+          v1Store.ensureDemoOpenCircle(profile.id);
           setProfile(profile);
           setCircles(v1Store.listMyCircles(profile.id));
           setDiaryOwner(profile.id);

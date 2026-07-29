@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as store from '@/lib/v1-store';
 import {
@@ -8,7 +8,16 @@ import {
   v1ProfileAtom,
 } from '@/stores/v1-atoms';
 
-const SESSION_ID = crypto.randomUUID();
+function createSessionId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* ignore */
+  }
+  return `sess-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 export function CirclePage() {
   const profile = useAtomValue(v1ProfileAtom);
@@ -16,6 +25,9 @@ export function CirclePage() {
   const setPage = useSetAtom(v1PageAtom);
   const setDiaryOwner = useSetAtom(v1DiaryOwnerIdAtom);
   const [tick, setTick] = useState(0);
+  const sessionIdRef = useRef<string | null>(null);
+  if (!sessionIdRef.current) sessionIdRef.current = createSessionId();
+  const sessionId = sessionIdRef.current;
 
   const circle = circleId ? store.getCircle(circleId) : null;
   const members = circleId ? store.listCircleMembers(circleId) : [];
@@ -33,25 +45,26 @@ export function CirclePage() {
 
   useEffect(() => {
     if (!circleId || !profile) return;
-    store.heartbeatPresence(circleId, profile.id, SESSION_ID);
+    store.heartbeatPresence(circleId, profile.id, sessionId);
     const interval = setInterval(() => {
-      store.heartbeatPresence(circleId, profile.id, SESSION_ID);
+      store.heartbeatPresence(circleId, profile.id, sessionId);
       setTick((n) => n + 1);
     }, 15_000);
-    const onHide = () => {
+
+    const onVis = () => {
       if (document.visibilityState === 'hidden') {
         store.clearPresence(circleId, profile.id);
       } else {
-        store.heartbeatPresence(circleId, profile.id, SESSION_ID);
+        store.heartbeatPresence(circleId, profile.id, sessionId);
       }
     };
-    document.addEventListener('visibilitychange', onHide);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', onHide);
+      document.removeEventListener('visibilitychange', onVis);
       store.clearPresence(circleId, profile.id);
     };
-  }, [circleId, profile]);
+  }, [circleId, profile, sessionId]);
 
   if (!profile || !circle || !circleId) {
     return (

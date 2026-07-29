@@ -58,7 +58,14 @@ export interface FreeBoardEntry {
 }
 
 function uid(): string {
-  return crypto.randomUUID();
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* non-secure context */
+  }
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 function now(): string {
@@ -79,7 +86,15 @@ function read<T>(key: string, fallback: T): T {
 }
 
 function write<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    throw new Error(
+      e instanceof Error && /quota|exceeded/i.test(e.message)
+        ? '저장 공간이 부족합니다. 브라우저 데이터를 지운 뒤 다시 시도해 주세요.'
+        : '브라우저 저장소에 접근할 수 없습니다. 프라이빗 모드를 끄고 다시 시도해 주세요.',
+    );
+  }
 }
 
 function upsertDirectory(profile: AppProfile): void {
@@ -808,4 +823,31 @@ export function clearV1Data(): void {
   for (const key of Object.values(KEYS)) {
     localStorage.removeItem(key);
   }
+}
+
+/**
+ * Demo shortcut: ensure the user has at least one open circle (planet on universe).
+ * Idempotent — skips if they already belong to an open circle.
+ */
+export function ensureDemoOpenCircle(userId: string): Circle[] {
+  const existing = listMyCircles(userId);
+  if (existing.length > 0) return existing;
+
+  const directory = ensureDemoDirectory(userId);
+  const a = directory[0]?.id;
+  const b = directory[1]?.id;
+  if (!a || !b) throw new Error('데모 친구를 준비하지 못했습니다.');
+
+  const { draft } = proposeCircle({
+    name: '금요일 스터디',
+    inviterId: userId,
+    inviteeIds: [a, b],
+  });
+  const circle = demoAcceptAllAndOpen(draft.id);
+  updateCircleDesign(circle.id, userId, {
+    name: '금요일 스터디',
+    color: CIRCLE_COLORS[0],
+    symbol: CIRCLE_SYMBOLS[0],
+  });
+  return listMyCircles(userId);
 }

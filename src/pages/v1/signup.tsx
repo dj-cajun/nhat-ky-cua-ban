@@ -20,6 +20,22 @@ export function SignupPage({ onComplete }: SignupPageProps) {
   const [displayName, setDisplayName] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const enterApp = (name: string, authProvider: AuthProvider, emailValue?: string) => {
+    store.createProfile({
+      displayName: name,
+      email: emailValue,
+      authProvider,
+    });
+    const profile = store.getSessionProfile();
+    if (!profile) {
+      throw new Error('프로필을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+    store.ensureDemoDirectory(profile.id);
+    store.ensureDemoOpenCircle(profile.id);
+    onComplete();
+  };
 
   const startProvider = (id: AuthProvider, ready: boolean) => {
     if (!ready) {
@@ -29,8 +45,13 @@ export function SignupPage({ onComplete }: SignupPageProps) {
     setError('');
     setProvider(id);
     if (id === 'demo') {
-      setDisplayName('나');
-      setStep('terms');
+      setBusy(true);
+      try {
+        enterApp('나', 'demo');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '데모 시작에 실패했습니다.');
+        setBusy(false);
+      }
       return;
     }
     setStep('terms');
@@ -42,13 +63,14 @@ export function SignupPage({ onComplete }: SignupPageProps) {
       setError('이름을 입력해 주세요.');
       return;
     }
-    store.createProfile({
-      displayName: name,
-      email: provider === 'email' ? email.trim() || undefined : undefined,
-      authProvider: provider,
-    });
-    store.ensureDemoDirectory(store.getSessionProfile()!.id);
-    onComplete();
+    setBusy(true);
+    setError('');
+    try {
+      enterApp(name, provider, provider === 'email' ? email.trim() || undefined : undefined);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '시작에 실패했습니다.');
+      setBusy(false);
+    }
   };
 
   return (
@@ -69,14 +91,15 @@ export function SignupPage({ onComplete }: SignupPageProps) {
             <button
               key={p.id}
               type="button"
+              disabled={busy}
               onClick={() => startProvider(p.id, p.ready)}
-              className={`w-full rounded-2xl border px-4 py-3 text-left text-sm ${
+              className={`w-full rounded-2xl border px-4 py-3 text-left text-sm disabled:opacity-50 ${
                 p.ready
                   ? 'border-[#cfc4b6] bg-white text-[#2f2a26]'
                   : 'border-dashed border-[#d9d0c4] bg-transparent text-[#9a9188]'
               }`}
             >
-              {p.label}
+              {busy && p.id === 'demo' ? '데모 여는 중…' : p.label}
               {!p.ready && <span className="ml-2 text-xs">준비 중</span>}
             </button>
           ))}
@@ -109,7 +132,7 @@ export function SignupPage({ onComplete }: SignupPageProps) {
           )}
           <button
             type="button"
-            disabled={!agreed}
+            disabled={!agreed || busy}
             onClick={() => setStep('profile')}
             className="w-full rounded-2xl bg-[#2f2a26] py-3 text-sm text-white disabled:opacity-40"
           >
@@ -131,10 +154,11 @@ export function SignupPage({ onComplete }: SignupPageProps) {
           <p className="text-xs text-[#9a9188]">프로필 사진은 나중에 추가할 수 있어요.</p>
           <button
             type="button"
+            disabled={busy}
             onClick={finish}
-            className="w-full rounded-2xl bg-[#2f2a26] py-3 text-sm text-white"
+            className="w-full rounded-2xl bg-[#2f2a26] py-3 text-sm text-white disabled:opacity-50"
           >
-            내 다이어리 만들기
+            {busy ? '여는 중…' : '내 다이어리 만들기'}
           </button>
         </div>
       )}
