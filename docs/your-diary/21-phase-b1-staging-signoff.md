@@ -1,0 +1,138 @@
+# 21 — Phase B.1 / H Staging Sign-off (전수)
+
+> **역할 구분 ([26](./26-official-app-plan.md))**  
+> · **S1**: 핵심 경로 staging **smoke test**만 (JWT·학교/서클 deny·일기·세션 누수)  
+> · **S4 / Phase H**: 이 문서의 **A–E/M 전수 실측 + 최종 sign-off**  
+> S1에서 이 전수 런북을 “앱 완성 전 최종 게이트”로 실행하지 않는다.
+>
+> **Phase B.1: DEFERRED UNTIL STAGING LAUNCH GATE (Phase H / Track S4)** — test plan and runbook prepared; full empirical execution at v1.0 exit gate.
+>
+> **지금은 S1~S3 구현·베타.** 전수 실측으로 개발을 멈추지 않는다.  
+> **게이트**: **B = 구현 완료**, **B.1/H = staging 전수로 증명 완료 (S4)**  
+> **판단 재료**: 이 문서의 실제 결과만 (코드 설명·기획 문서로 대체 불가)  
+> **동결**: [`b1-staging-run-freeze.md`](./b1-staging-run-freeze.md)  
+> **권한 요청·계정·증거 위치**: [`b1-staging-access-request.md`](./b1-staging-access-request.md)  
+> **런북**: [`scripts/b1-staging-gate.md`](../../scripts/b1-staging-gate.md)  
+> **체크리스트**: [`supabase/tests/020_staging_jwt_penetration_checklist.sql`](../../supabase/tests/020_staging_jwt_penetration_checklist.sql)
+
+가짜 PASS / 조건부 PASS 금지. staging 담당자가 런북을 실행한 뒤에만 이 문서를 채운다.
+
+---
+
+## 완료 정의 (최종 고정)
+
+| Phase | 의미 |
+|-------|------|
+| **B 완료** | 학교 경계가 기존 권한 경로에 **적용된** 상태 (구현) |
+| **B.1 완료** | 실제 staging JWT로 그 경계가 **우회되지 않음을 증명한** 상태 |
+
+```text
+베타 핵심 기능 완성 (Phase C–G)
+→ 019 + 020 staging 적용
+→ A–E / M 페르소나 JWT 전수 테스트
+→ 경로 매트릭스 전수 PASS
+→ 로그 검토
+→ 혼재 서클 resolve 실제 검증
+→ Phase H / B.1 승인 (이 문서 PASS + 증거)
+```
+
+전수 PASS와 로그 증거가 채워진 뒤에만 Phase H(B.1)를 닫는다.
+
+---
+
+## 자동 FAIL (하나라도 해당하면 B.1 미완료)
+
+| # | 실패 조건 |
+|---|-----------|
+| 1 | A–E / M 중 **하나라도** 예상 결과 불일치 |
+| 2 | 알려진 ID 또는 딥링크로 우회 가능 |
+| 3 | shared predicate를 거치지 않는 경로 발견 |
+| 4 | `pending_change`가 쓰기 가능 |
+| 5 | 혼재 서클 freeze/resolve가 **audit 없이** 처리됨 |
+| 6 | M이 ops 범위를 넘어 일반 다이어리·쪽지 열람 가능 |
+| 7 | 계정 전환 또는 캐시 때문에 이전 권한이 남음 |
+
+---
+
+## 결과 문서에 남길 항목 (이것만)
+
+아래를 채운 뒤 B.1을 승인한다. 장황한 기획 서술은 넣지 않는다.
+
+| # | 항목 | 기록 |
+|---|------|------|
+| 1 | staging 프로젝트 URL / ref | |
+| 2 | 적용 migration 버전 | `019`, `020` (및 DB revision) |
+| 3 | 테스트한 실제 계정 / 페르소나 | A–E, M (user id 또는 email 해시) |
+| 4 | 경로별 예상 결과 vs 실제 결과 | 매트릭스 표 또는 체크리스트 사본 |
+| 5 | 거부 시 반환 코드 | `FORBIDDEN` / `NOT_FOUND` / false 등 |
+| 6 | 관련 서버·RLS 로그 | 링크 또는 첨부 경로 |
+| 7 | 발견된 우회와 수정 커밋 | 없으면 `none` |
+| 8 | 혼재 서클 freeze / resolve 사례 | incident id · note · audit event |
+| 9 | 최종 실행자 · 승인 시각 | |
+
+---
+
+## 페르소나 (고정)
+
+| ID | 상태 | 기대 |
+|----|------|------|
+| A | 같은 학교 · 정상 서클 멤버 | 허용 |
+| B | 같은 학교 · 비서클 | 거절 |
+| C | 다른 학교 (+ known id / invite) | 존재 숨김 (`NOT_FOUND`) |
+| D | `pending_change` | 읽기만 · 쓰기 거절 |
+| E | 정지·만료 (+ known id) | 접근 불가 |
+| M | `app_moderators` | **명시된 ops만** |
+
+### M 추가 게이트 (필수)
+
+운영 권한이 **일반 데이터 열람권으로 번지지 않을 것.**
+
+- 허용: 학교 인증·변경 검토, 혼재 스캔/resolve, 신고 스냅샷 기반 검토, 계정 제한 등 **명시된 ops RPC**
+- 금지: 이유 없는 개인 다이어리·쪽지·방명록·가명글 전체 조회 (신고/케이스 컨텍스트 없는 SELECT/RPC)
+
+검증 예:
+
+```text
+M JWT로 can_view_diary_entry(타인 공유 글) — 비서클이면 false (학교 ops ≠ 멤버십)
+M JWT로 get_received_messages / get_anonymous_circle_posts(비서클) — FORBIDDEN
+M JWT로 ops_list_school_verification_requests — ok
+A JWT로 ops_* — FORBIDDEN
+```
+
+---
+
+## 경로 매트릭스 (전수)
+
+```text
+circle read/write
+diary read/write
+notice/poll
+pseudonymous board
+private notes
+guestbook
+invite preview
+presence publish
+deep link
+cached screen refresh
+account switch
+```
+
+상세 셀: `020_staging_jwt_penetration_checklist.sql`
+
+---
+
+## 관련 구현 단계 (이 런북과 별개)
+
+Phase C–G는 기능 구현이다. 이 문서의 staging 실측은 **Phase H**에서만 실행한다.
+
+---
+
+## Sign-off
+
+| | |
+|--|--|
+| Result | ☐ PASS · ☐ FAIL |
+| Executor | |
+| Approver | |
+| Approved at (UTC) | |
+| Notes | |

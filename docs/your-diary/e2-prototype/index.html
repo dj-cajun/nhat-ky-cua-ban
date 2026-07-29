@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Your Diary — E2 Static Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --void: #070b14;
+        --deep: #0e1526;
+        --star: #d7deea;
+        --brand: #f4efe6;
+        --whisper: rgba(244, 239, 230, 0.62);
+        --orb: #f7e7c8;
+        --orb-rim: #e8c78a;
+        --circle-wash: #17362f;
+        --circle-ink: #e7f2ec;
+        --circle-muted: rgba(231, 242, 236, 0.7);
+        --circle-accent: #7faf9a;
+        --friend-wash: #241820;
+        --friend-ink: #f8ede8;
+        --friend-muted: rgba(248, 237, 232, 0.72);
+        --friend-mood: #e8b4a0;
+        --mine-wash: #152028;
+        --mine-ink: #eaf3f6;
+        --mine-muted: rgba(234, 243, 246, 0.72);
+        --mine-mood: #9fcbd8;
+        --tomato: #d46a5c;
+        --display: "Fraunces", Georgia, serif;
+        --body: "Outfit", "Avenir Next", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: #111;
+        color: var(--brand);
+        font-family: var(--body);
+      }
+      body {
+        display: grid;
+        place-items: start center;
+        padding: 24px 12px 48px;
+      }
+      .phone {
+        width: min(390px, 100%);
+        min-height: 780px;
+        border-radius: 28px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 24px 80px rgba(0,0,0,.45);
+        background: var(--void);
+      }
+      .screen { display: none; min-height: 780px; position: relative; padding: 18px 20px 28px; }
+      .screen.active { display: flex; flex-direction: column; }
+      .stars::before, .stars::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          radial-gradient(1.2px 1.2px at 12% 18%, var(--star), transparent),
+          radial-gradient(.8px .8px at 40% 52%, rgba(215,222,234,.35), transparent),
+          radial-gradient(1.4px 1.4px at 78% 24%, var(--star), transparent),
+          radial-gradient(.9px .9px at 92% 70%, rgba(215,222,234,.35), transparent),
+          radial-gradient(1.1px 1.1px at 18% 80%, var(--star), transparent),
+          radial-gradient(.7px .7px at 55% 12%, rgba(215,222,234,.35), transparent);
+        opacity: .9;
+      }
+      .rail {
+        display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 18px; position: relative; z-index: 2;
+      }
+      .rail button, .linkish, .cta {
+        font: 500 12px/1 var(--body);
+        border-radius: 999px;
+        border: 1px solid rgba(244,239,230,.18);
+        background: transparent;
+        color: inherit;
+        padding: 8px 12px;
+        min-height: 36px;
+        cursor: pointer;
+      }
+      .rail button.on {
+        border-color: rgba(244,239,230,.55);
+        background: rgba(244,239,230,.1);
+        font-weight: 600;
+      }
+      .meta {
+        display: flex; justify-content: space-between; font-size: 12px; opacity: .75; position: relative; z-index: 2;
+      }
+      h1 {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 34px;
+        margin: 8px 0 6px;
+        letter-spacing: -.5px;
+        position: relative; z-index: 2;
+      }
+      .tag { color: var(--whisper); font-size: 15px; position: relative; z-index: 2; }
+      .stage { position: relative; flex: 1; min-height: 440px; margin-top: 8px; }
+      .links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+      .self {
+        position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%);
+        width: 112px; text-align: center; z-index: 10;
+      }
+      .self .orb {
+        width: 112px; height: 112px; border-radius: 999px;
+        background: var(--orb); border: 2px solid var(--orb-rim);
+        box-shadow: 0 0 40px rgba(232,199,138,.28);
+        display: grid; place-items: center; font-size: 28px; color: #6a5430;
+      }
+      .self span { display: block; margin-top: 8px; letter-spacing: 2px; text-transform: uppercase; font-size: 12px; font-weight: 500; }
+      .node {
+        position: absolute; border: 0; padding: 0; cursor: pointer; border-radius: 999px;
+        transform: translate(-50%, -50%);
+      }
+      .node.close { z-index: 6; background: none; width: auto; text-align: center; color: inherit; }
+      .node.close i {
+        display: block; margin: 0 auto; border-radius: 999px;
+        border: 2px solid rgba(255,255,255,.28); box-shadow: 0 6px 18px rgba(0,0,0,.35);
+        font-style: normal;
+      }
+      .node.close.front i { width: 64px; height: 64px; }
+      .node.close.mid i { width: 56px; height: 56px; }
+      .node.close.back i { width: 48px; height: 48px; opacity: .92; }
+      .node.close b { display: block; margin-top: 6px; font-size: 12px; font-weight: 500; }
+      .node.near { width: 22px; height: 22px; background: #9aa7b8; z-index: 3; }
+      .node.distant { width: 9px; height: 9px; background: #6b7384; z-index: 1; opacity: .85; }
+      .node.pulled { width: 28px; height: 28px; background: #b8c2d4; z-index: 8; opacity: 1; }
+      .focus-card {
+        position: absolute; left: 8px; right: 8px; bottom: 4px; z-index: 20;
+        border-radius: 18px; border: 1px solid rgba(244,239,230,.22);
+        background: rgba(14,21,38,.92); padding: 16px; display: none;
+      }
+      .focus-card.on { display: block; }
+      .focus-card h3 { margin: 0; font-family: var(--display); font-size: 22px; font-weight: 600; }
+      .focus-card p { margin: 6px 0 0; font-size: 13px; color: var(--whisper); }
+      .focus-card .visit {
+        margin-top: 14px; border: 0; border-radius: 999px; min-height: 44px; padding: 0 16px;
+        background: var(--orb); color: #3a2e18; font: 600 14px var(--body); cursor: pointer;
+      }
+      .focus-card .dismiss {
+        display: block; margin-top: 12px; background: none; border: 0; color: var(--whisper);
+        font: 400 13px var(--body); cursor: pointer; padding: 0; min-height: 36px;
+      }
+      .privacy {
+        margin: 6px 0 0; font-size: 11px; line-height: 1.35; color: rgba(215,222,234,.45); position: relative; z-index: 2;
+      }
+      .foot {
+        text-align: center; margin-top: 8px; padding-top: 4px; position: relative; z-index: 2;
+      }
+      .foot button {
+        background: none; border: 0; color: var(--whisper); text-decoration: underline;
+        font: 400 14px/1.4 var(--body); cursor: pointer; min-height: 44px;
+      }
+      #universe.dim .node.close, #universe.dim .node.near:not(.pulled), #universe.dim .node.distant:not(.pulled) { opacity: .35; }
+      #universe.dim .node.pulled, #universe.dim .self { opacity: 1; }
+
+      #circle { background: linear-gradient(180deg, #17362f 0%, #0f241f 100%); color: var(--circle-ink); }
+      #circle .back, #friend .back, #mine .back {
+        background: none; border: 0; color: inherit; opacity: .75; font: 400 13px var(--body);
+        padding: 0; min-height: 44px; cursor: pointer; text-align: left;
+      }
+      #circle .sym { font-size: 28px; color: var(--circle-accent); }
+      #circle h1 { font-size: 30px; color: var(--circle-ink); }
+      #circle .tag { color: var(--circle-muted); }
+      .ring {
+        position: absolute; left: 18%; top: 28%; width: 64%; height: 52%;
+        border: 1px solid rgba(127,175,154,.35); border-radius: 999px;
+      }
+      .friend {
+        position: absolute; width: 90px; text-align: center; cursor: pointer; border: 0; background: none; color: inherit;
+      }
+      .friend i {
+        display: block; width: 64px; height: 64px; margin: 0 auto; border-radius: 999px;
+        border: 2px solid rgba(255,255,255,.35); font-style: normal;
+      }
+      .friend b { display: block; margin-top: 8px; font-size: 13px; }
+      .friend small { display: block; margin-top: 2px; font-size: 11px; color: var(--circle-muted); }
+      .f1 { left: 8%; top: 30%; } .f1 i { background: #f0d3b0; }
+      .f2 { right: 8%; top: 26%; } .f2 i { background: #b8d4e8; }
+      .f3 { left: 38%; top: 58%; } .f3 i { background: #e8c4d4; }
+      .objects { display: flex; gap: 10px; margin-top: auto; position: relative; z-index: 2; }
+      .objects .obj {
+        flex: 1; border-radius: 16px; border: 1px solid rgba(231,242,236,.28);
+        background: rgba(231,242,236,.14); padding: 12px; min-height: 56px;
+      }
+      .objects .obj span { display: block; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; opacity: .7; }
+      .objects .obj strong { display: block; margin-top: 4px; font-size: 13px; font-weight: 500; }
+      .cta {
+        align-self: center; margin-top: 14px; border: 0; background: none; font-size: 14px; font-weight: 500; cursor: pointer;
+      }
+
+      /* Diary = pastel pencil mini-hompy only (no dark scene strip) */
+      #friend, #mine {
+        background: #e8dfd2;
+        color: #2a2430;
+      }
+      #friend .meta, #mine .meta,
+      #friend .rail button, #mine .rail button,
+      #friend .back, #mine .back,
+      #friend .cta, #mine .cta { color: #2a2430; }
+      #friend .rail button, #mine .rail button {
+        border-color: rgba(42,36,48,.25);
+      }
+      #friend .rail button.on, #mine .rail button.on {
+        background: rgba(42,36,48,.08);
+        border-color: rgba(42,36,48,.45);
+      }
+      .hompy {
+        margin-top: 6px; border: 2px solid #4a3f55; background: #f7f1e8;
+        border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 8px;
+        background-image: radial-gradient(rgba(74,63,85,.12) 1px, transparent 1px);
+        background-size: 14px 14px;
+      }
+      .profile-box {
+        display: flex; gap: 10px; align-items: center; padding: 12px;
+        background: #f3d6de; border: 1.5px solid #c98a9a; border-radius: 4px;
+      }
+      .profile-box .av {
+        width: 48px; height: 48px; border: 1.5px solid #c98a9a; background: #fff;
+        display: grid; place-items: center; font-weight: 700; border-radius: 4px;
+      }
+      .profile-box .meta b { display: block; font-size: 15px; }
+      .profile-box .meta small { color: #6a5a66; }
+      .today-box {
+        margin-top: 8px; padding: 10px; background: rgba(255,255,255,.72);
+        border: 1.5px solid #c98a9a; border-radius: 4px; font-size: 13px;
+      }
+      .today-box span { display: block; font-size: 10px; font-weight: 700; color: #6a5a66; margin-bottom: 4px; }
+      .grid2 { display: flex; gap: 8px; }
+      .panel {
+        flex: 1; min-height: 110px; border: 1.5px solid; border-radius: 4px; padding: 8px; font-size: 11px;
+      }
+      .panel.mint { background: #d8efe3; border-color: #7aaa90; }
+      .panel.peach { background: #f5e0d0; border-color: #d0a080; }
+      .panel strong { display: block; font-size: 10px; margin-bottom: 6px; color: #6a5a66; }
+      .board-box {
+        padding: 10px; background: #e4dff0; border: 1.5px solid #9a90b8; border-radius: 4px;
+      }
+      .board-box .music {
+        margin-top: 8px; border: 1.5px solid #4a3f55; background: #fff; border-radius: 4px;
+        padding: 10px; font-size: 12px; color: #2a2430;
+      }
+      .board-box .tomato {
+        margin-top: 8px; display: inline-block; border: 1.5px solid #d46a5c;
+        background: rgba(212,106,92,.18); border-radius: 4px; padding: 8px 12px;
+        font-size: 11px; font-weight: 700; cursor: pointer; color: #2a2430;
+      }
+      .hint { margin-top: 8px; font-size: 12px; color: #6a5a66; }
+      .doc {
+        width: min(390px, 100%); margin-top: 18px; color: #ddd; font-size: 13px; line-height: 1.5;
+      }
+      .doc code { background: #222; padding: 1px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="phone" aria-label="E2 static prototype phone frame">
+      <section id="universe" class="screen active stars" aria-label="Universe Home">
+        <div class="meta"><span>Exit → close tab</span><span>E2.1 STATIC</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button class="on" data-go="universe">Universe</button>
+          <button data-go="circle">Circle</button>
+          <button data-go="friend">Friend</button>
+          <button data-go="mine">Mine</button>
+        </nav>
+        <h1>Your Diary</h1>
+        <p class="tag">nearness you chose — private to you</p>
+        <div class="stage" id="universeStage" aria-label="Private spatial universe with relationship distances">
+          <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <line class="link-close" x1="50" y1="48" x2="34" y2="30" stroke="rgba(215,222,234,.14)" stroke-width="0.35" />
+            <line class="link-close" x1="50" y1="48" x2="66" y2="28" stroke="rgba(215,222,234,.14)" stroke-width="0.35" />
+            <line class="link-close" x1="50" y1="48" x2="30" y2="62" stroke="rgba(215,222,234,.14)" stroke-width="0.35" />
+            <line id="focusLink" x1="50" y1="48" x2="50" y2="48" stroke="rgba(232,199,138,.55)" stroke-width="0.45" style="display:none" />
+          </svg>
+          <!-- distant clusters -->
+          <button class="node distant" style="left:72%;top:18%" data-focus="Minji" data-circle="Brooklyn Friends" data-diary="1" data-x="72" data-y="18" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:80%;top:22%" data-focus="Noah" data-circle="Brooklyn Friends" data-diary="0" data-x="80" data-y="22" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:76%;top:12%" data-focus="Hana" data-circle="Brooklyn Friends" data-diary="0" data-x="76" data-y="12" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:18%;top:16%" data-focus="Theo" data-circle="Late Night" data-diary="1" data-x="18" data-y="16" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:12%;top:24%" data-focus="Ivy" data-circle="Late Night" data-diary="0" data-x="12" data-y="24" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:22%;top:78%" data-focus="Quinn" data-circle="Study Quiet" data-diary="0" data-x="22" data-y="78" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:30%;top:84%" data-focus="Jules" data-circle="Study Quiet" data-diary="1" data-x="30" data-y="84" aria-label="Focus distant member"></button>
+          <button class="node distant" style="left:16%;top:86%" data-focus="Sky" data-circle="Study Quiet" data-diary="0" data-x="16" data-y="86" aria-label="Focus distant member"></button>
+          <!-- near -->
+          <button class="node near" style="left:78%;top:58%" data-focus="Casey" data-circle="Brooklyn Friends" data-diary="1" data-x="78" data-y="58" aria-label="Casey, near member"></button>
+          <button class="node near" style="left:58%;top:82%" data-focus="Riley" data-circle="Study Quiet" data-diary="0" data-x="58" data-y="82" aria-label="Riley, near member"></button>
+          <!-- close friends: large unique orbs, direct diary -->
+          <button class="node close front" style="left:34%;top:30%;background:none" data-go="friend" aria-label="Minseo, close friend, open diary">
+            <i style="background:#C97B63"></i><b>Minseo</b>
+          </button>
+          <button class="node close back" style="left:66%;top:28%;background:none" data-go="friend" aria-label="Sam, close friend, open diary">
+            <i style="background:#7FAF9A"></i><b>Sam</b>
+          </button>
+          <button class="node close mid" style="left:30%;top:62%;background:none" data-go="friend" aria-label="Junho, close friend, open diary">
+            <i style="background:#6FA3C2"></i><b>Junho</b>
+          </button>
+          <div class="self" aria-label="Your presence at the center">
+            <div class="orb">◎</div>
+            <span>you</span>
+          </div>
+          <div class="focus-card" id="focusCard">
+            <h3 id="focusName">—</h3>
+            <p id="focusMeta">—</p>
+            <button class="visit" data-go="friend">visit diary</button>
+            <button class="dismiss" id="focusDismiss" type="button">return to place</button>
+          </div>
+        </div>
+        <p class="privacy">Close-friend placement is private and manually chosen. Size and distance never mean online status, popularity, or reciprocal affection.</p>
+        <div class="foot"><button data-go="circle">open a circle room →</button></div>
+      </section>
+
+      <section id="circle" class="screen" aria-label="Circle">
+        <div class="meta"><span>from universe</span><span>E2 STATIC</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button data-go="universe">Universe</button>
+          <button class="on" data-go="circle">Circle</button>
+          <button data-go="friend">Friend</button>
+          <button data-go="mine">Mine</button>
+        </nav>
+        <button class="back" data-go="universe">← universe</button>
+        <div class="sym" aria-hidden="true">◌</div>
+        <h1>Brooklyn Friends</h1>
+        <p class="tag">three quiet orbits</p>
+        <div class="stage" aria-label="Friends as spatial members">
+          <div class="ring" aria-hidden="true"></div>
+          <button class="friend f1" data-go="friend" aria-label="Visit Minseo diary"><i></i><b>Minseo</b><small>warm dusk</small></button>
+          <button class="friend f2" data-go="friend" aria-label="Visit Junho diary"><i></i><b>Junho</b><small>cool air</small></button>
+          <button class="friend f3" data-go="friend" aria-label="Visit Sam diary"><i></i><b>Sam</b><small>soft lamp</small></button>
+        </div>
+        <div class="objects">
+          <div class="obj"><span>notice</span><strong>Friday picnic?</strong></div>
+          <div class="obj"><span>board</span><strong>alias board</strong></div>
+        </div>
+        <button class="cta" data-go="friend">step into a friend’s today →</button>
+      </section>
+
+      <section id="friend" class="screen" aria-label="Friend Diary">
+        <div class="meta"><span>from circle</span><span>PASTEL HOMPY</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button data-go="universe">Universe</button>
+          <button data-go="circle">Circle</button>
+          <button class="on" data-go="friend">Friend</button>
+          <button data-go="mine">Mine</button>
+        </nav>
+        <button class="back" data-go="circle">← Brooklyn Friends</button>
+        <div class="hompy">
+          <div class="profile-box">
+            <div class="av">M</div>
+            <div class="meta"><b>Minseo</b><small>Calm · Brooklyn Friends</small></div>
+          </div>
+          <div class="today-box"><span>Today I…</span>the light stayed on the desk a little longer today</div>
+          <div class="grid2">
+            <div class="panel mint"><strong>2026.7</strong>S · M · T · W · T · F · S</div>
+            <div class="panel peach"><strong>mini album</strong>today’s frame</div>
+          </div>
+          <div class="board-box">
+            circle board · guestbook · free board
+            <div class="music">♪ Moonlight Drive · soft instrumental</div>
+          </div>
+          <button class="cta" data-go="mine" style="align-self:flex-start">same world · open my diary →</button>
+        </div>
+      </section>
+
+      <section id="mine" class="screen" aria-label="My Diary">
+        <div class="meta"><span>same world</span><span>PASTEL HOMPY</span></div>
+        <nav class="rail" aria-label="Prototype screens">
+          <button data-go="universe">Universe</button>
+          <button data-go="circle">Circle</button>
+          <button data-go="friend">Friend</button>
+          <button class="on" data-go="mine">Mine</button>
+        </nav>
+        <button class="back" data-go="friend">← friend’s today</button>
+        <div class="hompy">
+          <div class="profile-box">
+            <div class="av">A</div>
+            <div class="meta"><b>Alex</b><small>Grateful · Brooklyn Friends</small></div>
+          </div>
+          <div class="today-box"><span>Today I…</span><span id="todayBody">I kept one sentence and let the rest wait</span></div>
+          <div class="grid2">
+            <div class="panel mint"><strong>2026.7</strong>S · M · T · W · T · F · S</div>
+            <div class="panel peach"><strong>mini album</strong>today’s frame</div>
+          </div>
+          <div class="board-box">
+            circle board · guestbook · free board
+            <div class="music">♪ Harbor Morning · lo-fi piano</div>
+            <button class="tomato" id="editToday" type="button">Edit today</button>
+            <p class="hint" id="writeHint">tap Edit today to write (prototype · no save)</p>
+          </div>
+          <button class="cta" data-go="universe" style="align-self:flex-start">← return to the universe</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="doc">
+      <p><strong>Browser mirror</strong> — diary = pastel pencil mini-hompy only. In-app: <code>/prototype/e2</code> or real <code>/diary/[userId]</code></p>
+      <p>Pull branch <code>cursor/school-trust-boundary-plan-9985</code> then <code>npx expo start -c</code></p>
+    </div>
+
+    <script>
+      const go = (id) => {
+        document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('active', el.id === id));
+        history.replaceState(null, '', '#' + id);
+        clearFocus();
+      };
+      document.querySelectorAll('[data-go]').forEach((el) => {
+        el.addEventListener('click', () => go(el.getAttribute('data-go')));
+      });
+      document.getElementById('editToday').addEventListener('click', () => {
+        const body = document.getElementById('todayBody');
+        if (body) body.textContent = '…keeping one quiet line';
+        document.getElementById('writeHint').textContent = 'writing mode (prototype · no save)';
+      });
+
+      const universe = document.getElementById('universe');
+      const focusCard = document.getElementById('focusCard');
+      const focusLink = document.getElementById('focusLink');
+      let pulled = null;
+
+      function clearFocus() {
+        if (pulled) {
+          pulled.classList.remove('pulled');
+          if (pulled.dataset.homeLeft) {
+            pulled.style.left = pulled.dataset.homeLeft;
+            pulled.style.top = pulled.dataset.homeTop;
+          }
+          pulled = null;
+        }
+        focusCard.classList.remove('on');
+        universe.classList.remove('dim');
+        focusLink.style.display = 'none';
+      }
+
+      document.querySelectorAll('.node.distant, .node.near').forEach((el) => {
+        el.dataset.homeLeft = el.style.left;
+        el.dataset.homeTop = el.style.top;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (pulled === el) { clearFocus(); return; }
+          clearFocus();
+          pulled = el;
+          el.classList.add('pulled');
+          // temporarily nearer to center
+          const x = parseFloat(el.dataset.x);
+          const y = parseFloat(el.dataset.y);
+          el.style.left = (50 + (x - 50) * 0.55) + '%';
+          el.style.top = (48 + (y - 48) * 0.55) + '%';
+          document.getElementById('focusName').textContent = el.dataset.focus;
+          document.getElementById('focusMeta').textContent =
+            el.dataset.circle + (el.dataset.diary === '1' ? ' · diary today' : ' · quiet today');
+          focusCard.classList.add('on');
+          universe.classList.add('dim');
+          focusLink.setAttribute('x2', String(50 + (x - 50) * 0.55));
+          focusLink.setAttribute('y2', String(48 + (y - 48) * 0.55));
+          focusLink.style.display = 'block';
+        });
+      });
+      document.getElementById('focusDismiss').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearFocus();
+      });
+
+      const initial = location.hash.replace('#', '') || 'universe';
+      if (['universe', 'circle', 'friend', 'mine'].includes(initial)) go(initial);
+    </script>
+  </body>
+</html>

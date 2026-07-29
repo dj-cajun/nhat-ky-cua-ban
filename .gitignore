@@ -8,10 +8,15 @@ node_modules/
 out/
 dist/
 build/
+www/
 
 # env
 .env
-.env*.local
+.env.local
+.env.*.local
+!.env.example
+!mobile/.env.example
+
 
 # debug
 npm-debug.log*
@@ -32,3 +37,7 @@ test-results/
 # misc
 *.tsbuildinfo
 next-env.d.ts
+.vercel
+.expo/
+mobile/.expo/
+

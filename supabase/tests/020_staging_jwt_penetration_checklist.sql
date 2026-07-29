@@ -1,0 +1,131 @@
+-- Phase B.1 — staging JWT penetration GATE (launch blocker)
+-- Checklist existence ≠ pass. Mark each cell PASS/FAIL with real JWTs on staging.
+-- One path that skips shared school predicates ⇒ B.1 incomplete. Do not start Phase C.
+
+-- =============================================================================
+-- Personas (separate Auth sessions / JWTs)
+-- =============================================================================
+-- A  school-A verified + active member of circle X          → ALLOW (same school member)
+-- B  school-A verified + NOT a member of circle X          → DENY
+-- C  school-B verified + knows circle/diary/note ids + invite → NOT_FOUND / no existence leak
+-- D  school-A pending_change + member of circle X           → READ ok, WRITE deny
+-- E  school-A suspended OR expired (+ known ids)           → DENY all circle-bound access
+-- M  row in app_moderators                                 → ops only; not a data backdoor
+
+-- Shared fixtures:
+--   schools_v2: School A, School B
+--   circle X: school_id = A, members include A (+ optionally D)
+--   diary / notice / poll / anonymous post / private note / guestbook / photo for member of X
+--   invite link for circle X
+
+-- =============================================================================
+-- Gate matrix — every cell must PASS
+-- =============================================================================
+-- Path                         | A     | B        | C          | D           | E     | M(ops)
+-- -----------------------------+-------+----------+------------+-------------+-------+--------
+-- circle read                  | allow | deny     | NOT_FOUND* | allow       | deny  | n/a**
+-- circle write (post/etc)      | allow | deny     | deny       | deny        | deny  | n/a
+-- diary read (shared)          | allow | deny     | deny/false | allow       | deny  | n/a
+-- diary write (own)            | allow | allow*** | allow***   | allow***    | deny? | n/a
+-- notice/poll create           | allow‡| deny     | deny       | deny        | deny  | n/a
+-- notice/poll respond          | allow | deny     | deny       | deny        | deny  | n/a
+-- pseudonymous board read      | allow | deny     | deny       | allow       | deny  | n/a
+-- pseudonymous board write     | allow | deny     | deny       | deny        | deny  | n/a
+-- private notes send           | allow | deny     | deny       | deny        | deny  | n/a
+-- guestbook write (shared)     | allow | deny     | deny       | deny        | deny  | n/a
+-- invite preview               | allow | allow§   | NOT_FOUND  | allow§      | deny  | n/a
+-- presence publish             | allow | deny     | deny       | deny        | deny  | n/a
+-- deep link join               | ok/mem| preview  | NOT_FOUND  | preview     | deny  | n/a
+-- cached screen refresh        | ok    | miss     | miss       | read-only   | miss  | n/a
+-- account switch stale cache   | — clear caches; next persona must not see previous data —
+-- ops school verify / mixed    | FORBIDDEN for A–E | M only + audit
+--
+-- * C: prefer NOT_FOUND on preview (no existence leak); internals FORBIDDEN/false
+-- ** M must use ops RPCs only — not unrestricted SELECT on user content
+-- *** Own private diary may remain writable; circle-shared write paths still gated
+-- ‡ pioneer/admin role still required for create_circle_post
+-- § same-school access membership (verified|pending_change), not circle membership
+
+-- =============================================================================
+-- RPC / surface calls (fill PASS/FAIL)
+-- =============================================================================
+
+-- --- Persona A ---
+-- [ ] can_access_circle(A, X) = true
+-- [ ] can_write_circle(A, X) = true
+-- [ ] get_anonymous_circle_posts(X) ok
+-- [ ] create_circle_post / acknowledge / respond (role permitting) ok
+-- [ ] send_named_message ok
+-- [ ] Presence publish ok
+-- [ ] get_my_operator_capabilities → isModerator false
+-- [ ] ops_list_school_verification_requests → FORBIDDEN
+
+-- --- Persona B (same school, non-member) ---
+-- [ ] can_access_circle(B, X) = false
+-- [ ] get_anonymous_circle_posts(X) → FORBIDDEN
+-- [ ] can_view_diary_entry(shared) = false
+-- [ ] send_named_message → FORBIDDEN
+-- [ ] get_circle_invite_preview(X) → ok metadata only (not member)
+-- [ ] create_circle_join_request with valid recommenders → proceeds to pending (not auto member)
+
+-- --- Persona C (other school + known ids + invite) ---
+-- [ ] get_circle_invite_preview(X) → NOT_FOUND
+-- [ ] create_circle_join_request → FORBIDDEN
+-- [ ] get_anonymous_circle_posts → FORBIDDEN
+-- [ ] can_view_diary_entry → false
+-- [ ] send_named_message → FORBIDDEN
+-- [ ] create_photo_signed_url_token → FORBIDDEN
+-- [ ] Presence topic circle:X → denied
+-- [ ] App deep link /circles/X/join → NOT_FOUND (no join UI leak)
+
+-- --- Persona D (pending_change) ---
+-- [ ] can_access_circle(D, X) = true
+-- [ ] can_write_circle(D, X) = false
+-- [ ] get_anonymous_circle_posts → ok (read)
+-- [ ] create_anonymous_post / create_circle_post / recommend → FORBIDDEN
+-- [ ] send_named_message / guestbook write → FORBIDDEN
+-- [ ] Presence publish → denied; subscribe may remain (access)
+
+-- --- Persona E (suspended / expired) ---
+-- [ ] can_access_circle = false ; can_write_circle = false
+-- [ ] All known-id reads/writes above → deny
+-- [ ] Repeat for expired membership status
+
+-- --- Persona M (operator) ---
+-- [ ] get_my_operator_capabilities → true
+-- [ ] ops_list_school_verification_requests ok
+-- [ ] ops_scan_mixed_school_circles + ops_list_mixed_school_circles ok
+-- [ ] ops_resolve_mixed_school_circle writes school_audit_events (note required)
+-- [ ] A/B/C/D/E calling same ops → FORBIDDEN
+-- [ ] No service-role / hard-coded moderator JWT in client bundle
+-- [ ] M is NOT a data backdoor:
+--       can_view_diary_entry(other's shared entry) without circle membership → false
+--       get_anonymous_circle_posts / notes inbox for non-member circle → FORBIDDEN
+--       (report-case RPCs with snapshot may still work — that is explicit ops)
+
+-- =============================================================================
+-- Mixed-school incident flow (M)
+-- =============================================================================
+-- [ ] Seed foreign-school member on X → scan opens incident, auto_write_blocked
+-- [ ] A can_write_circle false while open
+-- [ ] Ops UI shows: canonical school, foreign members + statuses, freeze time,
+--     last activity, resolve note field, resolver after resolve
+-- [ ] Manual cleanup then resolve → audit event; writes restore for clean members
+-- [ ] Never auto-moves memberships / school_id
+
+-- =============================================================================
+-- Account switch / stale cache
+-- =============================================================================
+-- [ ] Sign in A → open circle X → switchToUser(C) without process kill
+-- [ ] query caches cleared (universe/circle/diary/messages)
+-- [ ] Presence left previous topic
+-- [ ] C cannot open cached href / known ids
+
+-- =============================================================================
+-- Sign-off
+-- =============================================================================
+-- Staging project: _______________
+-- Applied migrations: 019, 020
+-- Tester: _______________  Date: _______________
+-- Result: PASS / FAIL
+-- Failures (path + persona): _______________
