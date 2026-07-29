@@ -25,6 +25,15 @@ export function resolveCircleGraphId(fromParam?: string | string[]): string | nu
   return activeCircleGraphId;
 }
 
+/** Prefer replace on web — dismissTo/back stacks get weird across tabs. */
+function go(href: Href) {
+  try {
+    router.replace(href);
+  } catch {
+    router.push(href);
+  }
+}
+
 /** Universe → circle friends graph */
 export function openCircleGraph(circleId: string) {
   rememberCircleGraph(circleId);
@@ -37,31 +46,19 @@ export function openDiaryFromCircle(userId: string, circleId: string) {
   router.push(`/diary/${userId}?fromCircleId=${encodeURIComponent(circleId)}`);
 }
 
-function dismissOrReplace(href: Href) {
-  if (typeof router.dismissTo === 'function') {
-    router.dismissTo(href);
-    return;
-  }
-  router.replace(href);
-}
-
-/** Friend home → circle graph (always, not universe) */
+/** Friend/my home → circle graph (always, not universe) */
 export function backToCircleGraph(fromParam?: string | string[]) {
   const circleId = resolveCircleGraphId(fromParam);
   if (circleId) {
     rememberCircleGraph(circleId);
-    dismissOrReplace(`/circles/${circleId}/graph` as Href);
+    go(`/circles/${circleId}/graph` as Href);
     return;
   }
-  if (router.canGoBack()) {
-    router.back();
-    return;
-  }
-  dismissOrReplace('/(tabs)/universe');
+  go('/(tabs)/universe');
 }
 
-/** Circle graph → My Universe (circles only) */
+/** Circle graph → My Universe (circles wrapping A) */
 export function backToUniverseCircles() {
   clearCircleGraph();
-  dismissOrReplace('/(tabs)/universe');
+  go('/(tabs)/universe');
 }

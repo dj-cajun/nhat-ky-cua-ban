@@ -16,9 +16,7 @@ export type DeskWeather = 'night' | 'clear' | 'cloudy' | 'rain';
 export type DeskSceneProps = {
   weather?: DeskWeather;
   lampOn?: boolean;
-  /** Up to 3 photo URIs for cork slots; null = empty polaroid. */
   corkSlots?: Array<string | null>;
-  /** Optional overlay text on memo (tenCharText). */
   memoText?: string;
   tomatoRunning?: boolean;
   onPressMemo?: () => void;
@@ -29,18 +27,18 @@ export type DeskSceneProps = {
   onPressLamp?: () => void;
 };
 
-/* Metro asset requires — same pattern as intro-asset.generated.ts */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const ASSETS = {
   deskBg: require('../../../assets/desk/desk_bg.png') as ImageSourcePropType,
-  plant: require('../../../assets/desk/plant.png') as ImageSourcePropType,
+  corkboard: require('../../../assets/desk/corkboard.png') as ImageSourcePropType,
+  corkEmpty: require('../../../assets/desk/cork_empty.png') as ImageSourcePropType,
   books: require('../../../assets/desk/books.png') as ImageSourcePropType,
   tomato: require('../../../assets/desk/tomato_timer.png') as ImageSourcePropType,
   memo: require('../../../assets/desk/memo_note.png') as ImageSourcePropType,
   frame: require('../../../assets/desk/photo_frame.png') as ImageSourcePropType,
   lamp: require('../../../assets/desk/lamp.png') as ImageSourcePropType,
   lampGlow: require('../../../assets/desk/lamp_glow.png') as ImageSourcePropType,
-  corkEmpty: require('../../../assets/desk/cork_empty.png') as ImageSourcePropType,
+  plant: require('../../../assets/desk/plant.png') as ImageSourcePropType,
   sky: {
     night: require('../../../assets/desk/sky_night.png') as ImageSourcePropType,
     clear: require('../../../assets/desk/sky_clear.png') as ImageSourcePropType,
@@ -51,46 +49,39 @@ const ASSETS = {
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 /**
- * Coordinates measured against desk_bg.png (768×512).
- * desk_bg already draws the wall, dual frames, and desk surface —
- * do NOT stack a second corkboard/window_frame on top (that was the muddy collage).
+ * Fitted to desk_bg.png (768×512): left window hole + right cork hole + desk band.
+ * No second full-scene frames stacked on top of desk_bg.
  */
 const LAYOUT = {
-  /** Left frame inner glass */
-  window: { x: 0.1, y: 0.13, w: 0.32, h: 0.36 },
-  /** Right cork inner board */
-  cork: { x: 0.56, y: 0.12, w: 0.33, h: 0.36 },
+  window: { x: 0.1, y: 0.125, w: 0.325, h: 0.355 },
+  cork: { x: 0.545, y: 0.11, w: 0.355, h: 0.37 },
   corkSlots: [
-    { x: 0.58, y: 0.15, w: 0.12, h: 0.14 },
-    { x: 0.74, y: 0.15, w: 0.12, h: 0.14 },
-    { x: 0.66, y: 0.31, w: 0.12, h: 0.14 },
+    { x: 0.57, y: 0.145, w: 0.13, h: 0.145 },
+    { x: 0.735, y: 0.145, w: 0.13, h: 0.145 },
+    { x: 0.65, y: 0.305, w: 0.13, h: 0.145 },
   ],
-  plant: { x: 0.04, y: 0.52, w: 0.16, h: 0.4 },
-  books: { x: 0.2, y: 0.6, w: 0.18, h: 0.28 },
-  tomato: { x: 0.4, y: 0.56, w: 0.15, h: 0.3 },
-  memo: { x: 0.56, y: 0.56, w: 0.14, h: 0.32 },
-  frame: { x: 0.7, y: 0.58, w: 0.13, h: 0.3 },
-  lamp: { x: 0.84, y: 0.46, w: 0.14, h: 0.44 },
-  lampGlow: { x: 0.72, y: 0.42, w: 0.26, h: 0.38 },
+  plant: { x: 0.03, y: 0.54, w: 0.15, h: 0.38 },
+  books: { x: 0.19, y: 0.62, w: 0.17, h: 0.26 },
+  tomato: { x: 0.39, y: 0.57, w: 0.14, h: 0.28 },
+  memo: { x: 0.55, y: 0.57, w: 0.13, h: 0.3 },
+  frame: { x: 0.7, y: 0.6, w: 0.12, h: 0.28 },
+  lamp: { x: 0.84, y: 0.48, w: 0.14, h: 0.42 },
+  lampGlow: { x: 0.74, y: 0.44, w: 0.24, h: 0.36 },
 } as const;
 
 const WEATHER_CYCLE: DeskWeather[] = ['night', 'clear', 'cloudy', 'rain'];
 
+type Box = { x: number; y: number; w: number; h: number };
 type BoxStyle = Pick<ViewStyle, 'left' | 'top' | 'width' | 'height'>;
 
-function box(r: { x: number; y: number; w: number; h: number }): BoxStyle {
+function box(r: Box): BoxStyle {
   const pct = (n: number) => `${(n * 100).toFixed(2)}%` as `${number}%`;
-  return {
-    left: pct(r.x),
-    top: pct(r.y),
-    width: pct(r.w),
-    height: pct(r.h),
-  };
+  return { left: pct(r.x), top: pct(r.y), width: pct(r.w), height: pct(r.h) };
 }
 
 /**
- * Layered desk for MY hompy only.
- * Base plate = desk_bg; sky/photos/props are insets — no duplicate frames.
+ * MY hompy desk — replaces Today I… + mini album.
+ * Clean layer order: desk_bg → sky/corkboard insets → photos → props.
  */
 export function DeskScene({
   weather: weatherProp,
@@ -159,10 +150,7 @@ export function DeskScene({
       onPressWindow();
       return;
     }
-    setWeather((w) => {
-      const i = WEATHER_CYCLE.indexOf(w);
-      return WEATHER_CYCLE[(i + 1) % WEATHER_CYCLE.length]!;
-    });
+    setWeather((w) => WEATHER_CYCLE[(WEATHER_CYCLE.indexOf(w) + 1) % WEATHER_CYCLE.length]!);
   };
 
   const toggleLamp = () => {
@@ -175,47 +163,49 @@ export function DeskScene({
 
   return (
     <View style={styles.root} accessibilityLabel="Desk scene">
-      {/* 1) Base plate — wall, frames, desk */}
       <Image source={ASSETS.deskBg} style={styles.fill} resizeMode="cover" />
 
-      {/* 2) Sky painted into the left frame hole (desk_bg hole is opaque black) */}
-      <View style={[styles.abs, box(LAYOUT.window), styles.windowClip]} pointerEvents="none">
+      {/* Sky inside left window hole */}
+      <View style={[styles.abs, box(LAYOUT.window), styles.clipRound]} pointerEvents="none">
         <Image source={ASSETS.sky[weather]} style={styles.fill} resizeMode="cover" />
       </View>
 
-      {/* 3) Photos pinned into cork hole */}
+      {/* Cork texture fitted to right hole (not a second full wall frame) */}
+      <View style={[styles.abs, box(LAYOUT.cork), styles.clipRound]} pointerEvents="none">
+        <Image source={ASSETS.corkboard} style={styles.fill} resizeMode="cover" />
+      </View>
+
+      {/* Photo slots above cork */}
       {LAYOUT.corkSlots.map((slot, i) => (
-        <View key={`slot-${i}`} style={[styles.abs, box(slot), styles.slotClip]} pointerEvents="none">
+        <View key={`slot-${i}`} style={[styles.abs, box(slot), styles.slot]} pointerEvents="none">
           {slots[i] ? (
             <Image source={{ uri: slots[i]! }} style={styles.fill} resizeMode="cover" />
           ) : (
-            <Image source={ASSETS.corkEmpty} style={styles.fill} resizeMode="cover" />
+            <View style={styles.emptySlot}>
+              <Image source={ASSETS.corkEmpty} style={styles.emptyPolaroid} resizeMode="contain" />
+            </View>
           )}
         </View>
       ))}
-      <Pressable
-        style={[styles.hit, box(LAYOUT.cork)]}
-        onPress={onPressCork}
-        accessibilityRole="button"
-        accessibilityLabel="Open mini album"
-      />
+
       <Pressable
         style={[styles.hit, box(LAYOUT.window)]}
         onPress={cycleWeather}
         accessibilityRole="button"
         accessibilityLabel="Change window weather"
       />
+      <Pressable
+        style={[styles.hit, box(LAYOUT.cork)]}
+        onPress={onPressCork}
+        accessibilityRole="button"
+        accessibilityLabel="Open mini album"
+      />
 
-      {/* 4) Desk props */}
       <Image source={ASSETS.plant} style={[styles.abs, box(LAYOUT.plant)]} resizeMode="contain" />
       <Image source={ASSETS.books} style={[styles.abs, box(LAYOUT.books)]} resizeMode="contain" />
 
       <Animated.View
-        style={[
-          styles.abs,
-          box(LAYOUT.tomato),
-          { transform: [{ rotate: tomatoRotate }] },
-        ]}
+        style={[styles.abs, box(LAYOUT.tomato), { transform: [{ rotate: tomatoRotate }] }]}
         pointerEvents="box-none"
       >
         <Image source={ASSETS.tomato} style={styles.fill} resizeMode="contain" />
@@ -260,11 +250,9 @@ export function DeskScene({
       </View>
 
       {lampOn ? (
-        <Image
-          source={ASSETS.lampGlow}
-          style={[styles.abs, box(LAYOUT.lampGlow), styles.glow]}
-          resizeMode="contain"
-        />
+        <View style={[styles.abs, box(LAYOUT.lampGlow), styles.glow]} pointerEvents="none">
+          <Image source={ASSETS.lampGlow} style={styles.fill} resizeMode="contain" />
+        </View>
       ) : null}
       <View style={[styles.abs, box(LAYOUT.lamp)]} pointerEvents="box-none">
         <Image source={ASSETS.lamp} style={styles.fill} resizeMode="contain" />
@@ -283,7 +271,7 @@ const styles = StyleSheet.create({
   root: {
     width: '100%',
     aspectRatio: 1.5,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#1a1512',
   },
@@ -292,44 +280,43 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  abs: {
-    position: 'absolute',
+  abs: { position: 'absolute' },
+  clipRound: {
+    overflow: 'hidden',
+    borderRadius: 6,
   },
-  windowClip: {
+  slot: {
     overflow: 'hidden',
     borderRadius: 4,
-    zIndex: 0,
-  },
-  slotClip: {
-    overflow: 'hidden',
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(40,28,18,0.55)',
-    backgroundColor: '#2a1c12',
-    zIndex: 2,
-  },
-  hit: {
-    position: 'absolute',
-    zIndex: 3,
-  },
-  hitFill: {
-    ...StyleSheet.absoluteFill,
-  },
-  glow: {
-    opacity: 0.75,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(30,20,12,0.65)',
+    backgroundColor: '#3a2818',
     zIndex: 4,
   },
+  emptySlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3e6d2',
+  },
+  emptyPolaroid: {
+    width: '88%',
+    height: '88%',
+  },
+  hit: { position: 'absolute', zIndex: 5 },
+  hitFill: { ...StyleSheet.absoluteFill },
+  glow: { opacity: 0.7, zIndex: 6 },
   framePhoto: {
-    margin: '12%',
-    width: '76%',
-    height: '76%',
+    margin: '14%',
+    width: '72%',
+    height: '72%',
     alignSelf: 'center',
   },
   memoOverlay: {
     position: 'absolute',
-    left: '14%',
-    right: '14%',
-    top: '28%',
+    left: '12%',
+    right: '12%',
+    top: '30%',
     fontSize: 10,
     lineHeight: 13,
     color: '#3a2e22',

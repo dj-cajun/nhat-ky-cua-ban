@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -12,19 +12,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Line } from 'react-native-svg';
-import { BreathingView } from '@/features/space-ui/BreathingView';
-import { SpatialDot } from '@/features/space-ui/SpatialDot';
-import { spaceMotion } from '@/features/space-ui/space-motion';
 import type { CircleSummary, Profile } from '@/types/domain';
-import {
-  addCloseFriend,
-  getCloseFriendIds,
-  removeCloseFriend,
-} from './close-friends.store';
 import { INTRO_HANDOFF } from './handoff';
 import { resolveLiveHandoffLayout, resolveSettleScale } from './handoff-layout';
-import { buildSpatialNodes, type SpatialNode } from './spatial-members';
 
 export type UniverseGraphFriend = {
   userId: string;
@@ -32,30 +22,23 @@ export type UniverseGraphFriend = {
   circleId: string;
 };
 
-const SPACE = {
-  void: '#070B14',
-  linkFaint: 'rgba(215,222,234,0.14)',
-  linkFocus: 'rgba(232,199,138,0.55)',
-  ink: '#F4EFE6',
-  whisper: 'rgba(244,239,230,0.62)',
-  card: 'rgba(14,21,38,0.92)',
-  cardBorder: 'rgba(244,239,230,0.22)',
+const PASTEL = {
+  fills: [
+    'rgba(255, 232, 240, 0.42)',
+    'rgba(223, 244, 255, 0.40)',
+    'rgba(229, 248, 232, 0.40)',
+    'rgba(255, 243, 224, 0.40)',
+    'rgba(240, 234, 255, 0.40)',
+  ] as const,
+  borders: ['#E8A4C4', '#9EC5E8', '#A8D5B0', '#E8C9A0', '#C9B8E8'] as const,
+  ink: ['#8B4F6A', '#3F6F96', '#3F7A4E', '#8A6A3A', '#5E4F8A'] as const,
 };
 
-function polar(cx: number, cy: number, r: number, angleDeg: number) {
-  const rad = ((angleDeg - 90) * Math.PI) / 180;
-  return { x: cx + Math.cos(rad) * r, y: cy + Math.sin(rad) * r };
-}
-
-function closeSize(n: SpatialNode) {
-  if (n.depth === 'front') return 64;
-  if (n.depth === 'back') return 48;
-  return 56;
-}
-
 /**
- * E3/E4 Universe — private spatial hierarchy + intentional presence motion.
- * Close friends are manually selected locally; never engagement-ranked.
+ * My Universe home (restored product path):
+ * - A is the shared center (always visible)
+ * - Each circle = large pastel-filled disk wrapping A
+ * - Tap a circle → friends graph page (not friend orbs here)
  */
 export function FallbackUniverse({
   profile,
@@ -65,7 +48,6 @@ export function FallbackUniverse({
   revealPlanets,
   onPressSelf,
   onPressCircle,
-  onPressFriend,
   animateSettle = true,
 }: {
   profile: Profile;
@@ -75,6 +57,7 @@ export function FallbackUniverse({
   revealPlanets: boolean;
   onPressSelf: () => void;
   onPressCircle: (id: string) => void;
+  /** Kept for call-site compat; friends live on the circle graph screen. */
   onPressFriend?: (userId: string) => void;
   animateSettle?: boolean;
 }) {
@@ -82,38 +65,20 @@ export function FallbackUniverse({
   const layout = resolveLiveHandoffLayout(width, height);
   const { diameter, left, top, cxPx, cyPx } = layout;
   const settleScale = resolveSettleScale(width, height);
-  const maxR = Math.min(width, height) * 0.42;
 
   const selfScale = useSharedValue(revealProfile && !animateSettle ? settleScale : 1);
   const diagramOp = useSharedValue(0);
-  const focusCardOp = useSharedValue(0);
-  const [closeIds, setCloseIds] = useState<string[]>([]);
-  const [focusId, setFocusId] = useState<string | null>(null);
-  const [breathing, setBreathing] = useState(!animateSettle && revealProfile);
-
-  useEffect(() => {
-    void getCloseFriendIds().then(setCloseIds);
-  }, []);
 
   useEffect(() => {
     if (revealProfile) {
-      setBreathing(false);
-      if (animateSettle) {
-        selfScale.value = withTiming(settleScale, {
-          duration: INTRO_HANDOFF.settleDurationSec * 1000,
-          easing: Easing.out(Easing.quad),
-        });
-        const id = setTimeout(
-          () => setBreathing(true),
-          INTRO_HANDOFF.settleDurationSec * 1000 + 80,
-        );
-        return () => clearTimeout(id);
-      }
-      selfScale.value = settleScale;
-      setBreathing(true);
+      selfScale.value = animateSettle
+        ? withTiming(settleScale, {
+            duration: INTRO_HANDOFF.settleDurationSec * 1000,
+            easing: Easing.out(Easing.quad),
+          })
+        : settleScale;
     } else {
       selfScale.value = 1;
-      setBreathing(false);
     }
   }, [revealProfile, animateSettle, settleScale, selfScale]);
 
@@ -121,47 +86,34 @@ export function FallbackUniverse({
     diagramOp.value = revealPlanets
       ? withTiming(1, { duration: 750, easing: Easing.out(Easing.cubic) })
       : 0;
-    if (!revealPlanets) setFocusId(null);
   }, [revealPlanets, diagramOp]);
 
-  useEffect(() => {
-    const show = Boolean(focusId);
-    focusCardOp.value = withTiming(show ? 1 : 0, {
-      duration: spaceMotion.focusCardMs,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [focusId, focusCardOp]);
+  const minSide = Math.min(width, height);
+  const baseRing = minSide * 0.38;
+  const ringStep = minSide * 0.11;
 
-  const nodes = useMemo(
-    () => buildSpatialNodes(friends, closeIds),
-    [friends, closeIds],
-  );
-  const focused = useMemo(
-    () => nodes.find((n) => n.userId === focusId) ?? null,
-    [nodes, focusId],
-  );
-  const closeNodes = nodes.filter((n) => n.tier === 'close');
-  const nearNodes = nodes.filter((n) => n.tier === 'near');
-  const distantNodes = nodes.filter((n) => n.tier === 'distant');
-
-  const visit = useCallback(
-    (userId: string) => {
-      setFocusId(null);
-      if (onPressFriend) onPressFriend(userId);
-    },
-    [onPressFriend],
-  );
-
-  const keepNear = useCallback(async (userId: string) => {
-    const next = await addCloseFriend(userId);
-    setCloseIds(next);
-    setFocusId(null);
-  }, []);
-
-  const releaseNear = useCallback(async (userId: string) => {
-    const next = await removeCloseFriend(userId);
-    setCloseIds(next);
-  }, []);
+  const circleDisks = useMemo(() => {
+    // Paint large → small so inner disks sit above outer fills; A stays on top.
+    return circles
+      .map((c, i) => {
+        const ring = baseRing + (circles.length - 1 - i) * ringStep;
+        const angle = -Math.PI / 2 + i * 0.7;
+        const labelR = ring * 0.72;
+        return {
+          circle: c,
+          ring,
+          z: i + 1,
+          fill: PASTEL.fills[i % PASTEL.fills.length]!,
+          border: PASTEL.borders[i % PASTEL.borders.length]!,
+          ink: PASTEL.ink[i % PASTEL.ink.length]!,
+          labelX: cxPx + Math.cos(angle) * labelR,
+          labelY: cyPx + Math.sin(angle) * labelR,
+          friendCount: friends.filter((f) => f.circleId === c.id && f.userId !== profile.id)
+            .length,
+        };
+      })
+      .sort((a, b) => b.ring - a.ring);
+  }, [circles, friends, profile.id, baseRing, ringStep, cxPx, cyPx]);
 
   const selfStyle = useAnimatedStyle(() => ({
     transform: [{ scale: selfScale.value }],
@@ -169,151 +121,63 @@ export function FallbackUniverse({
   const diagramStyle = useAnimatedStyle(() => ({
     opacity: diagramOp.value,
   }));
-  const focusCardStyle = useAnimatedStyle(() => ({
-    opacity: focusCardOp.value,
-    transform: [{ translateY: (1 - focusCardOp.value) * 12 }],
-  }));
 
   const glowPad = 0.12;
   const hit = diameter * (1 + glowPad * 2);
   const avatar = Math.max(28, diameter * 0.32);
-  const circleName = (id: string) => circles.find((c) => c.id === id)?.name ?? 'Circle';
 
   return (
-    <View style={[styles.root, { width, height, backgroundColor: SPACE.void }]}>
+    <View style={[styles.root, { width, height, backgroundColor: INTRO_HANDOFF.spaceBg }]}>
       <StarField width={width} height={height} />
 
       <Animated.View
-        style={[StyleSheet.absoluteFill, diagramStyle, { pointerEvents: 'box-none' }]}
+        style={[StyleSheet.absoluteFill, diagramStyle]}
+        pointerEvents={revealPlanets ? 'box-none' : 'none'}
       >
-        <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
-          {closeNodes.map((n) => {
-            const p = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
-            return (
-              <Line
-                key={`link-${n.userId}`}
-                x1={cxPx}
-                y1={cyPx}
-                x2={p.x}
-                y2={p.y}
-                stroke={focusId ? 'rgba(215,222,234,0.06)' : SPACE.linkFaint}
-                strokeWidth={1}
-              />
-            );
-          })}
-          {focused && focused.tier !== 'close'
-            ? (() => {
-                const r =
-                  focused.tier === 'distant'
-                    ? Math.min(focused.radius, 0.55)
-                    : focused.radius;
-                const p = polar(cxPx, cyPx, r * maxR, focused.angleDeg);
-                return (
-                  <Line
-                    x1={cxPx}
-                    y1={cyPx}
-                    x2={p.x}
-                    y2={p.y}
-                    stroke={SPACE.linkFocus}
-                    strokeWidth={1.4}
-                  />
-                );
-              })()
-            : null}
-        </Svg>
-
-        {distantNodes.map((n) => {
-          const pulled = focusId === n.userId;
-          const home = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
-          const focus = polar(cxPx, cyPx, Math.min(n.radius, 0.55) * maxR, n.angleDeg);
-          return (
-            <SpatialDot
-              key={n.userId}
-              homeX={home.x}
-              homeY={home.y}
-              focusX={focus.x}
-              focusY={focus.y}
-              homeSize={9}
-              focusSize={28}
-              color={n.color}
-              focusColor="#B8C2D4"
-              focused={pulled}
-              dimmed={Boolean(focusId && !pulled)}
-              zIndex={pulled ? 8 : 1}
-              enabled={revealPlanets}
-              accessibilityLabel={
-                pulled ? `${n.displayName}, dismiss` : `Focus ${n.displayName}`
-              }
-              onPress={() => setFocusId(pulled ? null : n.userId)}
-            />
-          );
-        })}
-
-        {nearNodes.map((n) => {
-          const active = focusId === n.userId;
-          const home = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
-          return (
-            <SpatialDot
-              key={n.userId}
-              homeX={home.x}
-              homeY={home.y}
-              focusX={home.x}
-              focusY={home.y}
-              homeSize={22}
-              focusSize={30}
-              color={n.color}
-              focusColor="#C5D0E0"
-              focused={active}
-              dimmed={Boolean(focusId && !active)}
-              zIndex={3}
-              enabled={revealPlanets}
-              accessibilityLabel={n.displayName}
-              onPress={() => setFocusId(active ? null : n.userId)}
-            />
-          );
-        })}
-
-        {closeNodes.map((n) => {
-          const p = polar(cxPx, cyPx, n.radius * maxR, n.angleDeg);
-          const size = closeSize(n);
-          return (
+        {circleDisks.map((c) => (
+          <View key={c.circle.id} pointerEvents="box-none" style={{ zIndex: c.z }}>
             <Pressable
-              key={n.userId}
-              onPress={() => visit(n.userId)}
-              onLongPress={() => void releaseNear(n.userId)}
+              onPress={() => onPressCircle(c.circle.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${n.displayName}, close friend, open diary`}
+              accessibilityLabel={c.circle.name}
               style={[
-                styles.closeWrap,
+                styles.disk,
                 {
-                  left: p.x - size / 2 - 8,
-                  top: p.y - size / 2 - 4,
-                  width: size + 16,
-                  zIndex: n.depth === 'front' ? 7 : n.depth === 'back' ? 4 : 6,
-                  opacity: focusId ? 0.45 : 1,
-                  pointerEvents: revealPlanets ? 'auto' : 'none',
+                  left: cxPx - c.ring,
+                  top: cyPx - c.ring,
+                  width: c.ring * 2,
+                  height: c.ring * 2,
+                  borderRadius: c.ring,
+                  backgroundColor: c.fill,
+                  borderColor: c.border,
                 },
               ]}
+            />
+            <Pressable
+              onPress={() => onPressCircle(c.circle.id)}
+              style={[
+                styles.inDiskContent,
+                {
+                  left: c.labelX - 70,
+                  top: c.labelY - 28,
+                  width: 140,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={c.circle.name}
             >
-              <View
-                style={[
-                  styles.closeOrb,
-                  {
-                    width: size,
-                    height: size,
-                    borderRadius: size,
-                    backgroundColor: n.color,
-                  },
-                ]}
-              >
-                <Text style={styles.closeLetter}>{n.displayName.slice(0, 1)}</Text>
-              </View>
-              <Text style={styles.closeName} numberOfLines={1}>
-                {n.displayName}
+              <Text style={[styles.inDiskSymbol, { color: c.ink }]}>{c.circle.symbol}</Text>
+              <Text style={[styles.inDiskTitle, { color: c.ink }]} numberOfLines={2}>
+                {c.circle.name}
+              </Text>
+              <Text style={[styles.inDiskMeta, { color: c.ink }]}>
+                {c.friendCount > 0
+                  ? `${c.friendCount} friends · tap`
+                  : `${c.circle.activeMemberCount} members · tap`}
               </Text>
             </Pressable>
-          );
-        })}
+          </View>
+        ))}
       </Animated.View>
 
       <Animated.View
@@ -329,144 +193,73 @@ export function FallbackUniverse({
           selfStyle,
         ]}
       >
-        <BreathingView active={breathing && revealPlanets} style={styles.sphereHit}>
-          <Pressable
-            onPress={onPressSelf}
-            style={styles.sphereHit}
-            accessibilityRole="button"
-            accessibilityLabel={profile.displayName}
-            testID="universe-self-sphere"
+        <Pressable
+          onPress={onPressSelf}
+          style={styles.sphereHit}
+          accessibilityRole="button"
+          accessibilityLabel={profile.displayName}
+          testID="universe-self-sphere"
+        >
+          <View
+            pointerEvents="none"
+            style={[
+              styles.glow,
+              {
+                width: hit,
+                height: hit,
+                borderRadius: hit / 2,
+                backgroundColor: INTRO_HANDOFF.sphere.glow,
+              },
+            ]}
+          />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.sphere,
+              {
+                width: diameter,
+                height: diameter,
+                borderRadius: diameter / 2,
+                backgroundColor: INTRO_HANDOFF.sphere.color,
+              },
+            ]}
           >
             <View
               style={[
-                styles.glow,
+                styles.highlight,
                 {
-                  width: hit,
-                  height: hit,
-                  borderRadius: hit / 2,
-                  backgroundColor: INTRO_HANDOFF.sphere.glow,
-                  pointerEvents: 'none',
+                  width: diameter * 0.35,
+                  height: diameter * 0.18,
+                  borderRadius: diameter * 0.1,
                 },
               ]}
             />
-            <View
-              style={[
-                styles.sphere,
-                {
-                  width: diameter,
-                  height: diameter,
-                  borderRadius: diameter / 2,
-                  backgroundColor: INTRO_HANDOFF.sphere.color,
-                  pointerEvents: 'none',
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.highlight,
-                  {
-                    width: diameter * 0.35,
-                    height: diameter * 0.18,
-                    borderRadius: diameter * 0.1,
-                  },
-                ]}
-              />
-              {revealProfile ? (
-                <View style={styles.profile}>
-                  <View
-                    style={[
-                      styles.avatar,
-                      { width: avatar, height: avatar, borderRadius: avatar / 2 },
-                    ]}
-                  >
-                    <Text style={[styles.avatarText, { fontSize: avatar * 0.42 }]}>
-                      {profile.displayName.slice(0, 1)}
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.name,
-                      {
-                        fontSize: Math.max(10, diameter * 0.07),
-                        maxWidth: diameter * 0.75,
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {profile.displayName}
+            {revealProfile ? (
+              <View style={styles.profile}>
+                <View
+                  style={[
+                    styles.avatar,
+                    { width: avatar, height: avatar, borderRadius: avatar / 2 },
+                  ]}
+                >
+                  <Text style={[styles.avatarText, { fontSize: avatar * 0.42 }]}>
+                    {profile.displayName.slice(0, 1)}
                   </Text>
                 </View>
-              ) : null}
-            </View>
-          </Pressable>
-        </BreathingView>
-      </Animated.View>
-
-      {revealPlanets && focused && focused.tier !== 'close' ? (
-        <Animated.View
-          style={[styles.focusCard, focusCardStyle]}
-          accessibilityRole="summary"
-          pointerEvents="box-none"
-        >
-          <Text style={styles.focusName}>{focused.displayName}</Text>
-          <Text style={styles.focusMeta}>{circleName(focused.circleId)} · same circle</Text>
-          <Pressable
-            style={styles.focusBtn}
-            onPress={() => visit(focused.userId)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.focusBtnText}>visit diary</Text>
-          </Pressable>
-          {closeIds.length < 3 && !closeIds.includes(focused.userId) ? (
-            <Pressable
-              onPress={() => void keepNear(focused.userId)}
-              accessibilityRole="button"
-              style={styles.focusSecondary}
-            >
-              <Text style={styles.focusSecondaryText}>keep near me (private)</Text>
-            </Pressable>
-          ) : null}
-          <Pressable onPress={() => setFocusId(null)} accessibilityRole="button">
-            <Text style={styles.focusDismiss}>return to place</Text>
-          </Pressable>
-        </Animated.View>
-      ) : null}
-
-      {/* Circle planets orbit self — primary entry to graph room (not tiny bottom chips). */}
-      {revealPlanets && circles.length > 0
-        ? circles.slice(0, 4).map((c, index) => {
-            const angle = -40 + index * 55;
-            const radius = maxR * 0.72;
-            const p = polar(cxPx, cyPx, radius, angle);
-            const size = 72;
-            return (
-              <Pressable
-                key={c.id}
-                onPress={() => onPressCircle(c.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`${c.name} 서클 열기`}
-                style={[
-                  styles.circlePlanet,
-                  {
-                    left: p.x - size / 2,
-                    top: p.y - size / 2,
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: c.color || '#6B8CAE',
-                    opacity: focusId ? 0.55 : 1,
-                    pointerEvents: 'auto',
-                  },
-                ]}
-              >
-                <Text style={styles.circlePlanetSymbol}>{c.symbol}</Text>
-                <Text style={styles.circlePlanetName} numberOfLines={1}>
-                  {c.name}
+                <Text
+                  style={[
+                    styles.name,
+                    { fontSize: Math.max(10, diameter * 0.07), maxWidth: diameter * 0.75 },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {profile.displayName}
                 </Text>
-              </Pressable>
-            );
-          })
-        : null}
+              </View>
+            ) : null}
+          </View>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -474,7 +267,7 @@ export function FallbackUniverse({
 function StarField({ width, height }: { width: number; height: number }) {
   const stars = useMemo(
     () =>
-      Array.from({ length: 42 }, (_, i) => ({
+      Array.from({ length: 36 }, (_, i) => ({
         key: i,
         left: (i * 97) % width,
         top: (i * 53) % height,
@@ -484,7 +277,7 @@ function StarField({ width, height }: { width: number; height: number }) {
     [width, height],
   );
   return (
-    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {stars.map((s) => (
         <View
           key={s.key}
@@ -506,21 +299,30 @@ function StarField({ width, height }: { width: number; height: number }) {
 
 const styles = StyleSheet.create({
   root: { overflow: 'hidden' },
-  closeWrap: { position: 'absolute', alignItems: 'center' },
-  closeOrb: {
+  disk: {
+    position: 'absolute',
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  closeLetter: { color: '#1A1410', fontWeight: '700', fontSize: 16 },
-  closeName: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: '500',
-    color: SPACE.ink,
-    maxWidth: 72,
+  inDiskContent: {
+    position: 'absolute',
+    zIndex: 5,
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  inDiskSymbol: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  inDiskTitle: {
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: '700',
     textAlign: 'center',
+  },
+  inDiskMeta: {
+    marginTop: 2,
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
+    opacity: 0.85,
   },
   sphereWrap: {
     position: 'absolute',
@@ -538,7 +340,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    boxShadow: `0 6px 18px ${INTRO_HANDOFF.sphere.glow}80`,
+    shadowColor: INTRO_HANDOFF.sphere.glow,
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 10,
   },
   highlight: {
@@ -557,53 +362,4 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontWeight: '700' },
   name: { marginTop: 6, color: '#2A2430', fontWeight: '700' },
-  focusCard: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 88,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: SPACE.cardBorder,
-    backgroundColor: SPACE.card,
-    padding: 16,
-    zIndex: 30,
-  },
-  focusName: { fontSize: 22, fontWeight: '600', color: SPACE.ink },
-  focusMeta: { marginTop: 4, fontSize: 13, color: SPACE.whisper },
-  focusBtn: {
-    marginTop: 14,
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: '#F7E7C8',
-    justifyContent: 'center',
-  },
-  focusBtnText: { fontSize: 14, fontWeight: '700', color: '#3A2E18' },
-  focusSecondary: { marginTop: 10, minHeight: 36, justifyContent: 'center' },
-  focusSecondaryText: { fontSize: 13, color: SPACE.ink, textDecorationLine: 'underline' },
-  focusDismiss: { marginTop: 10, fontSize: 13, color: SPACE.whisper },
-  circlePlanet: {
-    position: 'absolute',
-    zIndex: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,230,168,0.55)',
-    paddingHorizontal: 6,
-    shadowColor: '#F0C36A',
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  circlePlanetSymbol: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  circlePlanetName: {
-    color: 'rgba(255,255,255,0.92)',
-    fontSize: 10,
-    fontWeight: '600',
-    maxWidth: 60,
-    textAlign: 'center',
-    marginTop: 2,
-  },
 });
