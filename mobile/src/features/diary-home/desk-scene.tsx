@@ -33,9 +33,6 @@ export type DeskSceneProps = {
 /* eslint-disable @typescript-eslint/no-require-imports */
 const ASSETS = {
   deskBg: require('../../../assets/desk/desk_bg.png') as ImageSourcePropType,
-  windowFrame: require('../../../assets/desk/window_frame.png') as ImageSourcePropType,
-  corkboard: require('../../../assets/desk/corkboard.png') as ImageSourcePropType,
-  corkEmpty: require('../../../assets/desk/cork_empty.png') as ImageSourcePropType,
   plant: require('../../../assets/desk/plant.png') as ImageSourcePropType,
   books: require('../../../assets/desk/books.png') as ImageSourcePropType,
   tomato: require('../../../assets/desk/tomato_timer.png') as ImageSourcePropType,
@@ -43,6 +40,7 @@ const ASSETS = {
   frame: require('../../../assets/desk/photo_frame.png') as ImageSourcePropType,
   lamp: require('../../../assets/desk/lamp.png') as ImageSourcePropType,
   lampGlow: require('../../../assets/desk/lamp_glow.png') as ImageSourcePropType,
+  corkEmpty: require('../../../assets/desk/cork_empty.png') as ImageSourcePropType,
   sky: {
     night: require('../../../assets/desk/sky_night.png') as ImageSourcePropType,
     clear: require('../../../assets/desk/sky_clear.png') as ImageSourcePropType,
@@ -52,22 +50,28 @@ const ASSETS = {
 } as const;
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-/** Normalized layout from docs/your-diary/27-desk-scene-layered-sprites.md §5 */
+/**
+ * Coordinates measured against desk_bg.png (768×512).
+ * desk_bg already draws the wall, dual frames, and desk surface —
+ * do NOT stack a second corkboard/window_frame on top (that was the muddy collage).
+ */
 const LAYOUT = {
-  window: { x: 0.04, y: 0.06, w: 0.44, h: 0.42 },
-  corkboard: { x: 0.52, y: 0.06, w: 0.44, h: 0.42 },
+  /** Left frame inner glass */
+  window: { x: 0.1, y: 0.13, w: 0.32, h: 0.36 },
+  /** Right cork inner board */
+  cork: { x: 0.56, y: 0.12, w: 0.33, h: 0.36 },
   corkSlots: [
-    { x: 0.56, y: 0.12, w: 0.12, h: 0.16 },
-    { x: 0.72, y: 0.1, w: 0.12, h: 0.16 },
-    { x: 0.64, y: 0.28, w: 0.12, h: 0.16 },
+    { x: 0.58, y: 0.15, w: 0.12, h: 0.14 },
+    { x: 0.74, y: 0.15, w: 0.12, h: 0.14 },
+    { x: 0.66, y: 0.31, w: 0.12, h: 0.14 },
   ],
-  plant: { x: 0.06, y: 0.52, w: 0.14, h: 0.36 },
-  books: { x: 0.22, y: 0.58, w: 0.16, h: 0.28 },
-  tomato: { x: 0.42, y: 0.55, w: 0.16, h: 0.32 },
-  memo: { x: 0.58, y: 0.58, w: 0.14, h: 0.3 },
-  frame: { x: 0.72, y: 0.6, w: 0.12, h: 0.28 },
-  lamp: { x: 0.84, y: 0.48, w: 0.14, h: 0.42 },
-  lampGlow: { x: 0.7, y: 0.45, w: 0.28, h: 0.4 },
+  plant: { x: 0.04, y: 0.52, w: 0.16, h: 0.4 },
+  books: { x: 0.2, y: 0.6, w: 0.18, h: 0.28 },
+  tomato: { x: 0.4, y: 0.56, w: 0.15, h: 0.3 },
+  memo: { x: 0.56, y: 0.56, w: 0.14, h: 0.32 },
+  frame: { x: 0.7, y: 0.58, w: 0.13, h: 0.3 },
+  lamp: { x: 0.84, y: 0.46, w: 0.14, h: 0.44 },
+  lampGlow: { x: 0.72, y: 0.42, w: 0.26, h: 0.38 },
 } as const;
 
 const WEATHER_CYCLE: DeskWeather[] = ['night', 'clear', 'cloudy', 'rain'];
@@ -85,8 +89,8 @@ function box(r: { x: number; y: number; w: number; h: number }): BoxStyle {
 }
 
 /**
- * Layered desk sprites (method 2) for MY hompy only.
- * Replaces pastel 「Today I…」 + mini album slots.
+ * Layered desk for MY hompy only.
+ * Base plate = desk_bg; sky/photos/props are insets — no duplicate frames.
  */
 export function DeskScene({
   weather: weatherProp,
@@ -171,18 +175,29 @@ export function DeskScene({
 
   return (
     <View style={styles.root} accessibilityLabel="Desk scene">
+      {/* 1) Base plate — wall, frames, desk */}
       <Image source={ASSETS.deskBg} style={styles.fill} resizeMode="cover" />
 
-      {/* Window: sky under frame */}
-      <Image
-        source={ASSETS.sky[weather]}
-        style={[styles.abs, box(LAYOUT.window)]}
-        resizeMode="cover"
-      />
-      <Image
-        source={ASSETS.windowFrame}
-        style={[styles.abs, box(LAYOUT.window)]}
-        resizeMode="contain"
+      {/* 2) Sky painted into the left frame hole (desk_bg hole is opaque black) */}
+      <View style={[styles.abs, box(LAYOUT.window), styles.windowClip]} pointerEvents="none">
+        <Image source={ASSETS.sky[weather]} style={styles.fill} resizeMode="cover" />
+      </View>
+
+      {/* 3) Photos pinned into cork hole */}
+      {LAYOUT.corkSlots.map((slot, i) => (
+        <View key={`slot-${i}`} style={[styles.abs, box(slot), styles.slotClip]} pointerEvents="none">
+          {slots[i] ? (
+            <Image source={{ uri: slots[i]! }} style={styles.fill} resizeMode="cover" />
+          ) : (
+            <Image source={ASSETS.corkEmpty} style={styles.fill} resizeMode="cover" />
+          )}
+        </View>
+      ))}
+      <Pressable
+        style={[styles.hit, box(LAYOUT.cork)]}
+        onPress={onPressCork}
+        accessibilityRole="button"
+        accessibilityLabel="Open mini album"
       />
       <Pressable
         style={[styles.hit, box(LAYOUT.window)]}
@@ -191,38 +206,9 @@ export function DeskScene({
         accessibilityLabel="Change window weather"
       />
 
-      {/* Cork empties under board holes, then board */}
-      {LAYOUT.corkSlots.map((slot, i) => (
-        <View key={`empty-${i}`} style={[styles.abs, box(slot)]} pointerEvents="none">
-          {slots[i] ? (
-            <Image source={{ uri: slots[i]! }} style={styles.fill} resizeMode="cover" />
-          ) : (
-            <Image source={ASSETS.corkEmpty} style={styles.fill} resizeMode="contain" />
-          )}
-        </View>
-      ))}
-      <Image
-        source={ASSETS.corkboard}
-        style={[styles.abs, box(LAYOUT.corkboard)]}
-        resizeMode="contain"
-      />
-      <Pressable
-        style={[styles.hit, box(LAYOUT.corkboard)]}
-        onPress={onPressCork}
-        accessibilityRole="button"
-        accessibilityLabel="Open mini album"
-      />
-
-      <Image
-        source={ASSETS.plant}
-        style={[styles.abs, box(LAYOUT.plant)]}
-        resizeMode="contain"
-      />
-      <Image
-        source={ASSETS.books}
-        style={[styles.abs, box(LAYOUT.books)]}
-        resizeMode="contain"
-      />
+      {/* 4) Desk props */}
+      <Image source={ASSETS.plant} style={[styles.abs, box(LAYOUT.plant)]} resizeMode="contain" />
+      <Image source={ASSETS.books} style={[styles.abs, box(LAYOUT.books)]} resizeMode="contain" />
 
       <Animated.View
         style={[
@@ -299,7 +285,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1.5,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#2A2430',
+    backgroundColor: '#1a1512',
   },
   fill: {
     ...StyleSheet.absoluteFill,
@@ -309,14 +295,29 @@ const styles = StyleSheet.create({
   abs: {
     position: 'absolute',
   },
+  windowClip: {
+    overflow: 'hidden',
+    borderRadius: 4,
+    zIndex: 0,
+  },
+  slotClip: {
+    overflow: 'hidden',
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(40,28,18,0.55)',
+    backgroundColor: '#2a1c12',
+    zIndex: 2,
+  },
   hit: {
     position: 'absolute',
+    zIndex: 3,
   },
   hitFill: {
     ...StyleSheet.absoluteFill,
   },
   glow: {
-    opacity: 0.88,
+    opacity: 0.75,
+    zIndex: 4,
   },
   framePhoto: {
     margin: '12%',
@@ -329,10 +330,9 @@ const styles = StyleSheet.create({
     left: '14%',
     right: '14%',
     top: '28%',
-    fontSize: 9,
-    lineHeight: 12,
-    color: '#4A3F3A',
+    fontSize: 10,
+    lineHeight: 13,
+    color: '#3a2e22',
     textAlign: 'center',
-    fontWeight: '600',
   },
 });

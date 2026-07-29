@@ -280,12 +280,12 @@ export function DiaryHompyHome({
             </OutlineBox>
           ) : null}
 
-          {/* Calendar | Album — friend keeps album; mine calendar only under desk */}
-          <View style={styles.grid2}>
+          {/* Calendar — full width on my desk; friend keeps calendar | album */}
+          <View style={isMine ? styles.grid1 : styles.grid2}>
             <OutlineBox
               fill={hompy.mint}
               stroke={hompy.mintInk}
-              style={styles.gridCell}
+              style={isMine ? styles.gridCellFull : styles.gridCell}
               contentStyle={styles.panelPad}
             >
               <Pressable
@@ -486,8 +486,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   todayText: { fontSize: 13, color: hompy.ink, lineHeight: 18 },
+  grid1: { flexDirection: 'column' },
   grid2: { flexDirection: 'row', gap: 8 },
   gridCell: { flex: 1, minHeight: 168 },
+  gridCellFull: { width: '100%', minHeight: 168 },
   gridCellFill: { flex: 1, minHeight: 168 },
   panelPad: { padding: 8, flexGrow: 1 },
   panelTitle: {

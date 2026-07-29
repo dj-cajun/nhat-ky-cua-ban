@@ -432,24 +432,41 @@ export function FallbackUniverse({
         </Animated.View>
       ) : null}
 
-      {revealPlanets && circles.length > 0 ? (
-        <View style={styles.circleDock} pointerEvents="box-none">
-          {circles.slice(0, 4).map((c) => (
-            <Pressable
-              key={c.id}
-              onPress={() => onPressCircle(c.id)}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${c.name} circle room`}
-              style={styles.circleChip}
-            >
-              <Text style={styles.circleChipSymbol}>{c.symbol}</Text>
-              <Text style={styles.circleChipName} numberOfLines={1}>
-                {c.name}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      {/* Circle planets orbit self — primary entry to graph room (not tiny bottom chips). */}
+      {revealPlanets && circles.length > 0
+        ? circles.slice(0, 4).map((c, index) => {
+            const angle = -40 + index * 55;
+            const radius = maxR * 0.72;
+            const p = polar(cxPx, cyPx, radius, angle);
+            const size = 72;
+            return (
+              <Pressable
+                key={c.id}
+                onPress={() => onPressCircle(c.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.name} 서클 열기`}
+                style={[
+                  styles.circlePlanet,
+                  {
+                    left: p.x - size / 2,
+                    top: p.y - size / 2,
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: c.color || '#6B8CAE',
+                    opacity: focusId ? 0.55 : 1,
+                    pointerEvents: 'auto',
+                  },
+                ]}
+              >
+                <Text style={styles.circlePlanetSymbol}>{c.symbol}</Text>
+                <Text style={styles.circlePlanetName} numberOfLines={1}>
+                  {c.name}
+                </Text>
+              </Pressable>
+            );
+          })
+        : null}
     </View>
   );
 }
@@ -567,29 +584,26 @@ const styles = StyleSheet.create({
   focusSecondary: { marginTop: 10, minHeight: 36, justifyContent: 'center' },
   focusSecondaryText: { fontSize: 13, color: SPACE.ink, textDecorationLine: 'underline' },
   focusDismiss: { marginTop: 10, fontSize: 13, color: SPACE.whisper },
-  circleDock: {
+  circlePlanet: {
     position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 18,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-    zIndex: 25,
-  },
-  circleChip: {
-    minHeight: 40,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(244,239,230,0.22)',
-    backgroundColor: 'rgba(14,21,38,0.72)',
-    flexDirection: 'row',
+    zIndex: 18,
     alignItems: 'center',
-    gap: 6,
-    maxWidth: 160,
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,230,168,0.55)',
+    paddingHorizontal: 6,
+    shadowColor: '#F0C36A',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  circleChipSymbol: { color: SPACE.whisper, fontSize: 13 },
-  circleChipName: { color: SPACE.ink, fontSize: 12, fontWeight: '600', maxWidth: 110 },
+  circlePlanetSymbol: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  circlePlanetName: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 10,
+    fontWeight: '600',
+    maxWidth: 60,
+    textAlign: 'center',
+    marginTop: 2,
+  },
 });
